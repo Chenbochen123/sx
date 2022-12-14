@@ -1,0 +1,393 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberReturninInsert : Mesnac.Web.UI.Page
+{
+    protected PpmRubberChkManager chkManager = new PpmRubberChkManager();
+    protected PpmRubberChkDetailManager chkdetailManager = new PpmRubberChkDetailManager();
+    protected BasUserManager userManager = new BasUserManager();
+    protected BasMaterialManager materManager = new BasMaterialManager();
+    protected BasFactoryInfoManager facManager = new BasFactoryInfoManager();
+
+    protected BasStorageManager storageManager = new BasStorageManager();
+    protected BasStoragePlaceManager storagePlaceManager = new BasStoragePlaceManager();
+    protected PpmRubberStoreinManager storeInManager = new PpmRubberStoreinManager();
+    protected PpmRubberStoreinDetailManager storeinDetailManager = new PpmRubberStoreinDetailManager();
+    protected PpmRubberReturninManager returninManager = new PpmRubberReturninManager();
+    protected PpmRubberReturninDetailManager returninDetailManager = new PpmRubberReturninDetailManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            txtReturninDate.Text = DateTime.Now.ToString();
+            txtMakerPerson.Text = userManager.GetListByWhere(BasUser._.WorkBarcode == this.UserID)[0].UserName;
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                BindData(Request.QueryString["BillNo"].ToString());
+            }
+            else
+            {
+                hiddenBillNo.Text = Guid.NewGuid().ToString();
+            }
+        }
+    }
+
+    private PageResult<PpmRubberReturninDetail> GetPageResultData1(PageResult<PpmRubberReturninDetail> pageParams)
+    {
+        PpmRubberReturninDetailManager.QueryParams queryParams = new PpmRubberReturninDetailManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = hiddenBillNo.Text;
+
+        return returninDetailManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindDetail(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberReturninDetail> pageParams = new PageResult<PpmRubberReturninDetail>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "RecordDate desc";
+
+        PageResult<PpmRubberReturninDetail> lst = GetPageResultData1(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    public void BindData(string billNo)
+    {
+        PpmRubberReturnin returninBill = returninManager.GetById(Request.QueryString["BillNo"].ToString());
+        txtBillNo.Text = returninBill.BillNo;
+        hiddenBillNo.Text = returninBill.BillNo;
+        //txtSendChkNo.Text = storeInBill.SendChkNo;
+        txtStorageName.Text = storageManager.GetStorageName(returninBill.StorageID);
+        hiddenStorageID.Text = returninBill.StorageID;
+        txtFactoryID.Text = facManager.GetById(returninBill.FactoryID).FacName;
+        hiddenFactoryID.Text = returninBill.FactoryID.ToString();
+        txtReturninDate.Text = returninBill.ReturninDate.ToString();
+        txtRemark.Text = returninBill.Remark;
+        btnSave.Disabled = false;
+        DataSet ds = returninDetailManager.GetByBillNo(billNo);
+        EntityArrayList<PpmRubberReturninDetail> returninDetail = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == billNo);
+        //txtStorageName.Text = storageManager.GetStorageName(storeinDetail[0].StorageID);
+        //hiddenStorageID.Text = storeinDetail[0].StorageID;
+        //txtStoragePlaceName.Text = storagePlaceManager.GetStoragePlaceName(storeinDetail[0].StorageID, storeinDetail[0].StoragePlaceID);
+        hiddenStoragePlaceID.Text = returninDetail[0].StoragePlaceID;
+
+        this.store.DataSource = ds;
+        this.store.DataBind();
+    }
+
+    protected void btnAddDetail_Click(object sender, EventArgs e)
+    {
+        //EntityArrayList<PpmRubberStoreinDetail> storeinDetails = storeinDetailManager.GetListByWhere(PpmRubberStoreinDetail._.BillNo == hiddenBillNo.Text && PpmRubberStoreinDetail._.Barcode == txtBarcode3.Text);
+        //if (storeinDetails.Count > 0)
+        //{
+        //    X.MessageBox.Alert("操作", "列表中已存在" + txtBarcode3.Text + "的条码,不能重复！").Show();
+        //    return;
+        //}
+        EntityArrayList<PpmRubberReturninDetail> details = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.Barcode == txtBarcode3.Text && PpmRubberReturninDetail._.DeleteFlag == "0");
+        foreach (PpmRubberReturninDetail returninDetail1 in details)
+        {
+            if (returninDetail1.MaterCode != hiddenMaterCode.Text)
+            {
+                X.MessageBox.Alert("操作", "其他单据已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                return;
+            }
+        }
+
+        EntityArrayList<PpmRubberReturninDetail> returninDetailCount = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.DeleteFlag == "0");
+
+        PpmRubberReturninDetail returninDetail = new PpmRubberReturninDetail();
+        returninDetail.BillNo = hiddenBillNo.Text;
+        returninDetail.Barcode = txtBarcode3.Text;
+        returninDetail.ProductNo = txtProductNo3.Text;
+        returninDetail.OrderID = returninDetailCount.Count + 1;
+        //storeinDetail.StorageID = hiddenStorageID.Text;
+        returninDetail.StoragePlaceID = hiddenStoragePlaceID.Text;
+        returninDetail.MaterCode = hiddenMaterCode.Text;
+        returninDetail.ProcDate = Convert.ToDateTime(txtProcDate3.Text);
+        returninDetail.ReturninNum = Convert.ToInt32(txtReturninNum3.Text);
+        returninDetail.PieceWeight = Convert.ToDecimal(txtPieceWeight3.Text);
+        returninDetail.ReturninWeight = Convert.ToDecimal(txtReturninWeight3.Text);
+        returninDetail.RecordDate = DateTime.Now;
+        //storeinDetail.SourcePlace = "0,手工录入";
+        returninDetail.DeleteFlag = "0";
+        returninDetail.Remark = txtRemark3.Text;
+
+        returninDetailManager.Insert(returninDetail);
+        pageToolBar.DoRefresh();
+
+        txtBarcode3.Text = string.Empty;
+        txtProductNo3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        //txtStoragePlaceName3.Text = string.Empty;
+        //hiddenStoragePlaceID.Text = string.Empty;
+        txtProcDate3.Text = Convert.ToString(DateTime.Now);
+        txtReturninNum3.Text = string.Empty;
+        txtPieceWeight3.Text = string.Empty;
+        txtReturninWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumndetail_direct_edit(string barcode)
+    {
+        PpmRubberReturninDetail returninDetail = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.Barcode == barcode)[0];
+
+        hiddenBarcode.Text = returninDetail.Barcode;
+        txtBarcode2.Text = returninDetail.Barcode;
+        txtProductNo2.Text = returninDetail.ProductNo;
+        txtMaterialName2.Text = materManager.GetMaterName(returninDetail.MaterCode);
+        if (string.IsNullOrEmpty(hiddenStorageID.Text))
+        {
+            X.MessageBox.Alert("提示", "请首先在主信息中选择库房").Show();
+            return;
+        }
+        if (string.IsNullOrEmpty(returninDetail.StoragePlaceID))
+        {
+            BasStoragePlace place = storagePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+            txtStoragePlaceName2.Text = place.StoragePlaceName;
+            hiddenStoragePlaceID.Text = place.StoragePlaceID;
+        }
+        else
+        {
+            txtStoragePlaceName2.Text = storagePlaceManager.GetStoragePlaceName(hiddenStorageID.Text, returninDetail.StoragePlaceID);
+            hiddenStoragePlaceID.Text = returninDetail.StoragePlaceID;
+        }
+        hiddenMaterCode.Text = returninDetail.MaterCode;
+        txtProcDate2.Text = returninDetail.ProcDate.ToString();
+        txtInputNum2.Text = returninDetail.ReturninNum.ToString();
+        txtPieceWeight2.Text = returninDetail.PieceWeight.ToString();
+        txtInputWeight2.Text = returninDetail.ReturninWeight.ToString();
+        txtRemark2.Text = returninDetail.Remark;
+
+        this.winModifyDetail.Show();
+    }
+
+    protected void btnModifyDetailSave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            EntityArrayList<PpmRubberReturninDetail> returninDetails = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.DeleteFlag == "0");
+            PpmRubberReturninDetail returninDetail = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.Barcode == hiddenBarcode.Text)[0];
+
+            //判断其他单据是否有相同的条码和物料
+            EntityArrayList<PpmRubberReturninDetail> details = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.Barcode == txtBarcode2.Text && PpmRubberReturninDetail._.DeleteFlag == "0");
+            foreach (PpmRubberReturninDetail returninDetail1 in details)
+            {
+                if (returninDetail1.MaterCode != hiddenMaterCode.Text && details.Count > 2)
+                {
+                    X.MessageBox.Alert("操作", "已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                    return;
+                }
+            }
+
+            SaveModifyDetail();
+        }
+        catch (Exception ex)
+        {
+            X.MessageBox.Alert("操作", "更新失败：" + ex).Show();
+        }
+    }
+
+    public string SaveModifyDetail()
+    {
+        PpmRubberReturninDetail returninDetail = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.Barcode == hiddenBarcode.Text)[0];
+
+        returninDetail.Barcode = hiddenBarcode.Text;
+        returninDetail.ProductNo = txtProductNo2.Text;
+        returninDetail.StoragePlaceID = hiddenStoragePlaceID.Text;
+        returninDetail.MaterCode = hiddenMaterCode.Text;
+        returninDetail.ProcDate = Convert.ToDateTime(txtProcDate2.Text);
+        int Num = Convert.ToInt32(returninDetail.ReturninNum);
+        returninDetail.ReturninNum = Convert.ToInt32(txtInputNum2.Text);
+        returninDetail.PieceWeight = Convert.ToDecimal(txtPieceWeight2.Text);
+        returninDetail.ReturninWeight = Convert.ToDecimal(txtInputWeight2.Text);
+        returninDetail.RecordDate = DateTime.Now;
+        returninDetail.Remark = txtRemark2.Text;
+
+        returninDetailManager.Update(returninDetail);
+        if (txtBarcode2.Text != hiddenBarcode.Text)
+            returninDetailManager.Update(new PropertyItem[] { PpmRubberReturninDetail._.Barcode }, new object[] { txtBarcode2.Text }, PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.Barcode == hiddenBarcode.Text);
+
+        pageToolBar.DoRefresh();
+        this.winModifyDetail.Close();
+        return "true";
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void DeleteDetail(string barcode)
+    {
+        PpmRubberReturninDetail returninDetail = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.Barcode == barcode)[0];
+
+        returninDetailManager.Delete(returninDetail);
+    }
+
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(txtStorageName.Text))
+        {
+            X.MessageBox.Alert("提示", "请首先在主信息中选择库房").Show();
+            return;
+        }
+        txtBarcode3.Text = string.Empty;
+        txtProductNo3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        BasStoragePlace place = storagePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+        txtStoragePlaceName3.Text = place.StoragePlaceName;
+        hiddenStoragePlaceID.Text = place.StoragePlaceID;
+        txtProcDate3.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        txtReturninNum3.Text = string.Empty;
+        txtPieceWeight3.Text = string.Empty;
+        txtReturninWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+
+        this.winAddDetail.Show();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnSave_Click()
+    {
+        EntityArrayList<PpmRubberReturninDetail> returninDetailCounts = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == hiddenBillNo.Text && PpmRubberReturninDetail._.DeleteFlag == "0");
+        if (returninDetailCounts.Count == 0)
+        {
+            return "false";
+        }
+        //foreach (PpmRubberReturninDetail p in returninDetailCounts)
+        //{
+        //    if (string.IsNullOrEmpty(p.StoragePlaceID))
+        //        return "false1";
+        //}
+
+        try
+        {
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                PpmRubberReturnin store = returninManager.GetById(Request.QueryString["BillNo"].ToString());
+                //store.SendChkNo = txtSendChkNo.Text;
+                store.FactoryID = Convert.ToInt32(hiddenFactoryID.Text);
+                store.ReturninDate = Convert.ToDateTime(txtReturninDate.Text);
+                store.ReturninPerson = userManager.UserID;
+                store.MakerPerson = userManager.UserID;
+                store.Remark = txtRemark.Text;
+
+                returninManager.Update(store);
+            }
+            else
+            {
+                //插入主信息
+                PpmRubberReturnin store = new PpmRubberReturnin();
+                store.BillNo = returninManager.GetBillNo();
+                store.FactoryID = Convert.ToInt32(hiddenFactoryID.Text);
+                store.StorageID = hiddenStorageID.Text;
+                store.ReturninPerson = userManager.UserID;
+                if (Convert.ToDateTime(txtReturninDate.Text).ToShortDateString() == DateTime.Now.ToShortDateString())
+                    store.ReturninDate = DateTime.Now;
+                else
+                    store.ReturninDate = Convert.ToDateTime(txtReturninDate.Text);
+                store.MakerPerson = userManager.UserID;
+                store.LockedFlag = "0";
+                store.ChkResultFlag = "0";
+                store.FiledFlag = "0";
+                store.DeleteFlag = "0";
+                store.Remark = txtRemark.Text;
+
+                returninManager.Insert(store);
+
+                returninDetailManager.Update(new PropertyItem[] { PpmRubberReturninDetail._.BillNo }, new object[] { store.BillNo }, PpmRubberReturninDetail._.BillNo == returninDetailCounts[0].BillNo);
+
+                EntityArrayList<PpmRubberReturninDetail> details = returninDetailManager.GetListByWhere(PpmRubberReturninDetail._.BillNo == store.BillNo);
+                BasStoragePlace place = storagePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+                for (int i = 0; i < details.Count; i++)
+                {
+                    if (string.IsNullOrEmpty(details[i].StoragePlaceID))
+                    {
+                        details[i].StoragePlaceID = place.StoragePlaceID;
+                        returninDetailManager.Update(details[i]);
+                    }
+                }
+            }
+
+            //将控件清空还原
+            BackControl();
+            return "添加成功！";
+        }
+        catch (Exception ex)
+        {
+            return "添加失败：" + ex.ToString();
+        }
+    }
+
+    public void BackControl()
+    {
+        txtStorageName.Text = string.Empty;
+        hiddenStorageID.Text = string.Empty;
+        hiddenStoragePlaceID.Text = string.Empty;
+        txtFactoryID.Text = string.Empty;
+        txtRemark.Text = string.Empty;
+
+        store.Data = null;
+        store.DataBind();
+    }
+
+    public void btnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAddDetail.Close();
+        this.winModifyDetail.Close();
+    }
+
+    public void txtStorein_Change(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(txtReturninNum3.Text) && !string.IsNullOrEmpty(txtReturninWeight3.Text))
+                txtPieceWeight3.Text = String.Format("{0:N3}", Convert.ToDecimal(txtReturninWeight3.Text) / Convert.ToInt32(txtReturninNum3.Text));
+        }
+        catch
+        { }
+    }
+
+    public void txtStorein2_Change(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(txtInputNum2.Text) && !string.IsNullOrEmpty(txtInputWeight2.Text))
+                txtPieceWeight2.Text = String.Format("{0:N3}", Convert.ToDecimal(txtInputWeight2.Text) / Convert.ToInt32(txtInputNum2.Text));
+        }
+        catch
+        { }
+    }
+
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+}

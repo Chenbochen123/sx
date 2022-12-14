@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/09/2014 16:21:05" ReportInfo.Modified="04/09/2014 17:17:30" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3EbN+NfiWegx9WggTAhF4DLg==">
+      <TableDataSource Name="Table" Alias="RubConsume" DataType="System.Int32" Enabled="true" SelectCommand="select '0' as PlanDate,'1' as EquipName,'2' as MinerTypeName,'3' as CostMaterName,'4' as MaterialName,0 as consumeqty,0 as Consqty">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="MinerTypeName" DataType="System.String"/>
+        <Column Name="CostMaterName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="consumeqty" DataType="System.Decimal"/>
+        <Column Name="Consqty" DataType="System.Decimal"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="10000" PaperHeight="10000">
+    <DataBand Name="Data1" Width="37724.4" Height="103.95">
+      <MatrixObject Name="Matrix1" Left="18.9" Top="18.9" Width="591.66" Height="71.07" FixedRows="2" FixedColumns="4" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[RubConsume.PlanDate]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[RubConsume.EquipName]"/>
+          <Header Expression="[RubConsume.MinerTypeName]" Totals="false"/>
+          <Header Expression="[RubConsume.CostMaterName]" Totals="false"/>
+          <Header Expression="[RubConsume.MaterialName]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[RubConsume.consumeqty]"/>
+          <Cell Expression="[RubConsume.Consqty]"/>
+        </MatrixCells>
+        <TableColumn Name="Column7" Width="77.06" AutoSize="true"/>
+        <TableColumn Name="Column8" Width="101.81" AutoSize="true"/>
+        <TableColumn Name="Column9" Width="101.81" AutoSize="true"/>
+        <TableColumn Name="Column10" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column11" Width="83.25" AutoSize="true"/>
+        <TableColumn Name="Column12" Width="64.69" AutoSize="true"/>
+        <TableColumn Name="Column13" Width="33.71" AutoSize="true"/>
+        <TableColumn Name="Column14" Width="33.71" AutoSize="true"/>
+        <TableRow Name="Row4" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell19" Border.Lines="All" Text="机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell20" Border.Lines="All" Text="物料类型" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell23" Border.Lines="All" Text="生产物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell25" Border.Lines="All" Text="消耗物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell26" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell39"/>
+          <TableCell Name="Cell43" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell47"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell21"/>
+          <TableCell Name="Cell22"/>
+          <TableCell Name="Cell24"/>
+          <TableCell Name="Cell27"/>
+          <TableCell Name="Cell28" Border.Lines="All" Text="设定" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell40" Border.Lines="All" Text="消耗" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell44" Border.Lines="All" Text="设定" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell48" Border.Lines="All" Text="消耗" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="16.5" AutoSize="true">
+          <TableCell Name="Cell29" Border.Lines="All" Text="[EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Border.Lines="All" Text="[MinerTypeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="[CostMaterName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell33" Border.Lines="All" Text="[consumeqty]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell41" Border.Lines="All" Text="[Consqty]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell45" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell49" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row7" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell34" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="4"/>
+          <TableCell Name="Cell35"/>
+          <TableCell Name="Cell36"/>
+          <TableCell Name="Cell37"/>
+          <TableCell Name="Cell38" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell42" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell46" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell50" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

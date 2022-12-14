@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/08/2014 20:49:10" ReportInfo.Modified="04/09/2014 13:11:39" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3E4cqbHQBvyty4LRz+VKZKlQ==">
+      <TableDataSource Name="Table" Alias="PpmScanCalcEquipCode" DataType="System.Int32" Enabled="true" SelectCommand="exec ProcPpmScanCalcEquipCode '2014-04-03', '2014-04-05', '2'">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="EquipCode" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="SerialCount" DataType="System.Int32"/>
+        <Column Name="ScanRate" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="2000" PaperHeight="2000">
+    <DataBand Name="Data1" Width="7484.4" Height="127.49">
+      <MatrixObject Name="Matrix1" Left="9.45" Top="9.45" Width="242.43" Height="34.69" FixedRows="1" FixedColumns="1" AutoSize="false" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[PpmScanCalcEquipCode.EquipName]" Totals="false"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[PpmScanCalcEquipCode.PlanDate]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[PpmScanCalcEquipCode.ScanRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="89.77"/>
+        <TableColumn Name="Column2" Width="152.66"/>
+        <TableRow Name="Row1" Height="18.19">
+          <TableCell Name="Cell1" Border.Lines="All" Text="计划日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="[EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="16.5">
+          <TableCell Name="Cell3" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="[ScanRate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

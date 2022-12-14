@@ -1,0 +1,40 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Data.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Data.Interface;
+    using System.Data;
+    public class PptMixingDataService : BaseService<PptMixingData>, IPptMixingDataService
+    {
+		#region 构造方法
+
+        public PptMixingDataService() : base(){ }
+
+        public PptMixingDataService(string connectStringKey) : base(connectStringKey){ }
+
+        public PptMixingDataService(NBear.Data.Gateway way) : base(way){ }
+
+        #endregion 构造方法
+
+        public DataSet GetMixDataByBarCode(string barCode) {
+            StringBuilder sqlstr = new StringBuilder();
+            sqlstr.AppendLine(@" SELECT	    m.Barcode , m.MixID , t.ShowName AS TermCode , 
+                                            m.SetTime , m.SeTemp , m.SetEner , m.SetPower , 
+                                            m.SetPres , m.SetRota , a.ShowName AS ActCode , m.SaveTime,
+                                            m.PFTime,   m.PFTemp,   m.PFEner, m.PFPower, m.PFPres, m.PFRota
+                                 FROM	    PptMixingData m
+                                 LEFT JOIN  PmtTerm t  ON m.TermCode = t.TermCode
+                                 LEFT JOIN  PmtAction a  ON m.ActCode = a.ActionCode ");
+            sqlstr.AppendLine(@" WHERE      1=1");
+            sqlstr.AppendLine(@" AND        m.Barcode='" + barCode + "'");
+            sqlstr.AppendLine(@" Order by   m.MixId");
+
+            NBear.Data.CustomSqlSection css = this.GetBySql(sqlstr.ToString());
+            return css.ToDataSet();
+        }
+    }
+}

@@ -1,0 +1,191 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="StopReasonDetail.aspx.cs" Inherits="Manager_Equipment_StopManage_StopReasonDetail" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>停机数据分析</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js"></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/echarts.min.js"></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/ecStat.js"></script>
+    <script type="text/javascript">
+
+        var refreshChart = function () {
+            debugger;
+            App.direct.chartMainBindData({
+                success: function (result) {
+                    var arr = result.split("@");
+                    console.log(arr[0]);
+                   // debugger;
+                    var data = JSON.parse(arr[0]);  //完整数据
+                    var std = {};
+
+                    var bins = ecStat.histogram(data);
+                    drawBar(bins, std);
+                },
+                failure: function (errorMsg) {
+                    Ext.Msg.alert("提示", errorMsg);
+                    return false;
+                },
+                eventMask: {
+                    showMask: true
+                }
+            });
+            return false;
+        }
+
+        var divBarResize = function () {
+            var width = App.pnlBar.getWidth() - 10;
+            var height = App.pnlBar.getHeight();
+            $('#divBar').height(height);
+            $('#divBar').width(width);
+            resizechartbar();
+        }
+
+        var resizechartbar = function () {
+            chartBar.resize();
+        }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <ext:ResourceManager runat="server" ID="ResourceManager1" />
+        <ext:Viewport runat="server" ID="Viewport1" Layout="BorderLayout">
+            <Items>
+                <ext:Hidden runat="server" ID="HiddenBeginDate" />
+                <ext:Hidden runat="server" ID="hiddenMaterialCode" />
+                <ext:Panel runat="server" ID="PanelNorth" Region="North" Layout="ColumnLayout">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="ToolbarNorth">
+                            <Items>
+                                <ext:Button runat="server" ID="ButtonNorthQuery" Icon="Magnifier" Text="查询">
+                                    <Listeners>
+                                        <Click Handler="refreshChart(false); return false;" />
+                                    </Listeners>
+                                </ext:Button>
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:Container ID="container1" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                            <Items>
+                                <ext:DateField runat="server" ID="DateFieldNorthBeginDate" FieldLabel="开始日期"
+                                    LabelAlign="Right" Editable="false" Format="yyyy-MM-dd">
+                                </ext:DateField>
+                            </Items>
+                        </ext:Container>
+                        <ext:Container ID="container2" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                            <Items>
+                                <ext:DateField runat="server" ID="DateFieldNorthEndDate" FieldLabel="结束日期"
+                                    LabelAlign="Right" Editable="false" Format="yyyy-MM-dd">
+                                </ext:DateField>
+                            </Items>
+                        </ext:Container>
+                        <ext:Container ID="container3" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                            <Items>
+                                <ext:ComboBox runat="server" ID="cbxfenxi" FieldLabel="停机分析类型" LabelAlign="Right"
+                                    Editable="true">
+                                    <Items>
+                                        <ext:ListItem Text="按停机时间分析（分钟）" Value="1">
+                                        </ext:ListItem>
+                                        <ext:ListItem Text="按停机频率分析" Value="2">
+                                        </ext:ListItem>
+                                    </Items>
+                                </ext:ComboBox>
+                            </Items>
+                        </ext:Container>
+                        <ext:Container ID="container5" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                            <Items>
+                                <ext:ComboBox runat="server" ID="cbxtype" FieldLabel="停机类别" LabelAlign="Right"
+                                    Editable="false">
+                                </ext:ComboBox>
+                            </Items>
+                        </ext:Container>
+                    </Items>
+                </ext:Panel>
+                <ext:Panel ID="Panel5" runat="server" Region="Center" Flex="1" Layout="FitLayout">
+                    <Items>
+                        <ext:Panel ID="pnlBar" runat="server" Header="false">
+                            <Content>
+                                <div id="divBar" style="width: 200px; height: 260px;" />
+                            </Content>
+                            <Listeners>
+                                <Resize Handler="this.on('resize', divBarResize);"></Resize>
+                            </Listeners>
+                        </ext:Panel>
+                    </Items>
+                </ext:Panel>
+            </Items>
+        </ext:Viewport>
+    </form>
+</body>
+<script type="text/javascript">
+    var chartBar = echarts.init(document.getElementById('divBar'), 'light');
+
+    var optionBar = {
+        title: {
+            text: '直方图',
+            x: 'left'
+        },
+        color: ['rgb(25, 183, 207)'],
+        grid: {
+            top: 35,
+            left: 15,
+            right: 15,
+            bottom: 15,
+            containLabel: true
+        },
+        xAxis: [{
+            type: 'value',
+            scale: false, //这个一定要设，不然barWidth和bins对应不上
+            min: 0,
+            max: 0,
+            interval: 0,
+            barWidth: 0,
+        }],
+        yAxis: [{
+            type: 'value',
+            position: 'left'
+        }
+        ],
+        series: [{
+            name: 'height',
+            type: 'bar',
+            barWidth: '99.3%',
+            yAxisIndex: 0,
+            label: {
+                normal: {
+                    show: true,
+                    position: 'insideTop',
+                    formatter: function (params) {
+                        return params.value[1];
+                    }
+                }
+            },
+            data: []
+        }
+        ]
+    };
+
+    var drawBar = function (bins, std) {
+
+        //bins.data.forEach(function (item, index) {
+        //    item[0] = (bins.bins[index].x1 - 0 - bins.bins[index].x0) / 2 + bins.bins[index].x0;
+        //});
+
+      //   var maxVal = ecStat.statistics.max(bins.data.map(function (item) { return item[1] }));
+
+        //optionBar.xAxis[0].min = bins.bins[0].x0;
+        //optionBar.xAxis[0].max = bins.bins[bins.bins.length - 1].x1;
+        //optionBar.xAxis[0].interval = (bins.bins[0].x1 - bins.bins[0].x0).toFixed(2) - 0;
+        //optionBar.xAxis[0].barWidth = (bins.bins[0].x1 - bins.bins[0].x0).toFixed(2) - 0;
+        optionBar.series[0].data = bins.data;
+
+        chartBar.setOption(optionBar, true);
+        divBarResize();
+    }
+</script>
+</html>

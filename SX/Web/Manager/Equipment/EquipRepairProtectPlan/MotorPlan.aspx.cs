@@ -1,0 +1,219 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Equipment_EquipRepairProtectPlan_MotorPlan : Mesnac.Web.UI.Page
+{
+    protected Eqm_MotorPlanManager manager = new Eqm_MotorPlanManager();
+    protected Eqm_MotorInfoManager infomanager = new Eqm_MotorInfoManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+
+            if (!string.IsNullOrEmpty(Request.QueryString["motorNo"]))
+            {
+                hidden_type.Text = Request.QueryString["motorNo"].ToString();
+            }
+          //  datestart.SelectedDate = DateTime.Now.AddDays(-7);
+           // dateend.SelectedDate = DateTime.Now;
+            bindList();
+        }
+    }
+
+
+    #region 初始化控件
+    
+
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select *,convert(varchar(100),realdate,23) realdate1  from Eqm_MotorPlan ");
+        sb.AppendLine("WHERE 1=1 ");
+        if (!string.IsNullOrEmpty(txtINo.Text))
+        {
+            sb.AppendLine("AND INo='" + txtINo.Text + "'");
+        }
+        if (datestart.SelectedDate!=DateTime.MinValue)
+        {
+            sb.AppendLine("AND convert(varchar(100),realdate,23)>='" + datestart.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        }
+        if (dateend.SelectedDate != DateTime.MinValue)
+        {
+            sb.AppendLine("AND convert(varchar(100),realdate,23)<='" + dateend.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        }
+        if(!string.IsNullOrEmpty(hidden_type.Text))
+        {
+            sb.AppendLine("AND motorNo='" + hidden_type.Text + "'");
+        }
+        sb.AppendLine("order by serialid desc");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList();
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "电机检测计划导出");
+        }
+    }
+
+    #endregion
+
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Eqm_MotorPlan record = manager.GetById(int.Parse(ObjID));
+        manager.Delete(int.Parse(ObjID));
+        this.AppendWebLog("电机检测计划删除", "删除编号：" + record.Serialid.ToString());
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+    [DirectMethod]
+    public void pnlList_Add(int serialid, int INo,string motorNo, DateTime realdate,
+                    decimal Dianshu, decimal LiCi, string CheckUser,
+                    DateTime outDate, DateTime inDate, string CheckInfo,
+                    string CheckFac, string Memo)
+    {
+        if (Convert.ToInt32(serialid) == 0)//新增
+        {
+            Eqm_MotorPlan record = new Eqm_MotorPlan();
+            EntityArrayList<Eqm_MotorInfo> listAdd = infomanager.GetListByWhere(Eqm_MotorInfo._.INo == INo);
+            if (listAdd.Count > 0)
+            {
+                listAdd[0].LastDate = realdate;
+                listAdd[0].DianShu = Dianshu;
+                listAdd[0].LiCi = LiCi;
+                infomanager.Update(listAdd[0]);
+            }
+            else { X.Msg.Alert("提示", "没有该系统编号，请核对！").Show(); return; }
+            record.Serialid = serialid;
+            record.INo = INo;
+            record.MotorNo = motorNo;
+            record.Realdate = realdate;
+            record.Dianshu = Dianshu;
+            record.LiCi = LiCi;
+            record.CheckUser = CheckUser;
+            if (outDate != DateTime.MinValue)
+            { record.OutDate = outDate; }
+            if (inDate != DateTime.MinValue)
+            { record.InDate = inDate; }
+            //if (outDate != null)
+            //{ record.OutDate = outDate; }
+            //if (inDate != null)
+            //{ record.InDate = inDate; }
+            record.CheckInfo = CheckInfo;
+            record.CheckFac = CheckFac;
+            record.Memo = Memo;
+            if (manager.Insert(record) >= 0)
+            {
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            Eqm_MotorPlan record = manager.GetById(serialid);
+            EntityArrayList<Eqm_MotorInfo> listAdd = infomanager.GetListByWhere(Eqm_MotorInfo._.INo ==INo);
+            if (listAdd.Count > 0)
+            {
+                listAdd[0].LastDate = realdate;
+                listAdd[0].DianShu = Dianshu;
+                listAdd[0].LiCi = LiCi;
+                infomanager.Update(listAdd[0]);
+            }
+            else { X.Msg.Alert("提示", "没有该系统编号，请核对！").Show(); return; }
+            record.INo = INo;
+            record.Realdate = realdate;
+            record.Dianshu = Dianshu;
+            record.LiCi = LiCi;
+            record.CheckUser = CheckUser;
+            if (outDate != DateTime.MinValue)
+            { record.OutDate = outDate; }
+            if (inDate != DateTime.MinValue)
+            { record.InDate = inDate; }
+            record.CheckInfo = CheckInfo;
+            record.CheckFac = CheckFac;
+            record.Memo = Memo;
+            if (manager.Update(record) >= 0)
+            {
+                X.Msg.Alert("提示", "修改完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "修改失败！").Show();
+            }
+        }
+    }
+    #endregion
+}

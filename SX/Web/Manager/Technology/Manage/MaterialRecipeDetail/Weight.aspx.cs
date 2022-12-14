@@ -1,0 +1,375 @@
+﻿using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Data;
+
+/// <summary>
+/// Manager_Technology_Manage_MaterialRecipeDetail_Weight 实现类
+/// 孙本强 @ 2013-04-03 13:06:42
+/// </summary>
+/// <remarks></remarks>
+public partial class Manager_Technology_Manage_MaterialRecipeDetail_Weight : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    private IPmtConfigManager pmtConfigManager = new PmtConfigManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    private IPmtRecipeWeightManager pmtRecipeWeightManager = new PmtRecipeWeightManager();
+    #endregion
+
+    /// <summary>
+    /// Gets the table by PY PMT config.
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    /// <param name="minor">The minor.</param>
+    /// <param name="query">The query.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private EntityArrayList<BasMaterial> GetTableByPYPmtConfig(string minor, string query)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == PmtConfigManager.TypeCode.WeightMaterial.ToString());
+        where.And(PmtConfig._.ItemCode == minor.Trim().ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        query = query.Trim();
+        return pmtConfigManager.GetBySql(String.Format(sqlstr, query)).ToArrayList<BasMaterial>();
+    }
+    /// <summary>
+    /// Fills the combo box.
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    /// <param name="typeCode">The type code.</param>
+    /// <param name="cb">The cb.</param>
+    /// <remarks></remarks>
+    private void FillComboBox(PmtConfigManager.TypeCode typeCode, Ext.Net.ComboBox cb)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == typeCode.ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        DataSet data = pmtConfigManager.GetBySql(sqlstr).ToDataSet();
+        cb.Items.Clear();
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = dr["ShowInfo"].ToString();
+                item.Value = dr["ValueInfo"].ToString();
+                cb.Items.Add(item);
+            }
+        }
+    }
+    /// <summary>
+    /// Sets the panel title.
+    /// 孙本强 @ 2013-04-03 13:06:44
+    /// </summary>
+    /// <remarks></remarks>
+    private void SetPanelTitle()
+    {
+        string recipe = GetRequest("Recipe");
+        string material = GetRequest("Material");
+        bool isMixing = true;
+        if (!string.IsNullOrWhiteSpace(material))
+        {
+            EntityArrayList<BasMaterial> lst = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == material);
+            if (lst.Count > 0)
+            {
+                BasMaterial m = lst[0];
+                if (m.MajorTypeID.ToString().Trim() == "2")
+                {
+                    isMixing = false;
+                }
+            }
+        }
+        if (isMixing)
+        {
+            gridPanelWeightCarbon.Visible = true;
+            gridPanelWeightOil1.Visible = true;
+            gridPanelWeightOil2.Visible = true;
+            gridPanelWeightRub.Visible = true;
+            gridPanelWeightPowderPackage.Visible = true;
+            gridPanelWeightPowder.Visible = false;
+            gridPanelWeightCarbon.Title = "炭黑称量信息-数量=0";
+            gridPanelWeightOil1.Title = "油称(1)称量信息-数量=0";
+            gridPanelWeightOil2.Title = "油称(2)称量信息-数量=0";
+            gridPanelWeightRub.Title = "胶料称量信息-数量=0";
+            gridPanelWeightPowderPackage.Title = "小料校核称量信息-数量=0";
+            gridPanelWeightPowder2.Title = "小料检量称量信息-数量=0";
+            try
+            {
+                gridPanelWeightCarbon.Title = "炭黑称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "0");
+                gridPanelWeightOil1.Title = "油称(1)称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "1");
+                gridPanelWeightOil2.Title = "油称(2)称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "5");
+                gridPanelWeightRub.Title = "胶料称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "2");
+                gridPanelWeightPowderPackage.Title = "小料校核称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "3");
+                gridPanelWeightPowder2.Title = "小料检量称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.ActCode != "2"
+                    && PmtRecipeWeight._.WeightType == "2" && PmtRecipeWeight._.MaterialCode.Like("2%"));
+
+            }
+            catch
+            {
+            }
+        }
+        else
+        {
+            gridPanelWeightCarbon.Visible = false;
+            gridPanelWeightOil1.Visible = false;
+            gridPanelWeightOil2.Visible = false;
+            gridPanelWeightRub.Visible = false;
+            gridPanelWeightPowderPackage.Visible = false;
+            gridPanelWeightPowder2.Visible = false;
+            gridPanelWeightPowder.Visible = true;
+            gridPanelWeightPowder.Title = "小料称量信息-数量=0";
+            try
+            {
+                gridPanelWeightPowder.Title = "小料称量信息-数量=" + pmtRecipeWeightManager.GetRowCountByWhere(PmtRecipeWeight._.RecipeObjID == recipe && PmtRecipeWeight._.WeightType == "3");
+            }
+            catch { };
+        }
+    }
+    /// <summary>
+    /// Handles the Load event of the Page control.
+    /// 孙本强 @ 2013-04-03 13:06:44
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        this.cbPageCanEdit.Checked = GetRequest("canEdit") == "1";
+        SetPanelTitle();
+        FillComboBox(PmtConfigManager.TypeCode.WeightAction, setActCodeCarbon);
+        FillComboBox(PmtConfigManager.TypeCode.WeightAction, setActCodeOil1);
+        FillComboBox(PmtConfigManager.TypeCode.WeightAction, setActCodeOil2);
+        FillComboBox(PmtConfigManager.TypeCode.WeightAction, setActCodeRub);
+        FillComboBox(PmtConfigManager.TypeCode.WeightAction, setActCodePowderPackage);
+
+
+        String sql = @"select remark as  id, itemname as  name from syscode
+where typeid = 'pmtType' order by Remark ";
+
+
+
+        DataSet data = pmtConfigManager.GetBySql(sql).ToDataSet();
+        ComboBox1.Items.Clear();
+
+        Ext.Net.ListItem nitem = new Ext.Net.ListItem();
+        nitem.Text = "空";
+        nitem.Value = "";
+        ComboBox1.Items.Add(nitem);
+
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = dr["name"].ToString();
+                item.Value = dr["id"].ToString();
+                ComboBox1.Items.Add(item);
+            }
+        }
+        SysUserCtrlManager ubll = new SysUserCtrlManager();
+
+        EntityArrayList<SysUserCtrl> mlist = ubll.GetAllList();
+        foreach (SysUserCtrl model in mlist)
+        {
+            if (model.TypeID == "Num1")
+            {
+
+                SetWeightCarbon.Renderer.Handler = "if (!value){return ''}; if (value==0) {return '';} else {return  parseFloat(value).toFixed(" + model.ItemCode + ").toString() +' 千克';}";
+
+            }
+            if (model.TypeID == "Num2")
+            {
+                SetWeightOil1.Renderer.Handler = "if (!value){return ''}; if (value==0) {return '';} else {return  parseFloat(value).toFixed(" + model.ItemCode + ").toString() +' 千克';}";
+
+            }
+            if (model.TypeID == "Num3")
+            {
+                SetWeightRub.Renderer.Handler = "if (!value){return ''}; if (value==0) {return '';} else {return  parseFloat(value).toFixed(" + model.ItemCode + ").toString() +' 千克';}";
+
+
+            }
+            if (model.TypeID == "Num4")
+            {
+                SetWeightPowderPackage.Renderer.Handler = "if (!value){return ''}; if (value==0) {return '';} else {return  parseFloat(value).toFixed(" + model.ItemCode + ").toString() +' 千克';}";
+
+            }
+            if (model.TypeID == "Num5")
+            {
+                SetWeightPowder2.Renderer.Handler = "if (!value){return ''}; if (value==0) {return '';} else {return  parseFloat(value).toFixed(" + model.ItemCode + ").toString() +' 千克';}";
+
+            }
+        }
+
+    }
+    /// <summary>
+    /// Handles the ReadData event of the ComboBoxSearchStore control.
+    /// 孙本强 @ 2013-04-03 13:06:44
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="Ext.Net.StoreReadDataEventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void ComboBoxSearchStore_ReadData(object sender, StoreReadDataEventArgs e)
+    {
+        Ext.Net.Store stor = (Store)sender;
+        string submitDirectEventConfig = this.Page.Request["submitDirectEventConfig"]; //{"config":{"extraParams":{"query":"r","page":1,"start":0,"limit":25}}}
+        string query = string.Empty;
+        if (!string.IsNullOrWhiteSpace(submitDirectEventConfig))
+        {
+            try
+            {
+                JavaScriptObject config = (JavaScriptObject)JavaScriptConvert.DeserializeObject(submitDirectEventConfig);
+                query = (((Newtonsoft.Json.JavaScriptObject)(((Newtonsoft.Json.JavaScriptObject)(config["config"]))["extraParams"]))["query"]).ToString();
+            }
+            catch
+            {
+            }
+        }
+        string storid = stor.ID.ToLower().Replace("ComboBoxSearchStore".ToLower(), "");
+        int itype = -1;
+        int.TryParse(storid, out itype);
+        if (query.Length == 0 || (itype < 0))
+        {
+            stor.DataSource = new EntityArrayList<BasMaterial>();
+            stor.DataBind();
+            return;
+        }
+        //油2
+        //if (itype == 5)
+        //{
+        //    itype = 1;
+        //}
+        stor.DataSource = GetTableByPYPmtConfig(itype.ToString(), query);
+        stor.DataBind();
+    }
+    #region 称量信息
+
+    /// <summary>
+    /// Gets the request.
+    /// 孙本强 @ 2013-04-03 13:06:44
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string GetRequest(string key)
+    {
+        if (this.Request[key] != null)
+        {
+            return this.Request[key].ToString();
+        }
+        return string.Empty;
+    }
+    /// <summary>
+    /// Weights the grid panel bind data.
+    /// 孙本强 @ 2013-04-03 13:06:45
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="extraParams">The extra params.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public object WeightGridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        EntityArrayList<PmtRecipeWeight> lst = new EntityArrayList<PmtRecipeWeight>();
+        string recipe = GetRequest("Recipe");
+        string ids = string.Empty;
+        string type = string.Empty;
+        if (!string.IsNullOrWhiteSpace(recipe))
+        {
+            foreach (KeyValuePair<string, object> p in extraParams)
+            {
+                string pagetypename = "Page@";
+                if (p.Key.ToLower().StartsWith(pagetypename.ToLower()))
+                {
+                    type = p.Key.Substring(pagetypename.Length).Trim();
+                    continue;
+                }
+            }
+            if (type == "22")
+            {
+                type = "2";
+                ids = "2%";
+            }
+            WhereClip where = new WhereClip();
+            where.And(PmtRecipeWeight._.RecipeObjID == recipe);
+            where.And(PmtRecipeWeight._.WeightType == type);
+            if (!string.IsNullOrWhiteSpace(ids))
+            {
+                string sql = "select materialcode from PmtCheckMaterSet";
+                DataSet ds = pmtRecipeWeightManager.GetBySql(sql).ToDataSet();
+
+                string[] sa =new string[ds.Tables[0].Rows.Count];
+                int ii=0;
+                foreach (DataRow dr in ds.Tables[0].Rows)
+                { sa[ii] = dr[0].ToString();
+
+                ii++;
+                }
+
+
+
+                where.And(((PmtRecipeWeight._.RecipeMaterialCode.SubString(0,1)=="5") && PmtRecipeWeight._.MaterialCode.Like(ids)) || PmtRecipeWeight._.MaterialCode.In(sa));
+            }
+            OrderByClip order = new OrderByClip();
+            order = PmtRecipeWeight._.WeightID.Asc;
+        
+                lst = pmtRecipeWeightManager.GetListByWhereAndOrder(where, order);
+           
+        }
+        if (lst.Count == 0)
+        {
+            PmtRecipeWeight m = new PmtRecipeWeight();
+            m.ActCode = "0";
+            m.RecipeMaterialCode = m.MaterialName;
+            lst.Add(m);
+            return new { data = lst, total = lst.Count };
+        }
+        for (int i = 0; i < lst.Count; i++)
+        {
+            PmtRecipeWeight p = lst[i];
+            if (ids == "2%")
+            {
+                p.ErrorAllow = p.CheckError;
+                p.SetWeight = p.CheckWeight;
+            }
+            p.RecipeMaterialCode = p.MaterialName;
+            try
+            {
+                p.RecipeEquipCode = "";
+                p.RecipeEquipCode = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == p.MaterialCode)[0].MaterialLevel;
+            }
+            catch { }
+        }
+        
+        return new { data = lst, total = lst.Count };
+    }
+    #endregion
+}

@@ -1,0 +1,479 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="08/29/2013 17:07:13" ReportInfo.Modified="01/04/2014 10:49:01" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Cell121_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell96.Text == &quot;&quot; ? 0 : double.Parse(Cell96.Text);
+      double totalQualitiedCount = Cell97.Text == &quot;&quot; ? 0 : double.Parse(Cell97.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell121.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell120_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell67.Text == &quot;&quot; ? 0 : double.Parse(Cell67.Text);
+      double totalQualitiedCount = Cell70.Text == &quot;&quot; ? 0 : double.Parse(Cell70.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell120.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell128_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell76.Text == &quot;&quot; ? 0 : double.Parse(Cell76.Text);
+      double totalQualitiedCount = Cell79.Text == &quot;&quot; ? 0 : double.Parse(Cell79.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell128.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell129_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell104.Text == &quot;&quot; ? 0 : double.Parse(Cell104.Text);
+      double totalQualitiedCount = Cell105.Text == &quot;&quot; ? 0 : double.Parse(Cell105.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell129.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell136_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell85.Text == &quot;&quot; ? 0 : double.Parse(Cell85.Text);
+      double totalQualitiedCount = Cell88.Text == &quot;&quot; ? 0 : double.Parse(Cell88.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell136.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell137_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell112.Text == &quot;&quot; ? 0 : double.Parse(Cell112.Text);
+      double totalQualitiedCount = Cell113.Text == &quot;&quot; ? 0 : double.Parse(Cell113.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell137.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell190_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell178.Text == &quot;&quot; ? 0 : double.Parse(Cell178.Text);
+      double totalQualitiedCount = Cell182.Text == &quot;&quot; ? 0 : double.Parse(Cell182.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell190.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+
+    private void Cell191_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Cell179.Text == &quot;&quot; ? 0 : double.Parse(Cell179.Text);
+      double totalQualitiedCount = Cell183.Text == &quot;&quot; ? 0 : double.Parse(Cell183.Text);
+      double totalQualitiedRate = 0;
+      if (totalSerialCount != 0)
+      {
+        totalQualitiedRate = Math.Round(totalQualitiedCount / totalSerialCount, 4);
+      }
+      Cell191.Text = totalQualitiedRate.ToString(&quot;0.00%&quot;);
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqJUrEa/KIcQqhhcfnlqC6PGg5imbaGg6zUaNTAYc5sc03TfePxSblja2w5ZBQ6XB2nNUlh7Kz1+7Ocqcqw6w5qgjdR5iHUReQsj8gZsBurmsXxHtOMHwJ7vxAj0a5O+1evOIGKp4pC4OIWYU/nNJ3AopZimP0EEI3DPzYNlmvdW0/r07V1bROp8k62zay5uPDKDL+AHySdAnsirP/L266QQ==">
+      <TableDataSource Name="Table" DataType="System.Int32" Enabled="true" SelectCommand="SELECT A.PlanDate, A.ShiftClass, A.ClassName, A.ShiftCheckGroupID&#13;&#10;    , A.CheckClassName, A.ZJSID Workerbarcode, A.UserName, A.RubTypeId, A.RubTypeName&#13;&#10;    , A.SerialCount, A.QualitiedCount, A.UnqualitiedCount&#13;&#10;FROM (&#13;&#10;    SELECT A.PlanDate, A.ShiftClass, A.ClassName, A.ShiftCheckGroupID&#13;&#10;        , A.CheckClassName, A.ZJSID, A.UserName, B.ObjID RubTypeId, B.RubTypeName&#13;&#10;        , CASE WHEN ISNULL(A.RubTypeName, B.RubTypeName) = B.RubTypeName THEN A.SerialCount ELSE NULL END SerialCount&#13;&#10;        , CASE WHEN ISNULL(A.RubTypeName, B.RubTypeName) = B.RubTypeName THEN A.UnqualitiedCount ELSE NULL END UnqualitiedCount&#13;&#10;        , CASE WHEN ISNULL(A.RubTypeName, B.RubTypeName) = B.RubTypeName THEN A.QualitiedCount ELSE NULL END QualitiedCount&#13;&#10;    FROM (&#13;&#10;        SELECT A.PlanDate, A.ShiftClass, H.ClassName, A.ShiftCheckGroupID&#13;&#10;            , I.ClassName CheckClassName, A.ZJSID, K.UserName, F.RubTypeName, COUNT(*) SerialCount&#13;&#10;            , SUM(CASE WHEN A.Grade = 1 THEN 0 ELSE 1 END) UnqualitiedCount&#13;&#10;            , SUM(CASE WHEN A.Grade = 1 THEN 1 ELSE 0 END) QualitiedCount&#13;&#10;        FROM (&#13;&#10;            SELECT A.PlanDate, A.ShiftClass, A.ShiftCheckGroupID, A.ZJSID, A.MaterCode&#13;&#10;                , Case When ISNULL(B.NotQuaCompute, '0') = '1' Then 1 Else B.Grade End Grade&#13;&#10;                , RANK() OVER(PARTITION BY A.CheckCode, B.SerialId, B.LLSerialID ORDER BY B.IfCheckNum DESC) RANK1&#13;&#10;            FROM QmtCheckMaster A&#13;&#10;            INNER JOIN QmtCheckLot B ON A.CheckCode = B.CheckCode&#13;&#10;            INNER JOIN QmtCheckStandType C ON A.StandCode = C.ObjID&#13;&#10;            WHERE 1 = 1 AND B.Grade IS NOT NULL AND C.CheckTypeCode IN (2)&#13;&#10;            AND A.PlanDate = @PlanDate&#13;&#10;        ) A&#13;&#10;        LEFT JOIN BasMaterial D ON A.MaterCode = D.MaterialCode&#13;&#10;        LEFT JOIN BasRubInfo E ON D.RubCode = E.RubCode&#13;&#10;        LEFT JOIN BasRubType F ON E.RubTypeCode = F.ObjID&#13;&#10;        LEFT JOIN PptClass H ON A.ShiftClass = H.ObjID&#13;&#10;        LEFT JOIN PptClass I ON A.ShiftCheckGroupID = I.ObjID&#13;&#10;        LEFT JOIN BasMainHander J ON A.ZJSID = J.MainHanderCode&#13;&#10;        LEFT JOIN BasUser K ON J.UserCode = K.HRCode&#13;&#10;        WHERE 1 = 1 AND A.RANK1 = 1&#13;&#10;        GROUP BY A.PlanDate, A.ShiftClass, H.ClassName, A.ShiftCheckGroupID, I.ClassName, A.ZJSID, K.UserName, F.RubTypeName&#13;&#10;    ) A&#13;&#10;    CROSS JOIN BasRubType B&#13;&#10;    WHERE B.DeleteFlag = '0'&#13;&#10;) A&#13;&#10;ORDER BY A.ZJSID, A.RubTypeId, A.ShiftClass, A.ShiftCheckGroupID&#13;&#10;">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="ClassName" DataType="System.String"/>
+        <Column Name="Workerbarcode" DataType="System.String"/>
+        <Column Name="UserName" DataType="System.String"/>
+        <Column Name="RubTypeName" DataType="System.String"/>
+        <Column Name="SerialCount" DataType="System.Int32"/>
+        <Column Name="UnqualitiedCount" DataType="System.Int32"/>
+        <Column Name="QualitiedCount" DataType="System.Int32"/>
+        <Column Name="CheckClassName" DataType="System.String"/>
+        <Column Name="QualitiedRate" DataType="System.Double" PropName="Column" Calculated="true" Expression="IIf([Table.SerialCount] == 0, 0, Round(ToDouble([Table.QualitiedCount]) / [Table.SerialCount], 4))"/>
+        <Column Name="CheckQualitiedRate" DataType="System.Double" PropName="Column" Calculated="true" Expression="IIf([Table.SerialCount] == 0, 0, Round(ToDouble([Table.QualitiedCount]) / [Table.SerialCount], 4))"/>
+        <Column Name="RubTypeId" DataType="System.Int32"/>
+        <Column Name="ShiftClass" DataType="System.Int32"/>
+        <Column Name="ShiftCheckGroupID" DataType="System.String"/>
+        <CommandParameter Name="PlanDate" DataType="22" Size="10" DefaultValue="2013-12-18"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" Landscape="true" PaperWidth="11176" PaperHeight="863.6" FirstPageSource="15" OtherPagesSource="15" ExtraDesignWidth="true">
+    <ReportTitleBand Name="ReportTitle1" Width="42169.68" Height="189">
+      <MatrixObject Name="Matrix1" Width="302.4" Height="189" Border.Lines="All" FixedRows="3" FixedColumns="2" AutoSize="false" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[Table.UserName]" Sort="None" Totals="false" SuppressTotals="true"/>
+          <Header Expression="[Table.Workerbarcode]" Totals="false"/>
+          <Header Expression="[Table.RubTypeName]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[Table.PlanDate]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[Table.SerialCount]"/>
+          <Cell Expression="[Table.QualitiedCount]"/>
+          <Cell Expression="[Table.UnqualitiedCount]"/>
+          <Cell Expression="[Table.QualitiedRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="75.6"/>
+        <TableColumn Name="Column2" Width="75.6"/>
+        <TableColumn Name="Column3" Width="75.6"/>
+        <TableColumn Name="Column10" Width="75.6"/>
+        <TableRow Name="Row1">
+          <TableCell Name="Cell1" Border.Lines="All" Text="日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell2" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="[UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell89"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell3"/>
+          <TableCell Name="Cell4"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="[Workerbarcode]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell90"/>
+        </TableRow>
+        <TableRow Name="Row3">
+          <TableCell Name="Cell5"/>
+          <TableCell Name="Cell6"/>
+          <TableCell Name="Cell14" Border.Lines="All" Text="[RubTypeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell91" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4">
+          <TableCell Name="Cell10" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell11" Border.Lines="All" Text="总项" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" Text="[SerialCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell92" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row5">
+          <TableCell Name="Cell16"/>
+          <TableCell Name="Cell17" Border.Lines="All" Text="合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" Text="[QualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell93" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row6">
+          <TableCell Name="Cell19"/>
+          <TableCell Name="Cell20" Border.Lines="All" Text="不合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell21" Border.Lines="All" Text="[UnqualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell94" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row17" Height="0">
+          <TableCell Name="Cell62"/>
+          <TableCell Name="Cell63" Border.Lines="All" Text="合格率" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell64" Border.Lines="All" Text="[QualitiedRate]" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell95" Border.Lines="All" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row18">
+          <TableCell Name="Cell65" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell66" Border.Lines="All" Text="总项" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell67" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell96" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row19">
+          <TableCell Name="Cell68"/>
+          <TableCell Name="Cell69" Border.Lines="All" Text="合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell70" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell97" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row26">
+          <TableCell Name="Cell114"/>
+          <TableCell Name="Cell115" Border.Lines="All" Text="不合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell116" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell117" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row27">
+          <TableCell Name="Cell118"/>
+          <TableCell Name="Cell119" Border.Lines="All" Text="合格率" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell120" Border.Lines="All" BeforePrintEvent="Cell120_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell121" Border.Lines="All" BeforePrintEvent="Cell121_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+      <MatrixObject Name="Matrix2" Left="453.6" Width="151.2" Height="189" Border.Lines="All" FixedRows="2" FixedColumns="2" AutoSize="false" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[Table.ShiftCheckGroupID] + &quot;-&quot; + [Table.ClassName] + &quot;班人员合计&quot;" Totals="false"/>
+          <Header Expression="[Table.RubTypeName]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[Table.PlanDate]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[Table.SerialCount]"/>
+          <Cell Expression="[Table.QualitiedCount]"/>
+          <Cell Expression="[Table.UnqualitiedCount]"/>
+          <Cell Expression="[Table.QualitiedRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column4" Width="0"/>
+        <TableColumn Name="Column5" Width="0"/>
+        <TableColumn Name="Column6" Width="75.6"/>
+        <TableColumn Name="Column11" Width="75.6"/>
+        <TableRow Name="Row7" Height="37.8">
+          <TableCell Name="Cell22" Border.Lines="All" Text="PlanDate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell23" Border.Lines="All" Text="Data" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell28" Border.Lines="All" Text="[[Table.ShiftCheckGroupID] + &quot;-&quot; + [Table.ClassName] + &quot;班人员合计&quot;]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell98"/>
+        </TableRow>
+        <TableRow Name="Row8">
+          <TableCell Name="Cell24"/>
+          <TableCell Name="Cell25"/>
+          <TableCell Name="Cell29" Border.Lines="All" Text="[RubTypeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell99" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row9">
+          <TableCell Name="Cell26" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell27" Border.Lines="All" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Border.Lines="All" Text="[SerialCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell100" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row10">
+          <TableCell Name="Cell34"/>
+          <TableCell Name="Cell35" Border.Lines="All" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="[QualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell101" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row11">
+          <TableCell Name="Cell41"/>
+          <TableCell Name="Cell42" Border.Lines="All" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell43" Border.Lines="All" Text="[UnqualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell102" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row20" Height="0">
+          <TableCell Name="Cell71"/>
+          <TableCell Name="Cell72" Text="QualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell73" Border.Lines="All" Text="[QualitiedRate]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell103" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row21">
+          <TableCell Name="Cell74" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell75" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell76" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell104" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row22">
+          <TableCell Name="Cell77"/>
+          <TableCell Name="Cell78" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell79" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell105" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row28">
+          <TableCell Name="Cell122"/>
+          <TableCell Name="Cell123" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell124" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell125" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row29">
+          <TableCell Name="Cell126"/>
+          <TableCell Name="Cell127" Text="QualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell128" Border.Lines="All" BeforePrintEvent="Cell128_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell129" Border.Lines="All" BeforePrintEvent="Cell129_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+      <MatrixObject Name="Matrix3" Left="604.8" Width="151.2" Height="189" Border.Lines="All" FixedRows="2" FixedColumns="2" AutoSize="false" DataSource="Table" ShowTitle="true">
+        <MatrixColumns>
+          <Header Expression="[Table.RubTypeName]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[Table.PlanDate]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[Table.SerialCount]"/>
+          <Cell Expression="[Table.QualitiedCount]"/>
+          <Cell Expression="[Table.UnqualitiedCount]"/>
+          <Cell Expression="[Table.QualitiedRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column7" Width="0"/>
+        <TableColumn Name="Column8" Width="0"/>
+        <TableColumn Name="Column9" Width="75.6"/>
+        <TableColumn Name="Column12" Width="75.6"/>
+        <TableRow Name="Row12" Height="37.8">
+          <TableCell Name="Cell44" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell45"/>
+          <TableCell Name="Cell50" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell106"/>
+        </TableRow>
+        <TableRow Name="Row13">
+          <TableCell Name="Cell46" Text="PlanDate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell47" Text="Data" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell51" Border.Lines="All" Text="[RubTypeName]" HorzAlign="Center" VertAlign="Bottom" Font="宋体, 9pt"/>
+          <TableCell Name="Cell107" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row14">
+          <TableCell Name="Cell48" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell49" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell52" Border.Lines="All" Text="[SerialCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell108" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row15">
+          <TableCell Name="Cell56"/>
+          <TableCell Name="Cell57" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell58" Border.Lines="All" Text="[QualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell109" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row16">
+          <TableCell Name="Cell59"/>
+          <TableCell Name="Cell60" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell61" Border.Lines="All" Text="[UnqualitiedCount]" HideZeros="true" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell110" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row23" Height="0">
+          <TableCell Name="Cell80"/>
+          <TableCell Name="Cell81" Text="QualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell82" Border.Lines="All" Text="[QualitiedRate]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell111" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row24">
+          <TableCell Name="Cell83" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell84" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell85" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell112" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row25">
+          <TableCell Name="Cell86"/>
+          <TableCell Name="Cell87" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell88" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell113" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row30">
+          <TableCell Name="Cell130"/>
+          <TableCell Name="Cell131" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell132" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell133" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row31">
+          <TableCell Name="Cell134"/>
+          <TableCell Name="Cell135" Text="QualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell136" Border.Lines="All" BeforePrintEvent="Cell136_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell137" Border.Lines="All" BeforePrintEvent="Cell137_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+      <TableObject Name="Table1" Left="75.6" Width="75.6" Height="56.7" Border.Lines="All">
+        <TableColumn Name="Column13" Width="75.6"/>
+        <TableRow Name="Row32">
+          <TableCell Name="Cell138" Border.Lines="All" Text="班组" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row33">
+          <TableCell Name="Cell143" Border.Lines="All" Text="姓名" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row34">
+          <TableCell Name="Cell148" Border.Lines="All" Text="受检数量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+      <MatrixObject Name="Matrix4" Left="302.4" Width="151.2" Height="189" Border.Lines="All" FixedRows="2" FixedColumns="2" AutoSize="false" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[Table.ShiftCheckGroupID] + &quot;-&quot; + [Table.CheckClassName] + &quot;班核查统计&quot;" Totals="false"/>
+          <Header Expression="[Table.RubTypeName]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[Table.PlanDate]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[Table.SerialCount]"/>
+          <Cell Expression="[Table.QualitiedCount]"/>
+          <Cell Expression="[Table.UnqualitiedCount]"/>
+          <Cell Expression="[Table.CheckQualitiedRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column14" Width="0"/>
+        <TableColumn Name="Column15" Width="0"/>
+        <TableColumn Name="Column16" Width="75.6"/>
+        <TableColumn Name="Column17" Width="75.6"/>
+        <TableRow Name="Row35" Height="37.8">
+          <TableCell Name="Cell149" Text="PlanDate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell150" Text="Data" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell155" Border.Lines="All" Text="[[Table.ShiftCheckGroupID] + &quot;-&quot; + [Table.CheckClassName] + &quot;班核查统计&quot;]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell164"/>
+        </TableRow>
+        <TableRow Name="Row36">
+          <TableCell Name="Cell151"/>
+          <TableCell Name="Cell152"/>
+          <TableCell Name="Cell156" Border.Lines="All" Text="[RubTypeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell165" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row37">
+          <TableCell Name="Cell153" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell154" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell157" Border.Lines="All" Text="[SerialCount]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell166" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row38">
+          <TableCell Name="Cell161"/>
+          <TableCell Name="Cell162" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell163" Border.Lines="All" Text="[QualitiedCount]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell167" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row39">
+          <TableCell Name="Cell168"/>
+          <TableCell Name="Cell169" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell170" Border.Lines="All" Text="[UnqualitiedCount]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell171" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row40" Height="0">
+          <TableCell Name="Cell172"/>
+          <TableCell Name="Cell173" Text="CheckQualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell174" Border.Lines="All" Text="[CheckQualitiedRate]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell175" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row41">
+          <TableCell Name="Cell176" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell177" Text="SerialCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell178" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell179" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row42">
+          <TableCell Name="Cell180"/>
+          <TableCell Name="Cell181" Text="QualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell182" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell183" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row43">
+          <TableCell Name="Cell184"/>
+          <TableCell Name="Cell185" Text="UnqualitiedCount" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell186" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell187" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row44">
+          <TableCell Name="Cell188"/>
+          <TableCell Name="Cell189" Text="CheckQualitiedRate" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell190" Border.Lines="All" BeforePrintEvent="Cell190_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell191" Border.Lines="All" BeforePrintEvent="Cell191_BeforePrint" Format="Percent" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.PercentSymbol="%" Format.PositivePattern="1" Format.NegativePattern="1" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </ReportTitleBand>
+  </ReportPage>
+</Report>

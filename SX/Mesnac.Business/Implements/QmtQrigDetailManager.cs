@@ -1,0 +1,211 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;
+
+namespace Mesnac.Business.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Interface;
+    using Mesnac.Data.Implements;
+    using Mesnac.Business.Interface;
+
+    using NBear.Common;
+
+    public class QmtQrigDetailManager : BaseManager<QmtQrigDetail>, IQmtQrigDetailManager
+    {
+		#region 属性注入与构造方法
+		
+        private IQmtQrigDetailService service;
+
+        public QmtQrigDetailManager()
+        {
+            this.service = new QmtQrigDetailService();
+            base.BaseService = this.service;
+        }
+
+		public QmtQrigDetailManager(string connectStringKey)
+        {
+			this.service = new QmtQrigDetailService(connectStringKey);
+            base.BaseService = this.service;
+        }
+
+        public QmtQrigDetailManager(NBear.Data.Gateway way)
+        {
+			this.service = new QmtQrigDetailService(way);
+            base.BaseService = this.service;
+        }
+
+        #endregion
+
+        public DataSet GetDataByParas(IQmtQrigDetailParams queryParams)
+        {
+            return this.service.GetDataByParas(queryParams);
+        }
+
+        /// <summary>
+        /// 逻辑删除
+        /// 创建标识：qusf 20131113
+        /// </summary>
+        /// <param name="originMaster"></param>
+        /// <param name="originDetail"></param>
+        public void LogicDelete(QmtQrigMaster originMaster, QmtQrigDetail originDetail)
+        {
+            // 启用事务
+            System.Transactions.TransactionOptions transOptions = new System.Transactions.TransactionOptions();
+            transOptions.IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted;
+            using (System.Transactions.TransactionScope scope = new System.Transactions.TransactionScope(System.Transactions.TransactionScopeOption.Required, transOptions))
+            {
+                // 更新相关的质检数据 
+
+                // 逻辑删除当前数据
+                originDetail.DeleteFlag = "1";
+                this.service.Update(originDetail);
+
+                // 更新相关质检数据的NeedReJudgeGrade
+                IQmtQrigMasterService dQmtQrigMasterService = new QmtQrigMasterService();
+                //if (originMaster.StandCode.Value == 1 || originMaster.StandCode.Value == 2)
+                //{
+                //    dQmtQrigMasterService.Update(new PropertyItem[] { QmtQrigMaster._.NeedReJudgeGrade }, new object[] { "1" }
+                //    , QmtQrigMaster._.PlanDate == originMaster.PlanDate
+                //    & QmtQrigMaster._.ShiftId == originMaster.ShiftId
+                //    & QmtQrigMaster._.MaterCode == originMaster.MaterCode
+                //    & QmtQrigMaster._.EquipCode == originMaster.EquipCode
+                //    & QmtQrigMaster._.ZJSID == originMaster.ZJSID
+                //    & QmtQrigMaster._.StandCode.In(new object[] { 1, 2 })
+                //    & QmtQrigMaster._.DeleteFlag == "0");
+                //}
+                //else
+                //{
+                //    dQmtQrigMasterService.Update(new PropertyItem[] { QmtQrigMaster._.NeedReJudgeGrade }, new object[] { "1" }
+                //    , QmtQrigMaster._.PlanDate == originMaster.PlanDate
+                //    & QmtQrigMaster._.ShiftId == originMaster.ShiftId
+                //    & QmtQrigMaster._.MaterCode == originMaster.MaterCode
+                //    & QmtQrigMaster._.EquipCode == originMaster.EquipCode
+                //    & QmtQrigMaster._.ZJSID == originMaster.ZJSID
+                //    & QmtQrigMaster._.StandCode == originMaster.StandCode.Value
+                //    & QmtQrigMaster._.DeleteFlag == "0");
+                //}
+
+                scope.Complete();
+                scope.Dispose();
+            }
+
+        }
+
+        /// <summary>
+        /// 逻辑修改
+        /// 创建标识：qusf 20131113
+        /// </summary>
+        /// <param name="entityMaster"></param>
+        /// <param name="entityDetail"></param>
+        public void LogicUpdate(QmtQrigMaster entityMaster, QmtQrigDetail entityDetail)
+        {
+            // 查找判级记录
+            IQmtCheckMasterService dQmtCheckMasterService = new QmtCheckMasterService();
+
+            EntityArrayList<QmtCheckMaster> mQmtCheckMasterList = null;
+
+            //if (entityMaster.StandCode.Value == 1 || entityMaster.StandCode.Value == 2)
+            //{
+            //    mQmtCheckMasterList = dQmtCheckMasterService.GetListByWhereAndOrder(
+            //        QmtCheckMaster._.PlanDate == entityMaster.PlanDate
+            //        & QmtCheckMaster._.MaterCode == entityMaster.MaterCode
+            //        & QmtCheckMaster._.EquipCode == entityMaster.EquipCode
+            //        & QmtCheckMaster._.ShiftId == entityMaster.ShiftId.Value
+            //        & QmtCheckMaster._.ZJSID == entityMaster.ZJSID
+            //        & QmtCheckMaster._.StandCode.In(new object[] { 1, 2 })
+            //        , QmtCheckMaster._.CheckCode.Asc);
+
+            //}
+            //else
+            //{
+            //    mQmtCheckMasterList = dQmtCheckMasterService.GetListByWhereAndOrder(
+            //        QmtCheckMaster._.PlanDate == entityMaster.PlanDate
+            //        & QmtCheckMaster._.MaterCode == entityMaster.MaterCode
+            //        & QmtCheckMaster._.EquipCode == entityMaster.EquipCode
+            //        & QmtCheckMaster._.ShiftId == entityMaster.ShiftId.Value
+            //        & QmtCheckMaster._.ZJSID == entityMaster.ZJSID
+            //        & QmtCheckMaster._.StandCode == entityMaster.StandCode.Value
+            //        , QmtCheckMaster._.CheckCode.Asc);
+
+            //}
+
+            System.Collections.Specialized.StringCollection checkCodeCollection = new System.Collections.Specialized.StringCollection();
+            foreach (QmtCheckMaster mQmtCheckMaster in mQmtCheckMasterList)
+            {
+                checkCodeCollection.Add(mQmtCheckMaster.CheckCode);
+            }
+            string[] checkCodes = new string[checkCodeCollection.Count];
+            checkCodeCollection.CopyTo(checkCodes, 0);
+
+            // 启用事务
+            System.Transactions.TransactionOptions transOptions = new System.Transactions.TransactionOptions();
+            transOptions.IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted;
+            using (System.Transactions.TransactionScope scope = new System.Transactions.TransactionScope(System.Transactions.TransactionScopeOption.Required, transOptions))
+            {
+                // 删除相关的判级数据
+
+                if (checkCodes.Length > 0)
+                {
+                    // 删除考核明细
+                    IQmtCheckAssessDetailService dQmtCheckAssessDetailService = new QmtCheckAssessDetailService();
+                    dQmtCheckAssessDetailService.DeleteByWhere(QmtCheckAssessDetail._.CheckCode.In(checkCodes));
+
+                    // 删除考核车次
+                    IQmtCheckAssessLotService dQmtCheckAssessLotService = new QmtCheckAssessLotService();
+                    dQmtCheckAssessLotService.DeleteByWhere(QmtCheckAssessLot._.CheckCode.In(checkCodes));
+
+                    // 删除考核记录
+                    IQmtCheckAssessMasterService dQmtCheckAssessMasterService = new QmtCheckAssessMasterService();
+                    dQmtCheckAssessMasterService.DeleteByWhere(QmtCheckAssessMaster._.CheckCode.In(checkCodes));
+
+                    // 删除判级明细
+                    IQmtCheckDetailService dQmtCheckDetailService = new QmtCheckDetailService();
+                    dQmtCheckDetailService.DeleteByWhere(QmtCheckDetail._.CheckCode.In(checkCodes));
+
+                    // 删除判级车次
+                    IQmtCheckLotService dQmtCheckLotService = new QmtCheckLotService();
+                    dQmtCheckLotService.DeleteByWhere(QmtCheckLot._.CheckCode.In(checkCodes));
+
+                    // 删除判级记录
+                    dQmtCheckMasterService.DeleteByWhere(QmtCheckMaster._.CheckCode.In(checkCodes));
+
+                }
+                // 更新相关的质检数据 
+
+                // 更新当前数据
+                this.service.Update(entityDetail);
+
+                // 更新相关质检数据的NeedReJudgeGrade
+                IQmtQrigMasterService dQmtQrigMasterService = new QmtQrigMasterService();
+                //if (entityMaster.StandCode.Value == 1 || entityMaster.StandCode.Value == 2)
+                //{
+                //    dQmtQrigMasterService.Update(new PropertyItem[] { QmtQrigMaster._.NeedReJudgeGrade }, new object[] { "1" }
+                //    , QmtQrigMaster._.PlanDate == entityMaster.PlanDate
+                //    & QmtQrigMaster._.ShiftId == entityMaster.ShiftId
+                //    & QmtQrigMaster._.MaterCode == entityMaster.MaterCode
+                //    & QmtQrigMaster._.EquipCode == entityMaster.EquipCode
+                //    & QmtQrigMaster._.ZJSID == entityMaster.ZJSID
+                //    & QmtQrigMaster._.StandCode.In(new object[] { 1, 2 })
+                //    & QmtQrigMaster._.DeleteFlag == "0");
+                //}
+                //else
+                //{
+                //    this.service.Update(new PropertyItem[] { QmtQrigMaster._.NeedReJudgeGrade }, new object[] { "1" }
+                //    , QmtQrigMaster._.PlanDate == entityMaster.PlanDate
+                //    & QmtQrigMaster._.ShiftId == entityMaster.ShiftId
+                //    & QmtQrigMaster._.MaterCode == entityMaster.MaterCode
+                //    & QmtQrigMaster._.EquipCode == entityMaster.EquipCode
+                //    & QmtQrigMaster._.ZJSID == entityMaster.ZJSID
+                //    & QmtQrigMaster._.StandCode == entityMaster.StandCode.Value
+                //    & QmtQrigMaster._.DeleteFlag == "0");
+                //}
+
+                scope.Complete();
+                scope.Dispose();
+            }
+
+        }
+    }
+}

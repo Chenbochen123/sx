@@ -1,0 +1,362 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_ShopStorage_ShopConsume : Mesnac.Web.UI.Page
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btnSearch" };
+            //历史查询 = new SysPageAction() { ActionID = 2, ActionName = "btn_history_search" };
+            //导出 = new SysPageAction() { ActionID = 3, ActionName = "btnExport" };
+            //修改 = new SysPageAction() { ActionID = 4, ActionName = "Edit" };
+            //删除 = new SysPageAction() { ActionID = 5, ActionName = "Delete" };
+            //恢复 = new SysPageAction() { ActionID = 6, ActionName = "Recover" };
+            //添加 = new SysPageAction() { ActionID = 7, ActionName = "btn_add" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        //public SysPageAction 历史查询 { get; private set; } //必须为 public
+        //public SysPageAction 导出 { get; private set; } //必须为 public
+        //public SysPageAction 修改 { get; private set; } //必须为 public
+        //public SysPageAction 删除 { get; private set; } //必须为 public
+        //public SysPageAction 恢复 { get; private set; } //必须为 public
+        //public SysPageAction 添加 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    private BasMaterialManager materManager = new BasMaterialManager();
+    private BasEquipManager equipManager = new BasEquipManager();
+    private PstmmshopoutManager shopoutManager = new PstmmshopoutManager();
+    private BasUserManager userManager = new BasUserManager();
+    private BasMaterialMinorTypeManager minorTypeManager = new BasMaterialMinorTypeManager();
+    private PstStorageManager storageManager = new PstStorageManager();
+    private PstShopStorageManager shopStorageManager = new PstShopStorageManager();
+    private PptShiftTimeManager shiftTimeManager = new PptShiftTimeManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            txtBeginTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtEndTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+
+            bindMaterType();
+        }
+    }
+
+    #region 分页相关方法
+    private PageResult<Pstmmshopout> GetPageResultData(PageResult<Pstmmshopout> pageParams)
+    {
+        PstmmshopoutManager.QueryParams queryParams = new PstmmshopoutManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.beginDate = Convert.ToDateTime(txtBeginTime.Text);
+        queryParams.endDate = Convert.ToDateTime(txtEndTime.Text);
+
+
+        queryParams.materCode = hiddenMaterCode.Text;
+
+
+        return GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<Pstmmshopout> pageParams = new PageResult<Pstmmshopout>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "stock_date ASC";
+
+        PageResult<Pstmmshopout> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+        int total = lst.RecordCount;
+        //aa.Text = sql;
+        return new { data, total };
+    }
+    public PageResult<Pstmmshopout> GetTablePageDataBySql(PstmmshopoutManager.QueryParams queryParams)
+    {
+        PageResult<Pstmmshopout> pageParams = queryParams.pageParams;
+        string sql = @" select pt.shift_name, pm.Mater_name,equipname,barcode,Real_weight,stock_date,Bill_no,
+operName,Real_num,Storeout_ID  from dbo.Pst_mmstoreout
+left join Ppt_SetTime pt on Pst_mmstoreout.shift_id=pt.objid
+left join Pmt_material pm on Pst_mmstoreout.mater_code=pm.mater_code
+left join basequip bq on Pst_mmstoreout.equip_code=bq.equipcode where stock_date >= '" + Convert.ToDateTime(txtBeginTime.Text).ToString("yyyy-MM-dd") + "' and  stock_date <= '" + Convert.ToDateTime(txtEndTime.Text).ToString("yyyy-MM-dd") + "'";
+        if (!string.IsNullOrEmpty(hiddenMaterCode.Text))
+            sql = sql + " and  Pst_mmstoreout.mater_code = '" + hiddenMaterCode.Text + "'";
+       // sql = sql + " order by stock_date";
+        pageParams.QueryStr = sql;
+        if (pageParams.PageSize < 0)
+        {
+            NBear.Data.CustomSqlSection css = shopoutManager.GetBySql(sql.ToString());
+            pageParams.DataSet = css.ToDataSet();
+            return pageParams;
+        }
+        else
+        {
+            return shopoutManager.GetPageDataBySql(pageParams);
+        }
+    }
+
+    private void bindMaterType()
+    {
+       
+    }
+
+    #endregion
+
+    #region 增删改查按钮激发的事件
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+      
+        cbxShiftID1.SelectedItem.Value = "1";
+        cbxShiftClassID1.SelectedItem.Value = "1";
+        txtBarcode1.Text = string.Empty;
+        txtEquipName1.Text = string.Empty;
+        hiddenEquipCode.Text = string.Empty;
+        txtMaterialName1.Text = string.Empty;
+        hiddenMaterCode.Text = string.Empty;
+        txtRealNum1.Text = string.Empty;
+        txtRealWeight1.Text = string.Empty;
+        hiddenUserID.Text = string.Empty;
+
+        this.winAdd.Show();
+    }
+
+    public void txtBarcode1_Change(object sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(txtBarcode1.Text))
+        {
+            return;
+        }
+        if ((string.IsNullOrEmpty(hiddenStorageID.Text) || string.IsNullOrEmpty(hiddenStoragePlaceID.Text)))
+        {
+            X.MessageBox.Alert("提示", "请首先选择库房和库位！").Show();
+            return;
+        }
+        if (txtBarcode1.Text.Length == 18 || txtBarcode1.Text.Length == 21)
+        {
+            EntityArrayList<PstShopStorage> storage = shopStorageManager.GetListByWhere(PstShopStorage._.StorageID == hiddenStorageID.Text && PstShopStorage._.StoragePlaceID == hiddenStoragePlaceID.Text && PstShopStorage._.Barcode == txtBarcode1.Text);
+            if (storage.Count == 0)
+            {
+                X.MessageBox.Alert("提示", "库房中不存在该条码，请检查！").Show();
+                return;
+            }
+            DataSet ds = materManager.GetMaterInfo(txtBarcode1.Text.Substring(0, 9));
+            hiddenMaterCode.Text = ds.Tables[0].Rows[0]["MaterialCode"].ToString();
+            txtMaterialName1.Text = ds.Tables[0].Rows[0]["MaterialName"].ToString();
+
+            PstShopStorage storageInfo = shopStorageManager.getPstShopStorage(txtBarcode1.Text, hiddenStorageID.Text, hiddenStoragePlaceID.Text, hiddenMaterCode.Text);
+            txtStorageNum1.Text = storageInfo.Num.ToString();
+            txtStorageWeight1.Text = storageInfo.RealWeight.ToString();
+            txtRealNum1.Text = storageInfo.Num.ToString();
+            txtRealWeight1.Text = storageInfo.RealWeight.ToString();
+        }
+    }
+
+    protected void btnAddSave_Click(object sender, EventArgs e)
+    {
+        if (txtBarcode1.Text.Length != 21 || txtBarcode1.Text.Length != 21)
+        {
+            X.MessageBox.Alert("提示", "条码不符合规范！").Show();
+            return;
+        }
+        Pstmmshopout shopout = new Pstmmshopout();
+        PstShopStorage storageInfo = shopStorageManager.getPstShopStorage(txtBarcode1.Text, hiddenStorageID.Text, hiddenStoragePlaceID.Text, hiddenMaterCode.Text);
+
+        shopout.PlanDate = storageInfo.ProcDate;
+        shopout.CostCode = hiddenMaterCode.Text;
+        shopout.MaterCode = hiddenMaterCode.Text;
+        shopout.EquipCode = hiddenEquipCode.Text;
+        shopout.ShiftID = Convert.ToInt16(cbxShiftID1.SelectedItem.Value);
+        shopout.ShiftClassID = Convert.ToInt16(cbxShiftClassID1.SelectedItem.Value);
+        shopout.ConsumeQty = Convert.ToDecimal(txtRealWeight1.Text);
+        shopout.BalanceQty = Convert.ToDecimal(txtRealWeight1.Text);
+        shopout.ConsQty = Convert.ToDecimal(txtRealWeight1.Text);
+        shopout.HandFlag = "0";
+        shopout.RealNum = Convert.ToInt32(txtRealNum1.Text);
+        shopout.RecordDate = DateTime.Now;
+        shopout.DeleteFlag = "0";
+        shopout.SourceBarcode = storageInfo.Barcode;
+        shopout.SourceStorageID = storageInfo.StorageID;
+        shopout.SourceStoragePlaceID = storageInfo.StoragePlaceID;
+
+        shopoutManager.Insert(shopout);
+
+        this.winAdd.Close();
+        txtEquipName1.Text = string.Empty;
+        hiddenEquipCode.Text = string.Empty;
+        txtMaterialName1.Text = string.Empty;
+        hiddenMaterCode.Text = string.Empty;
+        txtBarcode1.Text = string.Empty;
+        txtRealNum1.Text = string.Empty;
+        txtRealWeight1.Text = string.Empty;
+        hiddenUserID.Text = string.Empty;
+        hiddenStorageID.Text = string.Empty;
+        txtStorageName1.Text = string.Empty;
+        hiddenStoragePlaceID.Text = string.Empty;
+        txtStoragePlaceName1.Text = string.Empty;
+
+        pageToolBar.DoRefresh();
+    }
+
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        this.winAdd.Close();
+        this.winModify.Close();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumn_direct_edit(string ShopoutID)
+    {
+        Pstmmshopout shopout = shopoutManager.GetById(Convert.ToInt32(ShopoutID));
+        ShopOutid2.Text = shopout.ShopOutid.ToString();
+        txtBarcode2.Text = shopout.SourceBarcode;
+        if (!string.IsNullOrEmpty(shopout.MaterCode))
+            txtMaterName2.Text = materManager.GetMaterName(shopout.MaterCode);
+        if (shopout.ShiftID.ToString() == "1")
+        {
+            cbxShiftID2.Text = "早";
+            cbxShiftID2.Value = "1";
+        }
+        else if (shopout.ShiftID.ToString() == "2")
+        {
+            cbxShiftID2.Text = "中";
+            cbxShiftID2.Value = "2";
+        }
+        else if (shopout.ShiftID.ToString() == "3")
+        {
+            cbxShiftID2.Text = "夜";
+            cbxShiftID2.Value = "3";
+        }
+        if (shopout.ShiftClassID.ToString() == "1")
+        {
+            cbxShiftID2.Text = "甲";
+            cbxShiftID2.Value = "1";
+        }
+        else if (shopout.ShiftClassID.ToString() == "2")
+        {
+            cbxShiftID2.Text = "乙";
+            cbxShiftID2.Value = "2";
+        }
+        else if (shopout.ShiftClassID.ToString() == "3")
+        {
+            cbxShiftID2.Text = "丙";
+            cbxShiftID2.Value = "3";
+        }
+        txtEquipName2.Text = equipManager.GetListByWhere(BasEquip._.EquipCode == shopout.EquipCode)[0].EquipName;
+        hiddenEquipCode.Text = shopout.EquipCode;
+        txtRealNum2.Text = shopout.RealNum.ToString();
+        txtRealWeight2.Text = shopout.ConsumeQty.ToString();
+
+        this.winModify.Show();
+    }
+
+    protected void btnModify_Click(object sender, EventArgs e)
+    {
+        Pstmmshopout shopout = shopoutManager.GetById(Convert.ToInt32(ShopOutid2.Text));
+        shopout.ShiftID = Convert.ToInt16(cbxShiftID2.SelectedItem.Value);
+        shopout.EquipCode = hiddenEquipCode.Text;
+        shopout.RealNum = Convert.ToInt32(txtRealNum2.Text);
+        shopout.ConsumeQty = Convert.ToDecimal(txtRealWeight2.Text);
+        shopout.BalanceQty = Convert.ToDecimal(txtRealWeight2.Text);
+        shopout.ConsQty = Convert.ToDecimal(txtRealWeight2.Text);
+        shopout.HandFlag = "1";
+
+        shopoutManager.Update(shopout);
+        hiddenEquipCode.Text = string.Empty;
+        hiddenMaterCode.Text = string.Empty;
+        pageToolBar.DoRefresh();
+        this.winModify.Close();
+        X.MessageBox.Alert("操作", "更新成功").Show();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string ShopoutID)
+    {
+        try
+        {
+            string sql = @"  delete  from   Pst_mmstoreout  where  Storeout_ID = '"+ShopoutID+" '";
+            
+            //  shopoutManager.GetBySql(sql.ToString());
+              shopoutManager.GetBySql(sql).ToDataSet();
+               
+            pageToolBar.DoRefresh();
+
+            return "删除成功";
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+    }
+
+    
+    #endregion
+
+    #region 校验方法
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+      
+    }
+    #endregion
+     
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+
+
+        string sql = @" select pt.shift_name, pm.Mater_name,equipname,barcode,Real_weight,stock_date,Bill_no,
+operName  from dbo.Pst_mmstoreout
+left join Ppt_SetTime pt on Pst_mmstoreout.shift_id=pt.objid
+left join Pmt_material pm on Pst_mmstoreout.mater_code=pm.mater_code
+left join basequip bq on Pst_mmstoreout.equip_code=bq.equipcode where stock_date >= '" + Convert.ToDateTime(txtBeginTime.Text).ToString("yyyy-MM-dd") + "' and  stock_date <= '" + Convert.ToDateTime(txtEndTime.Text).ToString("yyyy-MM-dd") + "'";
+        if (!string.IsNullOrEmpty(hiddenMaterCode.Text))
+            sql = sql + " and  Pst_mmstoreout.mater_code = '" + hiddenMaterCode.Text + "'";
+        sql = sql + " order by stock_date";
+        DataSet ds = shopoutManager.GetBySql(sql).ToDataSet();
+
+        DataTable data = ds.Tables[0];
+        for (int i = 0; i < data.Columns.Count; i++)
+        {
+            bool isshow = false;
+            DataColumn dc = data.Columns[i];
+            foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+            {
+                if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                {
+                    dc.ColumnName = cb.Text;
+                    isshow = true;
+                    break;
+                }
+            }
+            if (!isshow)
+            {
+                data.Columns.Remove(dc.ColumnName);
+                i--;
+            }
+        }
+        //data.Columns[0].ColumnName = "车间";
+        //"车间原料消耗"
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "仓库出库单");
+    }
+
+   
+}

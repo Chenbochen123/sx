@@ -1,0 +1,43 @@
+﻿Equipment设备管理
+	|
+	|-----StopManage(停机管理目录)
+	|				|
+	|				|-----StopType.aspx(停机类型信息页面)
+	|				|-----StopFault.aspx(停机故障点信息页面)
+	|				|-----FaultReason.aspx(停机故障原因信息页面)
+	|				|-----StopRecord.aspx(停机记录信息页面)
+	|				|-----.aspx(页面)
+	|				|-----.aspx(页面)
+	|				|
+	|				|-----MixerFault(密炼机故障功能)
+	|				          |
+	|				          |----MixerFaultMain.aspx(密炼机故障查询分析主界面)
+	||
+	|-----SparePart(备件管理目录)
+	|				|
+	|				|-----MainType.aspx(备件大类信息页面)
+	|				|-----DetailType.aspx(备件小类信息页面)
+	|				|-----SparePartInfo.aspx( 备件信息页面
+	|
+	|-----SapSparePart(SAP系统备件出入库管理)
+	|				|
+	|				|-----SapSparePart.aspx( 备件入库明细页面)
+	|				|-----SparePartOut.aspx( 备件出库明细页面)
+	|				|-----SparePartStore.aspx(备件库存明细页面)
+	|
+	|-----Maintain(维修管理目录)
+	|				|
+	|				|-----MaintainRecord.aspx(维修记录信息页面)
+	|				|-----MaintainAnalysis.aspx(停机分析页面)
+	|
+	|-----EquipState(设备运行状态目录)
+	|				|
+	|				|-----EquipState.aspx(页面)
+	|
+	|-----ProjectRepairRecord(项目检修记录目录)
+	|				|
+	|				|-----ProjectRepairRecord.aspx(页面)
+	|
+	|-----EquipRepairProtectPlan(设备维护保养计划)
+	|				|
+	|				|-----EquipRepairProtectPlan.aspx(设备维护保养计划页面)

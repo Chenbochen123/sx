@@ -1,0 +1,144 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Equipment_EquipState : Mesnac.Web.UI.Page
+{
+    protected Ppt_EquipState2Manager manager = new Ppt_EquipState2Manager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            this.winSave.Hidden = true;
+            bindList();
+        }
+    }
+
+
+    #region 初始化控件
+    
+
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"SELECT  t.Equip_Code,t1.Equip_name,case t.State2 when 0 then '设备故障' when 1 then '运行' when 2 then '计划停机' when 3 then 'PM检修' end State2  from ppt_EquipState2 t 
+left join Pmt_equip t1 on t1.Equip_code=t.Equip_Code");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+  
+    #endregion
+
+    [DirectMethod]
+    public void pnlList_Edit(string Equip_Code)
+    {
+        EntityArrayList<Ppt_EquipState2> list = manager.GetListByWhere(Ppt_EquipState2._.Equip_Code == Equip_Code);
+        if (list.Count > 0)
+        {
+            Ppt_EquipState2 record = list[0];
+
+            if (record != null)
+            {
+                
+                if (record.State2 == 0)
+                { cbxState.Text = "设备故障"; }
+                else if (record.State2 == 1)
+                { cbxState.Text = "运行"; }
+                else if (record.State2 == 2)
+                { cbxState.Text = "计划停机"; }
+                else if (record.State2 == 3)
+                { cbxState.Text = "PM检修"; }
+
+                hideObjID1.Text = record.Equip_Code;
+                this.hideMode.Text = "Edit";
+
+                this.winSave.Hidden = false;
+            }
+        }
+        else
+        {
+            bindList();
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+        }
+    }
+
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        EntityArrayList<Ppt_EquipState2> list = manager.GetListByWhere(Ppt_EquipState2._.Equip_Code == hideObjID1.Text);
+         if (list.Count > 0)
+         {
+             Ppt_EquipState2 record = list[0];
+             if (record != null)
+             {
+               //  record.State2 = Convert.ToInt32(cbxState.SelectedItem.Value);
+
+                 if (cbxState.SelectedItem.Text == "设备故障")
+                 { record.State2 = 0; }
+                 else if (cbxState.SelectedItem.Text == "运行")
+                 { record.State2 = 1; }
+                 else if (cbxState.SelectedItem.Text == "计划停机")
+                 { record.State2 =2; }
+                 else if (cbxState.SelectedItem.Text == "PM检修")
+                 { record.State2 = 3; }
+
+               //  this.hideMode.Text = "Edit";
+
+                 this.winSave.Hidden = false;
+
+                 if (manager.Update(record) >= 0)
+                 {
+                     this.AppendWebLog("信息修改", "修改机台号：" + record.Equip_Code.ToString());
+                     winSave.Hidden = true;
+                     bindList();
+                     X.Msg.Alert("提示", "修改完成！").Show();
+                 }
+                 else
+                 {
+                     X.Msg.Alert("提示", "修改失败！").Show();
+                 }
+             }
+         }
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+}

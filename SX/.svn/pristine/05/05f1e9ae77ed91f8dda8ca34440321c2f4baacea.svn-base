@@ -1,0 +1,272 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Entity;
+using Mesnac.Business.Implements;
+using System.Data;
+
+public partial class Manager_ProducingPlan_ShiftSeting_ShiftimeRule : Mesnac.Web.UI.Page
+{
+    PptProcedureManager pptProcedureManager = new PptProcedureManager();
+    PptSetTimeManager pptSetTimeManager = new PptSetTimeManager();
+    PptClassManager pptClassManager = new PptClassManager();
+    PptShiftTimeRuleManager pptShiftimeRuleManager = new PptShiftTimeRuleManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            //加载工序
+            BindDept();
+            BingDate();
+        }
+    }
+    /// <summary>
+    /// 数据绑定 绑定当前工序班次 和绑定所有班组信息
+    /// </summary>
+    private void BingDate()
+    {
+        
+        //班次
+        string where = "WHERE ProcedureID='" + cbo_dept1.SelectedItem.Value + "'";
+        string procedureID = cbo_dept1.SelectedItem.Value;
+        Store store = this.gpSetTime.GetStore();
+        store.DataSource = pptSetTimeManager.GetDataSetByProcedureID(procedureID).Tables[0];
+        store.DataBind();
+        //绑定初始化的数量
+        WhereClip whereClip = PptShiftTimeRule._.ProcedureID ==Convert.ToInt32(cbo_dept1.SelectedItem.Value);
+        int count = this.pptShiftimeRuleManager.GetRowCountByWhere(whereClip);
+        txtWeekNum.Text=count.ToString();
+        //绑定班组
+        Store shiftClass = this.gpShiftClass.GetStore();
+        shiftClass.DataSource = pptClassManager.GetAllDataSet().Tables[0];
+        shiftClass.DataBind();
+      
+        //绑定倒班规律
+        Store shiftimeRule = this.gpShiftRule.GetStore();
+        shiftimeRule.DataSource = pptShiftimeRuleManager.GetBySqlByProcedureID(cbo_dept1.SelectedItem.Value).Tables[0];
+        X.Js.Alert(pptShiftimeRuleManager.GetBySqlByProcedureID(cbo_dept1.SelectedItem.Value).Tables[0].Rows.Count.ToString());
+        return;
+        shiftimeRule.DataBind();
+        whereClip = PptSetTime._.ProcedureID == Convert.ToInt32(cbo_dept1.SelectedItem.Value) & PptSetTime._.UseFlag== 0;
+        EntityArrayList<PptSetTime> list=pptSetTimeManager.GetListByWhere(whereClip);
+        this.gpShiftRule.ColumnModel.Columns[2].Hidden = false;
+        this.gpShiftRule.ColumnModel.Columns[3].Hidden = false;
+        this.gpShiftRule.ColumnModel.Columns[4].Hidden = false;
+        if (list.Count > 0)
+        {
+            int columns = 0;
+            for (int i = 0; i < list.Count; i++)
+            {
+                columns=Convert.ToInt32(list[i].ShiftID);
+                this.gpShiftRule.ColumnModel.Columns[columns+1].Hidden = true;
+            }
+        }
+     
+        //绑定倒班规律中的修改列
+        DataTable classes = pptClassManager.GetDataSetByWhere("Where UseFlag=1").Tables[0];
+        foreach (DataRow cl in classes.Rows)
+        {
+            this.cboZao.Items.Add(new Ext.Net.ListItem(cl["ClassName"].ToString(), Convert.ToInt32(cl["ObjID"]).ToString()));
+        }
+    }
+    /// <summary>
+    /// 绑定工序方法
+    /// 孙宜建
+    /// 2013-1-18
+    /// </summary>
+    private void BindDept()
+    {
+        
+        EntityArrayList<PptProcedure> procedureLists = pptProcedureManager.GetAllList();
+        foreach (PptProcedure procedure in procedureLists)
+        {
+            this.cbo_dept1.Items.Add(new Ext.Net.ListItem(procedure.ProcedureName, procedure.ObjID.ToString()));
+            cboDiaoYong.Items.Add(new Ext.Net.ListItem(procedure.ProcedureName, procedure.ObjID.ToString()));
+        }
+    }
+
+
+    protected void ShiftRuleRefresh(object sender, StoreReadDataEventArgs e)
+    {
+        BingDate();
+    }
+    protected void SetTimeRefresh(object sender, StoreReadDataEventArgs e)
+    {
+        BingDate();
+    }
+
+
+    /// <summary>
+    /// 批量修改 
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void BtnAddShiftRule_Click(object sender, DirectEventArgs e)
+    {
+        //this.txtWeekNum.Text = "确定";
+        X.Msg.Notify("","1").Show();
+        if (uplist.Count>0)
+        {
+            for (int i = 0; i < uplist.Count; i++)
+			{
+                pptShiftimeRuleManager.UpdateShiftTimeRule(uplist[i]);
+			}
+        }
+        BingDate();
+        uplist.Clear();
+    }
+
+    /// <summary>
+    /// 取消设置工序
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void BtnCancelShiftRule_Click(object sender, DirectEventArgs e)
+    {
+        //this.txtWeekNum.Text = "取消";
+        uplist.Clear();
+        BingDate();
+    }
+
+    static List<PptShiftTimeRule> uplist = new List<PptShiftTimeRule>();
+    protected void Edit(object sender, DirectEventArgs e)
+    {
+
+        //X.Msg.Alert("a","b").Show();
+        JsonObject data = JSON.Deserialize<JsonObject>(e.ExtraParams["record"]);
+        PptShiftTimeRule timeRule = this.pptShiftimeRuleManager.GetById(Convert.ToInt32(data["ObjID"].ToString()));
+        if (timeRule == null)
+        {
+            timeRule = new PptShiftTimeRule();
+        }
+        timeRule.ProcedureID = Convert.ToInt32(data["SerialID"].ToString());
+
+        string Shift1 = data["ShiftClass1ID"].ToString();
+        PptClass p1=pptClassManager.GetClassByName(Shift1);
+        if (p1 != null)
+        {
+            timeRule.ShiftClass1ID = p1.ObjID;
+        }
+        else
+        {
+            timeRule.ShiftClass1ID = 0;
+        }
+        string Shift2 = data["ShiftClass2ID"].ToString();
+        PptClass p2=pptClassManager.GetClassByName(Shift2);
+        if (p2 != null)
+        {
+            timeRule.ShiftClass2ID = p2.ObjID;
+        }
+        else
+        {
+            timeRule.ShiftClass2ID = 0;
+        }
+        string Shift3 = data["ShiftClass3ID"].ToString();
+        PptClass p3 = pptClassManager.GetClassByName(Shift3);
+        if (p3 != null)
+        {
+            timeRule.ShiftClass3ID = p3.ObjID;
+        }
+        else
+        {
+            timeRule.ShiftClass3ID = 0;
+        }
+        uplist.Add(timeRule);
+    }
+
+    [Ext.Net.DirectMethod()]
+    public int InitSetTime()
+    {
+
+        string sql = "select * from PptShiftTimeRule where ProcedureID = '"+ cbo_dept1.SelectedItem.Value + "'";
+        int num=  pptShiftimeRuleManager.GetBySql(sql).ToDataSet().Tables[0].Rows.Count;
+
+        int initNum = 0;
+        try
+        {
+            initNum = Convert.ToInt32(this.txtWeekNum.Text);
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+
+        if (num >initNum)
+        {
+            //WhereClip delwhere = PptShiftTimeRule._.SerialID > initNum & PptShiftTimeRule._.ProcedureID == Convert.ToInt32(cbo_dept1.SelectedItem.Value);
+            //pptShiftimeRuleManager.DeleteByWhere(delwhere);
+      
+            sql = "delete Ppt_ShiftimeRule where Serial_ID>'" + initNum + "' and ProcedureID='"+ cbo_dept1.SelectedItem.Value + "'";
+            pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+        }
+        else
+        {
+            for (int i = num + 1; i <= initNum; i++)
+            {
+                //PptShiftTimeRule ppstr = new PptShiftTimeRule();
+                //ppstr.ProcedureID = Convert.ToInt32(cbo_dept1.SelectedItem.Value);
+                //ppstr.SerialID = i;
+                //ppstr.ShiftClass1ID = 0;
+                //ppstr.ShiftClass2ID = 0;
+                //ppstr.ShiftClass3ID = 0;
+                //pptShiftimeRuleManager.Insert(ppstr);
+              
+                sql = "insert into Ppt_ShiftimeRule values('" + 1+"','"+ cbo_dept1.SelectedItem.Value + "','"+ i+ "','"+0+"','"+0+"','"+0+"')";
+                pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+            }
+        }
+        BingDate();
+        return 1;
+    }
+
+
+    [Ext.Net.DirectMethod()]
+    public void InvokingTime()
+    {
+        if (cboDiaoYong.SelectedItem == null)
+        {
+            return;
+        }
+        string sql = "select * from Ppt_ShiftimeRule where depttype = '" + cboDiaoYong.SelectedItem.Value + "'";
+        DataSet ds = pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+        int num = ds.Tables[0].Rows.Count;
+
+        int initNum = 0;
+        try
+        {
+            initNum = Convert.ToInt32(this.txtWeekNum.Text);
+        }
+        catch (Exception)
+        {
+        }
+        if (num > initNum)
+        {
+            sql = "delete Ppt_ShiftimeRule where Serial_id <='" + initNum + "' and depttype='" + cbo_dept1.SelectedItem.Value + "'";
+            pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+
+            for (int i = 0; i < initNum; i++)
+            {
+                int s = i + 1;
+                sql = "insert into Ppt_ShiftimeRule values('1','" + cbo_dept1.SelectedItem.Value + "','"+s+"','"+ds.Tables[0].Rows[i]["Shift1"].ToString()+ "','" + ds.Tables[0].Rows[i]["Shift2"].ToString() + "','" + ds.Tables[0].Rows[i]["Shift3"].ToString() + "')";
+                pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+            }
+        }
+        else
+        {
+            sql = "delete Ppt_ShiftimeRule where Serial_id <='" + num + "' and depttype='" + cbo_dept1.SelectedItem.Value + "'";
+            pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+            for (int i = 0; i < num; i++)
+            {
+                int s = i + 1;
+                sql = "insert into Ppt_ShiftimeRule values('1','" + cbo_dept1.SelectedItem.Value + "','" + s + "','" + ds.Tables[0].Rows[i]["Shift1"].ToString() + "','" + ds.Tables[0].Rows[i]["Shift2"].ToString() + "','" + ds.Tables[0].Rows[i]["Shift3"].ToString() + "')";
+                pptShiftimeRuleManager.GetBySql(sql).ToDataSet();
+            }
+        }
+        BingDate();
+    }
+}

@@ -1,0 +1,639 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Equipment_Repair_RepairStandards : Mesnac.Web.UI.Page
+{
+    BasEquipManager baseEquipManager = new BasEquipManager();
+
+    protected SysCodeManager sysCodeManager = new SysCodeManager();
+    protected Pmt_equipclassManager equipClassManager = new Pmt_equipclassManager();
+    protected Pmt_equipManager equipManager = new Pmt_equipManager();
+    protected Ppt_pmpartsManager equipTypeManager = new Ppt_pmpartsManager();
+    protected Eqm_MpParamManager typeMainManager = new Eqm_MpParamManager();
+    protected Eqm_MainStandManager manager = new Eqm_MainStandManager();
+    protected SYS_USERManager userManager = new SYS_USERManager();
+    protected JCZL_WorkShopManager workshopManager = new JCZL_WorkShopManager();
+    protected Eqm_MaintainPlanManager planManager = new Eqm_MaintainPlanManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+
+            bindList();
+            bindImport();
+            bindType(); 
+            bindEquipClass();
+            //bindEquipType();
+            bindEquip();
+            bindMaintainers();
+
+            this.winSave.Hidden = true;
+            this.winCopy.Hidden = true;
+            this.winPlanSave.Hidden = true;
+        }
+    }
+
+
+    #region 初始化控件
+    private void bindImport()
+    {
+        cbxImport.Clear();
+        EntityArrayList<Eqm_MpParam> list = typeMainManager.GetListByWhereAndOrder(Eqm_MpParam._.Param_Type == 1, Eqm_MpParam._.Param_id.Asc);
+        foreach (Eqm_MpParam type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Param_Name, type.Param_id);
+            cbxImport.Items.Add(item);
+            cbxPlanImport.Items.Add(item);
+        }
+    }
+    private void bindType()
+    {
+        cbxType.Clear();
+        EntityArrayList<Eqm_MpParam> list = typeMainManager.GetListByWhereAndOrder(Eqm_MpParam._.Param_Type == 2, Eqm_MpParam._.Param_id.Asc);
+        foreach (Eqm_MpParam type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Param_Name, type.Param_id);
+            cbxType.Items.Add(item);
+            cbxPlanType.Items.Add(item);
+        }
+    }
+    private void bindEquipClass()
+    {
+        cbxEquipClass.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equipclass> list = equipClassManager.GetListByWhereAndOrder(where, Pmt_equipclass._.Equip_class.Asc);
+        foreach (Pmt_equipclass equipClass in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(equipClass.Equip_classname, equipClass.Equip_class);
+            cbxEquipClass.Items.Add(item);
+            cbxPlanEquipClass.Items.Add(item);
+        }
+    }
+    private void bindEquip()
+    {
+        cbxEquip.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(where, Pmt_equip._.Equip_code.Asc);
+        foreach (Pmt_equip equip in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(equip.Equip_name, equip.Equip_code);
+            cbxEquip.Items.Add(item);
+            cbxPlanEquip.Items.Add(item);
+        }
+
+        this.storeEquipCopy.DataSource = list;
+        this.storeEquipCopy.DataBind();
+    }
+    private void bindEquipType()
+    {
+        cbxEquipType.Clear();
+        cbxPlanEquipType.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Ppt_pmparts> list = equipTypeManager.GetListByWhereAndOrder(where, Ppt_pmparts._.Mp_code.Asc);
+        foreach (Ppt_pmparts equipType in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(equipType.Mp_name, equipType.Mp_code);
+            cbxEquipType.Items.Add(item);
+            cbxPlanEquipType.Items.Add(item);
+        }
+    }
+    private void bindMaintainers()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<SYS_USER> list = userManager.GetListByWhere(where);
+        foreach (SYS_USER user in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(user.Real_name, user.USER_ID);
+            cbxMaintainers.Items.Add(item);
+        }
+    }
+    private void changeEquipClass()
+    {
+        object value = cbxEquip.SelectedItem.Value;
+        cbxEquip.Clear();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_class == cbxEquipClass.SelectedItem.Value, Pmt_equip._.Equip_code.Asc);
+        this.storeEquip.DataSource = list;
+        this.storeEquip.DataBind();
+        cbxEquip.SetValue(value);
+    }
+    private void changePlanEquipClass()
+    {
+        object value = cbxPlanEquip.SelectedItem.Value;
+        cbxPlanEquip.Clear();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_class == cbxPlanEquipClass.SelectedItem.Value, Pmt_equip._.Equip_code.Asc);
+        this.storePlanEquip.DataSource = list;
+        this.storePlanEquip.DataBind();
+        cbxPlanEquip.SetValue(value);
+    }
+    private void changeEquip()
+    {
+        object value = cbxEquipType.SelectedItem.Value;
+        cbxEquipType.Clear();
+        EntityArrayList<Ppt_pmparts> list = equipTypeManager.GetListByWhereAndOrder(Ppt_pmparts._.Equip_code == cbxEquip.SelectedItem.Value, Ppt_pmparts._.Mp_code.Asc);
+        this.storeEquipType.DataSource = list;
+        this.storeEquipType.DataBind();
+        cbxEquipType.SetValue(value);
+        if(cbxEquip.SelectedItem.Value != null)
+        {
+            EntityArrayList<Pmt_equip> listEquip = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == cbxEquip.SelectedItem.Value, Pmt_equip._.Equip_code.Asc);
+            EntityArrayList<JCZL_WorkShop> listShop = workshopManager.GetListByWhereAndOrder(JCZL_WorkShop._.WorkShop_Code == listEquip[0].WorkShop_Code, JCZL_WorkShop._.WorkShop_Code.Asc);
+            txtWorkShop.Text = listShop[0].WorkShop_Name;
+        }
+
+    }
+    private void changePlanEquip()
+    {
+        object value = cbxPlanEquipType.SelectedItem.Value;
+        cbxPlanEquipType.Clear();
+        EntityArrayList<Ppt_pmparts> list = equipTypeManager.GetListByWhereAndOrder(Ppt_pmparts._.Equip_code == cbxPlanEquip.SelectedItem.Value, Ppt_pmparts._.Mp_code.Asc);
+        this.storePlanEquipType.DataSource = list;
+        this.storePlanEquipType.DataBind();
+        cbxPlanEquipType.SetValue(value);
+
+    }
+
+
+    private void changeEquipCopy()
+    {
+        EntityArrayList<Ppt_pmparts> list = equipTypeManager.GetListByWhereAndOrder(Ppt_pmparts._.Equip_code == cbxEquipCopy.SelectedItem.Value, Ppt_pmparts._.Mp_code.Asc);
+        this.storeEquipTypeCopy.DataSource = list;
+        this.storeEquipTypeCopy.DataBind();
+        this.storeEquipTypeCopyTo.DataSource = list;
+        this.storeEquipTypeCopyTo.DataBind();
+
+        if (cbxEquipCopy.SelectedItem.Value != null)
+        {
+            EntityArrayList<Pmt_equip> listEquip = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == cbxEquipCopy.SelectedItem.Value, Pmt_equip._.Equip_code.Asc);
+            EntityArrayList<Pmt_equip> listEquipCopy = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_class == listEquip[0].Equip_class, Pmt_equip._.Equip_code.Asc);
+            this.storeEquipCopyTo.DataSource = listEquipCopy;
+            this.storeEquipCopyTo.DataBind();
+        }
+
+    }
+
+    private void changeEquipTypeCopy()
+    {
+        cbxEquipTypeCopyTo.SetValue(this.cbxEquipTypeCopy.SelectedItem.Value);
+    }
+
+
+    protected string GetMaxPlanID()
+    {
+        string planID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+        DataSet ds = planManager.GetBySql("select max(Mp_planid) Mp_planid from Eqm_MaintainPlan").ToDataSet();
+        if (ds.Tables.Count > 0)
+        {
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                planID = ds.Tables[0].Rows[0]["Mp_planid"].ToString();
+                if (planID.Substring(0, 8) == DateTime.Now.Date.ToString("yyyyMMdd"))
+                {
+                    planID = planID.Substring(0, 8) + (Convert.ToInt32(planID.Substring(8, 3)) + 1).ToString().PadLeft(3, '0');
+                }
+                else
+                {
+                    planID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+                }
+            }
+        }
+        return planID;
+    }
+    #endregion
+
+    #region 树
+    /// <summary>
+    /// 初始化机台列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        treeEquip.GetRootNode().RemoveAll();
+        treeEquip.GetRootNode().AppendChild(getTreeNodeByDelLevel());
+    }
+
+    /// <summary>
+    /// 获取机台树的算法
+    /// </summary>
+    /// <param name="dep_num"></param>
+    /// <returns></returns>
+    private Node getTreeNodeByDelLevel()
+    {
+        Node node = new Node();
+        node.NodeID = "0";
+        node.Text = "机台分组";
+        node.Expanded = true;
+        Dictionary<string, string> depChildFristList = new Dictionary<string, string>();
+        var query = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipType < "03" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipGroup.Asc).GroupBy(pet => pet.EquipGroup).Where(pet => !string.IsNullOrEmpty(pet.Key));
+        foreach (var info in query)
+        {
+            Node childNode = new Node();
+            childNode.NodeID = info.Key;
+            childNode.Text = info.Key;
+            childNode.Expanded = false;
+            var child = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipGroup == info.Key & BasEquip._.EquipType < "03" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipCode.Asc);
+            foreach (var item in child)
+            {
+                Node nodeLeaf = new Node();
+                nodeLeaf.Text = item.EquipName;
+                nodeLeaf.Qtip = item.EquipCode;
+                nodeLeaf.Leaf = true;
+                childNode.Children.Add(nodeLeaf);
+            }
+            node.Children.Add(childNode);
+        }
+        return node;
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 相应点击机台树事件
+    /// </summary>
+    /// <param name="group"></param>
+    [DirectMethod]
+    public void LoadGridData(string group)
+    {
+        //判断当前机台当前时间是否设置班组信息
+        //hidden_parent_num.Value = group;
+        hidden_equip_code.Text = group;
+        this.store.DataSource = getList(group);
+        this.store.DataBind();
+
+
+    }
+
+    private DataSet getList(string equip_Code)
+    {
+
+        return GetDataByParas(equip_Code);
+    }
+
+
+    public System.Data.DataSet GetDataByParas(string equip_Code)
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"SELECT T.Mp_StandId,T1.param_Name ImportName,T2.param_Name TypeName,T.workshop,
+                        T3.Mp_name,T4.Equip_name,T.Mp_stand,CAST(T.Mp_period AS INT) Mp_period,CONVERT(VARCHAR(10),T.Mp_date,120) Mp_date,
+                        CONVERT(VARCHAR(10),T.In_date,120) In_date,CONVERT(VARCHAR(10),(T.In_date + T.Mp_period),120) Next_date,T5.USER_NAME,T.Mem_note
+                        FROM Eqm_MainStand T
+                        LEFT JOIN eqm_Mpparam T1 ON T.Mp_import = T1.param_id AND T1.Param_Type = 1
+                        LEFT JOIN eqm_Mpparam T2 ON T.Mp_type = T2.param_id AND T2.Param_Type = 2
+                        LEFT JOIN Ppt_pmparts T3 ON T.Mp_code = T3.Mp_code AND T.Equip_code = T3.Equip_code
+                        LEFT JOIN Pmt_equip T4 ON T.Equip_code = T4.Equip_code
+                        LEFT JOIN SYS_USER T5 ON T.Worker_barcode = T5.Worker_barcode");
+        sb.AppendLine("WHERE 1=1");
+        if (!string.IsNullOrEmpty(equip_Code))
+            sb.AppendLine("AND T.Equip_code='" + equip_Code + "'");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList(hidden_equip_code.Text);
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList(hidden_equip_code.Text);
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "维修标准定义导出");
+        }
+    }
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "Add";
+
+        txtStartDate.SetValue(DateTime.Now.Date);
+        cbxImport.SetValue(null);
+        cbxType.SetValue(null);
+        cbxEquipClass.SetValue(null);
+        cbxEquip.SetValue(null);
+        cbxEquipType.SetValue(null);
+        txtMp_stand.Text = "";
+        txtMem_note.Text = "";
+        txtMp_period.Text = "";
+        txtWorkShop.Text = "";
+        this.winSave.Hidden = false;
+    }
+    protected void btnCopy_Click(object sender, EventArgs e)
+    {
+        this.winCopy.Hidden = false;
+    }
+    protected void btnCreatePlan_Click(object sender, EventArgs e)
+    {
+        if (rowSelectMuti.SelectedRows.Count == 0)
+        {
+            X.Msg.Alert("提示", "您没有选择任何行,请选择").Show();
+            return;
+        }
+        string objid = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            objid = row.RecordID; EntityArrayList<Eqm_MainStand> listEdit = manager.GetListByWhere(Eqm_MainStand._.Mp_StandId == row.RecordID);
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此维修标准！").Show();
+                return;
+            }
+            Eqm_MainStand record = listEdit[0];
+
+            txtMp_plandate.SetValue(record.In_date);
+            cbxPlanImport.SetValue(record.Mp_import);
+            cbxPlanType.SetValue(record.Mp_type);
+            EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == record.Equip_code, Pmt_equip._.Equip_code.Asc);
+            cbxPlanEquipClass.SetValue(list[0].Equip_class);
+            cbxPlanEquip.SetValue(record.Equip_code);
+            cbxMaintainers.SetValue(null);
+            cbxPlanStateAdd.Select(0);
+            txtMp_planday.Text = "0";
+            txtMp_realday.Text = "0";
+            txtRepairuser.Text = "";
+            txtMp_info.Text = record.Mp_stand;
+            txtMp_result.Text = "";
+            txtMp_memo.Text = "";
+            hidePlanObjID.Text = row.RecordID;
+            cbxPlanEquipType.SetValue(record.Mp_code);
+        }
+        this.winPlanSave.Hidden = false;
+    }
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        if (this.hideMode.Text == "Add")//添加
+        {
+            Eqm_MainStand record = new Eqm_MainStand();
+            record.Mp_import = cbxImport.SelectedItem.Value.ToString();
+            record.Mp_type = cbxType.SelectedItem.Value.ToString();
+            record.Mp_code = cbxEquipType.SelectedItem.Value.ToString();
+            record.Equip_code = cbxEquip.SelectedItem.Value.ToString();
+            record.Mp_period = Convert.ToDecimal(txtMp_period.Text);
+            record.Mp_date = txtStartDate.SelectedDate;
+            record.In_date = txtStartDate.SelectedDate;
+            record.Mp_stand = txtMp_stand.Text;
+            record.Mem_note = txtMem_note.Text;
+            record.Workshop = txtWorkShop.Text;
+            record.Worker_barcode = this.UserID;
+
+            if (manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("维修标准定义添加", "添加机台：" + record.Equip_code);
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            Eqm_MainStand record = manager.GetById(int.Parse(hideObjID.Text));
+            if (record != null)
+            {
+                record.Mp_import = cbxImport.SelectedItem.Value.ToString();
+                record.Mp_type = cbxType.SelectedItem.Value.ToString();
+                record.Mp_code = cbxEquipType.SelectedItem.Value.ToString();
+                record.Equip_code = cbxEquip.SelectedItem.Value.ToString();
+                record.Mp_period = Convert.ToDecimal(txtMp_period.Text);
+                record.Mp_date = txtStartDate.SelectedDate;
+                record.Mp_stand = txtMp_stand.Text;
+                record.Mem_note = txtMem_note.Text;
+                record.Workshop = txtWorkShop.Text;
+                record.Worker_barcode = this.UserID;
+
+                if (manager.Update(record) >= 0)
+                {
+                    this.AppendWebLog("维修标准定义修改", "修改机台：" + record.Equip_code);
+                    winSave.Hidden = true;
+                    bindList();
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+        }
+    }
+
+
+    protected void btnPlanSave_Click(object sender, EventArgs e)
+    {
+        Eqm_MaintainPlan record = new Eqm_MaintainPlan();
+        record.Mp_planid = GetMaxPlanID();
+        record.Mp_import = cbxPlanImport.SelectedItem.Value.ToString();
+        record.Mp_type = cbxPlanType.SelectedItem.Value.ToString();
+        if (cbxMaintainers.SelectedItem.Value != null)
+        {
+            record.Handle_name = cbxMaintainers.SelectedItem.Value.ToString();
+        }
+        record.Equip_class = cbxPlanEquipClass.SelectedItem.Value.ToString();
+        record.Mp_planday = Convert.ToDecimal(txtMp_planday.Text);
+        record.Mp_plandate = txtMp_plandate.SelectedDate.ToString("yyyy-MM-dd");
+        record.Mp_realday = Convert.ToDecimal(txtMp_realday.Text);
+        record.Mp_realend = txtMp_realend.SelectedDate.ToString("yyyy-MM-dd");
+        record.Equip_code = cbxPlanEquip.SelectedItem.Value.ToString();
+        record.Repairuser = txtRepairuser.Text;
+        record.Mp_info = txtMp_info.Text;
+        record.Mp_memo = txtMp_memo.Text;
+        if (!string.IsNullOrEmpty(txtMp_result.Text))
+        {
+            record.Mp_result = txtMp_result.Text;
+        }
+        else
+        {
+            record.Mp_result = "正常";
+        }
+        record.Mp_StandId = Convert.ToInt32(hidePlanObjID.Text);
+        if (cbxPlanStateAdd.SelectedItem.Value.ToString() == "2")
+        {
+            record.Mp_resulted = "1";
+        }
+        else
+        {
+            record.Mp_resulted = "0";
+        }
+        record.Ifnot_BJ = "0";
+        record.Plan_state = cbxPlanStateAdd.SelectedItem.Value.ToString();
+        record.Mp_code = cbxPlanEquipType.SelectedItem.Value.ToString();
+
+        if (planManager.Insert(record) >= 0)
+        {
+            this.AppendWebLog("设备维修计划添加", "添加机台：" + record.Equip_code);
+            winPlanSave.Hidden = true;
+            bindList();
+            X.Msg.Alert("提示", "添加完成！").Show();
+        }
+        else
+        {
+            X.Msg.Alert("提示", "添加失败！").Show();
+        }
+    }
+    protected void btnSaveCopy_Click(object sender, EventArgs e)
+    {
+
+        EntityArrayList<Eqm_MainStand> list = manager.GetListByWhereAndOrder(Eqm_MainStand._.Equip_code == cbxEquipCopy.SelectedItem.Value && Eqm_MainStand._.Mp_code == cbxEquipTypeCopy.SelectedItem.Value, Eqm_MainStand._.Mp_code.Asc);
+        foreach(Eqm_MainStand record in list)
+        {
+            Eqm_MainStand recordCopy = new Eqm_MainStand();
+            recordCopy.Mp_import = record.Mp_import;
+            recordCopy.Mp_type = record.Mp_type;
+            recordCopy.Mp_code = record.Mp_code;
+            recordCopy.Equip_code = cbxEquipCopyTo.SelectedItem.Value.ToString();
+            recordCopy.Mp_period = record.Mp_period;
+            recordCopy.Mp_date = record.Mp_date;
+            recordCopy.Mp_stand = record.Mp_stand;
+            recordCopy.Mem_note = record.Mem_note;
+            recordCopy.Workshop = record.Workshop;
+            recordCopy.In_date = record.In_date;
+            recordCopy.Worker_barcode = this.UserID;
+            if (manager.Insert(recordCopy) >= 0)
+            {
+                this.AppendWebLog("维修标准定义复制", "添加机台：" + recordCopy.Equip_code);
+            }
+            else
+            {
+                X.Msg.Alert("提示", "复制失败！").Show();
+                return;
+            }
+
+        }
+        winCopy.Hidden = true;
+        bindList();
+        X.Msg.Alert("提示", "复制完成！").Show();
+        
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    protected void btnPlanCancel_Click(object sender, EventArgs e)
+    {
+        winPlanSave.Hidden = true;
+    }
+    protected void btnCancelCopy_Click(object sender, EventArgs e)
+    {
+        winCopy.Hidden = true;
+    }
+    #endregion
+
+    #region 下拉列表事件响应
+    protected void cbxEquipClass_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquipClass();
+    }
+    protected void cbxEquip_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquip();
+    }
+    protected void cbxEquipCopy_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquipCopy();
+    }
+    protected void cbxEquipTypeCopy_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquipTypeCopy();
+    }
+    protected void cbxPlanEquipClass_SelectChanged(object sender, EventArgs e)
+    {
+        changePlanEquipClass();
+    }
+    protected void cbxPlanEquip_SelectChanged(object sender, EventArgs e)
+    {
+        changePlanEquip();
+    }
+    #endregion
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Edit(string ObjID)
+    {
+        Eqm_MainStand record = manager.GetById(int.Parse(ObjID));
+
+
+        if (record != null)
+        {
+            txtMp_period.Text = record.Mp_period.ToString();
+            txtStartDate.SelectedDate = Convert.ToDateTime(record.Mp_date);
+            txtMp_stand.Text = record.Mp_stand;
+            txtMem_note.Text = record.Mem_note;
+            cbxImport.SetValue(record.Mp_import);
+            cbxType.SetValue(record.Mp_type);
+            
+            EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == record.Equip_code, Pmt_equip._.Equip_code.Asc);
+            cbxEquipClass.SetValue(list[0].Equip_class);
+            cbxEquip.SetValue(record.Equip_code);
+            cbxEquipType.SetValue(record.Mp_code);
+            txtWorkShop.Text = record.Workshop;
+            hideObjID.Text = ObjID;
+            this.hideMode.Text = "Edit";
+
+            this.winSave.Hidden = false;
+        }
+        else
+        {
+            bindList();
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+        }
+    }
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Eqm_MainStand record = manager.GetById(int.Parse(ObjID));
+        manager.Delete(int.Parse(ObjID));
+        this.AppendWebLog("维修标准删除", "修改机台：" + record.Equip_code);
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+
+    #endregion
+}

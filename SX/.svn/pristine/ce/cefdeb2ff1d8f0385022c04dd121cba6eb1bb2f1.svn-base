@@ -1,0 +1,149 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Technology_Manage_Material : Mesnac.Web.UI.Page
+{
+    protected Pmt_materialManager manager = new Pmt_materialManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            
+            bindList();
+        }
+    }
+
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select * from Pmt_material");
+
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+    #region 导出
+    //protected void btnExportSubmit_Click(object sender, EventArgs e)
+    //{
+    //    DataSet ds = getList();
+    //    //huiw,2013-10-28添加，判断不为空时才导出excel
+    //    if (ds == null || ds.Tables[0].Rows.Count == 0)
+    //    {
+    //        X.Msg.Alert("提示", "未查询出数据！").Show();
+    //    }
+    //    else
+    //    {
+    //        for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+    //        {
+    //            bool isshow = false;
+    //            DataColumn dc = ds.Tables[0].Columns[i];
+    //            foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+    //            {
+    //                if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+    //                {
+    //                    dc.ColumnName = cb.Text;
+    //                    isshow = true;
+    //                    break;
+    //                }
+    //            }
+    //            if (!isshow)
+    //            {
+    //                ds.Tables[0].Columns.Remove(dc.ColumnName);
+    //                i--;
+    //            }
+    //        }
+    //        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "工艺参数导出");
+    //    }
+    //}
+        //protected void btnExportSubmit_Click(object sender, EventArgs e)
+        //{
+        //    DataTable qualifyDt = getList().Tables[0];
+
+        //    DataSet ds = new DataSet();
+        //    qualifyDt.TableName = "工艺参数";
+        //    ds.Tables.Add(qualifyDt.Copy());
+
+
+        //    new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "工艺参数");
+        //}
+    #endregion
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+            bindList();
+       
+    }
+  
+    #endregion
+
+
+    #region 信息列表事件响应
+  
+    [DirectMethod]
+    public void pnlList_Add(string Mater_code, int PJtemp_up, int PJtemp_down, int CBtime_up, int CBtime_down, int rubtime_up, int rubtime_down
+                   , int Speed_up, int speed_down, int press_up, int press_down, int ZZtemp_up, int ZZtemp_Down, int CBlTemp_up
+        , int CBTemp_down, int XLMtemp_up, int XLMtemp_dowm)
+    {
+        
+            Pmt_material record = manager.GetById(Mater_code);
+
+            record.PJtemp_up = PJtemp_up;
+            record.PJtemp_down = PJtemp_down;
+            record.CBtime_up = CBtime_up;
+            record.CBtime_down = CBtime_down;
+            record.Rubtime_up = rubtime_up;
+            record.Rubtime_down = rubtime_down;
+            record.Speed_up = Speed_up;
+            record.Speed_down = speed_down;
+            record.Press_up = press_up;
+            record.Press_down = press_down;
+            record.ZZtemp_up = ZZtemp_up;
+            record.ZZtepm_Down = ZZtemp_Down;
+            record.CBlTemp_up = CBlTemp_up;
+            record.CBTemp_down = CBTemp_down;
+            record.XLMtemp_up = XLMtemp_up;
+            record.XLMtemp_dowm = XLMtemp_dowm;
+
+            if (manager.Update(record) >= 0)
+            {
+                X.Msg.Alert("提示", "修改完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "修改失败！").Show();
+            }
+        
+    }
+    #endregion
+}

@@ -1,0 +1,486 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using Mesnac.Data.Components;
+using System.Data;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
+
+public partial class Manager_Rubber_ShiftConfig : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    private IPmtConfigManager pmtConfigManager = new PmtConfigManager();
+    private IPptShiftConfigManager pptShiftConfigManager = new PptShiftConfigManager();
+    private IPptShiftManager pptShiftManaer = new PptShiftManager();
+    private IPptPlanManager pptPlanManager = new PptPlanManager();
+    private Ext.Net.MessageBox msg = new Ext.Net.MessageBox();//弹出框
+    #endregion
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btnSearch" };
+            新增 = new SysPageAction() { ActionID = 2, ActionName = "btnAdd" };
+            删除 = new SysPageAction() { ActionID = 3, ActionName = "Delete" };
+            修改 = new SysPageAction() { ActionID = 4, ActionName = "Edit" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 新增 { get; private set; } //必须为 public
+        public SysPageAction 删除 { get; private set; } //必须为 public
+        public SysPageAction 修改 { get; private set; } //必须为 public
+    }
+    #endregion
+
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        txtStratShiftDate.Text = "2013-05-09";//DateTime.Now.ToString("yyyy-MM-dd");
+        FillComboBox(PmtConfigManager.TypeCode.Equip, cboEquipCode);
+        FillShift();
+    }
+
+  
+
+    #region 页面初始化
+
+    private void FillShift()
+    {
+        EntityArrayList<PptShift> lstShift = pptShiftManaer.GetListByWhere(PptShift._.UseFlag == 1);
+        if (lstShift.Count >= 0)
+        {
+            foreach (PptShift shift in lstShift)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = shift.ShiftName;
+                item.Value = shift.ObjID.ToString();
+                cboShift.Items.Add(item);
+                cboAddShif.Items.Add(item);
+            }
+        } 
+    }
+    private void FillComboBox(PmtConfigManager.TypeCode typeCode, Ext.Net.ComboBox cb)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == typeCode.ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        DataSet data = pmtConfigManager.GetBySql(sqlstr).ToDataSet();
+        cb.Items.Clear();
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = dr["ShowInfo"].ToString();
+                item.Value = dr["ValueInfo"].ToString();
+                cb.Items.Add(item);
+            }
+        }
+        //if (cb.Items.Count > 0)
+        //{
+        //    cb.Text = (cb.Items[0].Value);
+        //}
+    }
+    #endregion
+
+    protected void MaterNameRefresh(object sender, StoreReadDataEventArgs e)
+    {
+        EntityArrayList<PptPlan> pptPlans = new EntityArrayList<PptPlan>();
+        NBear.Common.WhereClip where =PptPlan._.PlanDate ==Convert.ToDateTime(this.txtStratShiftDate.Text).ToString("yyyy-MM-dd");// (this.cboEquipCode.SelectedItem.Value.Equals("-1") ? (PptPlan._.PlanDate ==this.txtStratShiftDate.Text) : (PptPlan._.RecipeEquipCode == this.cboEquipCode.SelectedItem.Value & PptPlan._.PlanDate== this.txtStratShiftDate.Text));
+        if (!string.IsNullOrWhiteSpace(cboShift.Text))
+        {
+            where =where & PptPlan._.ShiftID == Convert.ToInt32(this.cboShift.SelectedItem.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(cboEquipCode.Text))
+        {
+            where = where & PptPlan._.RecipeEquipCode == this.cboEquipCode.SelectedItem.Value;
+        }
+        OrderByClip order = new OrderByClip("RecipeMaterialName");
+        pptPlans = pptPlanManager.GetListByWhereAndOrder(where, order);
+        List<object> data = new List<object>();
+        foreach (PptPlan plan in pptPlans.Distinct())
+        {
+            string RecipeMaterialCode = plan.RecipeMaterialCode;
+            string RecipeMaterialName = plan.RecipeMaterialName;
+            string PlanNo = plan.PlanID;
+            data.Add(new { Id = RecipeMaterialCode, Name = RecipeMaterialName,PlanID = PlanNo });
+        }
+        this.MaterNameStore.DataSource = data;
+        this.MaterNameStore.DataBind();
+    }
+    protected void AddMaterNameRefresh(object sender, StoreReadDataEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(txtAddEquipCode.Text) || string.IsNullOrWhiteSpace(cboAddShif.Text))
+        {
+            return;
+        }
+        NBear.Common.WhereClip where = PptPlan._.PlanDate == Convert.ToDateTime(this.txtAddConfigDate.Text).ToString("yyyy-MM-dd");// (this.cboEquipCode.SelectedItem.Value.Equals("-1") ? (PptPlan._.PlanDate ==this.txtStratShiftDate.Text) : (PptPlan._.RecipeEquipCode == this.cboEquipCode.SelectedItem.Value & PptPlan._.PlanDate== this.txtStratShiftDate.Text));
+        if (!string.IsNullOrWhiteSpace(this.cboAddShif.Text))
+        {
+            where = where & PptPlan._.ShiftID == Convert.ToInt32(this.cboAddShif.SelectedItem.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(this.txtAddEquipCode.Text))
+        {
+            where = where & PptPlan._.RecipeEquipCode == this.hidden_select_equip_code.Text;
+        }
+
+        EntityArrayList<PptPlan> pptPlans = new EntityArrayList<PptPlan>();
+        //NBear.Common.WhereClip where = PptPlan._.RecipeEquipCode == this.hidden_select_equip_code.Text & PptPlan._.PlanDate == this.txtAddConfigDate.Text;
+        OrderByClip order = new OrderByClip("RecipeMaterialName");
+        pptPlans = pptPlanManager.GetListByWhereAndOrder(where, order);
+        List<object> data = new List<object>();
+        foreach (PptPlan plan in pptPlans.Distinct())
+        {
+            string RecipeMaterialCode = plan.RecipeMaterialCode;
+            string RecipeMaterialName = plan.RecipeMaterialName;
+            string PlanNo = plan.PlanID;
+            data.Add(new { Id = RecipeMaterialCode, Name = RecipeMaterialName, PlanID = PlanNo });
+        }
+        this.AddMaterNameStore.DataSource = data;
+        this.AddMaterNameStore.DataBind();
+    }
+
+
+    [DirectMethod]
+    public void ChangeNumChe()
+    {
+        this.txtMemNote.Text = "";
+        int strat = Convert.ToInt32(this.startNum.Text);
+        int end = Convert.ToInt32(this.endNum.Text);
+        this.setNum.Text =Convert.ToString(end - strat + 1);
+        this.realWeight.Text = (Convert.ToInt32(this.setNum.Text) * Convert.ToDecimal(this.totalWeight.Text)).ToString();
+        for (int i = strat; i <= end; i++)
+        {
+            this.txtMemNote.Text += i.ToString()+",";
+        }
+        if (this.txtMemNote.Text.Length > 0)
+        {
+            this.txtMemNote.Text = this.txtMemNote.Text.Substring(0,this.txtMemNote.Text.Length - 1);
+        }
+    }
+
+
+    [DirectMethod]
+    public void GetPlanNo()
+    {
+        if (this.cboAddMaterName.SelectedItem.Value == null)
+        {
+            this.startNum.Text = "1";
+            this.endNum.Text ="";
+            this.lblPlanNo.Text = "";
+            return;
+        }
+        string planNo = this.cboAddMaterName.SelectedItem.Value;
+        PptPlan plan=pptPlanManager.GetById(planNo,Convert.ToDateTime(this.txtAddConfigDate.Text).ToString("yyyy-MM-dd"));
+        this.realWeight.Text = "0";
+        this.lblPlanNo.Text = plan.PlanID;
+        this.startNum.Text = "1";
+        this.endNum.Text = plan.PlanNum.ToString() ;
+        this.setNum.Text = plan.PlanNum.ToString();
+        totalWeight.Text = plan.TotalWeight.ToString();
+       
+        
+    }
+
+    #region 分页相关方法
+    private PageResult<PptShiftConfig> GetPageResultData(PageResult<PptShiftConfig> pageParams)
+    {
+        PptShiftConfigManager.QueryParams queryParams = new PptShiftConfigManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.planDate = Convert.ToDateTime(txtStratShiftDate.Text).ToString("yyyy-MM-dd");
+        if (this.cboEquipCode.SelectedItem.Value != null)
+        {
+            queryParams.equipTypeName = this.cboEquipCode.SelectedItem.Value;
+        }
+        if (this.cboMaterName.SelectedItem.Value != null)
+        {
+            queryParams.materialName = this.cboMaterName.SelectedItem.Text;
+        }
+        if (this.cboShift.SelectedItem.Value != null)
+        {
+            queryParams.shiftID = this.cboShift.SelectedItem.Value;
+        }
+        queryParams.deleteFlag = hidden_delete_flag.Text;
+
+        return pptShiftConfigManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        //if (this._.查询.SeqIdx == 0)
+        //{
+        //    return null;
+        //}
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PptShiftConfig> pageParams = new PageResult<PptShiftConfig>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "PlanDate ASC";
+
+        PageResult<PptShiftConfig> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+ 
+    /// <summary>
+    /// 点击添加信息中保存按钮激发的事件
+    /// sunyj   2013年3月27日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnAddSave_Click(object sender, DirectEventArgs e)
+    {
+        
+        string planNo = this.cboAddMaterName.SelectedItem.Value;
+        PptPlan plan=pptPlanManager.GetById(planNo,Convert.ToDateTime(this.txtAddConfigDate.Text).ToString("yyyy-MM-dd"));
+
+        PptShiftConfig shiftConfig = new PptShiftConfig();
+        shiftConfig.PlanDate = Convert.ToDateTime(this.txtAddConfigDate.Text);
+        shiftConfig.EquipCode = this.hidden_select_equip_code.Text;
+        shiftConfig.ShiftID =Convert.ToInt16(this.cboAddShif.SelectedItem.Value);
+        shiftConfig.ClassID =Convert.ToInt16(plan.ClassID);
+        shiftConfig.MaterialCode = plan.RecipeMaterialCode;
+        shiftConfig.MaterialName = plan.RecipeMaterialName;
+        shiftConfig.BarcodeStart = Convert.ToInt32(this.startNum.Text);
+        shiftConfig.BarcodeEnd = Convert.ToInt32(this.endNum.Text);
+        if (shiftConfig.BarcodeStart > shiftConfig.BarcodeEnd)
+        {
+            msg.Alert("提示", "结束车次比开始车次小");
+            msg.Show();
+            return;
+        }
+        if (Convert.ToDecimal(this.realWeight.Text) <= 0)
+        {
+            msg.Alert("提示", "实际重量不能小于0");
+            msg.Show();
+            return;
+        }
+        shiftConfig.TotalWeight = plan.TotalWeight;
+        shiftConfig.ShelfNum =Convert.ToInt32(this.setNum.Text);// plan.PlanNum;
+        shiftConfig.RealWeight = Convert.ToDecimal(this.realWeight.Text);
+        shiftConfig.OperCode = this.hidden_select_userCode.Text;
+        shiftConfig.ReceiveDate = Convert.ToDateTime(this.txtAddConfigDate.Text);
+        shiftConfig.MemNote =this.txtMemNote.Text;//怎么拆分
+        shiftConfig.UpdateFlag = "3";
+        shiftConfig.PlanID = plan.PlanID;
+        shiftConfig.ProdDate = DateTime.Now;
+        string strat = "000" + this.startNum.Text.Trim();
+        string end = "000" + this.endNum.Text.Trim();
+        string barcode = this.lblPlanNo.Text.Trim() + strat.Substring(strat.Length - 3, 3) + end.Substring(end.Length-3,3);
+        EntityArrayList<PptShiftConfig> shiftConfigs = pptShiftConfigManager.GetListByWhere(PptShiftConfig._.Barcode.SubString(0,15) == barcode.Substring(0,15));
+        if (shiftConfigs.Count > 0)
+        {
+            msg.Alert("提示", "起始车次已存在请更改起始车次！");
+            msg.Show();
+            this.startNum.Focus();
+            return;
+        }
+        shiftConfig.Barcode = barcode;
+        try
+        {
+            pptShiftConfigManager.Insert(shiftConfig);
+            msg.Alert("提示", "添加成功");
+            msg.Show();
+            pageToolBar.DoRefresh();
+            this.AddConfigWin.Close();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+        
+    }
+
+    /// <summary>
+    /// 点击打印按钮激发的事件 批量打印、直接打印 @Create By 赵营 2013-06-18
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnPrint_Click(object sender, EventArgs e)
+    {
+        string strBarcode = string.Empty;
+        if (this.rowSelectMuti.SelectedRows.Count <= 0)
+        {
+            X.MessageBox.Alert("提示", "您没有选择任何项，请选择！").Show();
+            return;
+        }
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            //DataSet ds = pptShiftConfigManager.GetInfoByBarcode(row.RecordID, this.UserID);
+            //if (ds.Tables[0].Rows[0]["BarcodeUse"].ToString() == "1")
+            //{
+            //    X.MessageBox.Alert("提示", "您选择的项中有已经打印过的条码，请检查！").Show();
+            //    return;
+            //}
+            strBarcode += "'" + row.RecordID + "', ";
+        }
+
+        //初始化报表控件
+        FastReport.Report report = new FastReport.Report();
+        report.Load(Server.MapPath("RubbeBarcodePrint.frx"));
+        //绑定数据源
+        DataSet ds = pptShiftConfigManager.GetInfoByBarcode(strBarcode.Substring(0, strBarcode.Length - 2), this.UserID);
+        report.RegisterData(ds.Tables[0], "RubbeBarcodePrint");
+
+        report.PrintSettings.ShowDialog = false;
+        report.Print();
+
+        pageToolBar.DoRefresh();
+    }
+
+     /// <summary>
+    /// 点击添加按钮激发的事件
+    /// sunyj   2013年3月27日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        this.txtAddConfigDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        this.cboAddMaterName.Text = "";
+        this.cboEquipCode.Text = "";
+        this.lblPlanNo.Text = "";
+        this.hidden_select_equip_code.Text = "";
+        this.hidden_select_userCode.Text = "";
+        this.startNum.Text = "1";
+        this.endNum.Text = "";
+        this.txtMemNote.Text = "";
+        this.txtAddEquipCode.Text = "";
+        this.cboAddShif.Text = "";
+        this.totalWeight.Text = "";
+        this.realWeight.Text = "1";
+        this.operUser.Text = "";
+        btnAddSave.Disable(true);
+        this.AddConfigWin.Show();
+    }
+
+    /// <summary>
+    /// 点击取消按钮激发的事件
+    /// sunyj   2013年3月25日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.AddConfigWin.Close();
+    }
+
+    public void BtnModifyCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.ModifyConfigWin.Close();
+    }
+    public void BtnModifySave_Click(object sender, DirectEventArgs e)
+    {
+        string mem = "";
+        try
+        {
+            int strat = Convert.ToInt32(this.modStartNum.Text);
+            int end = Convert.ToInt32(this.modEndNum.Text);
+            if (strat > end)
+            {
+                msg.Alert("提示", "结束车次比开始车次小");
+                msg.Show();
+                return;
+            }
+            this.setNum.Text = Convert.ToString(end - strat + 1);
+
+            for (int i = strat; i <= end; i++)
+            {
+                mem += i.ToString() + ",";
+            }
+            if (mem.Length > 0)
+            {
+                mem = mem.Substring(0, mem.Length - 1);
+            }
+            PptShiftConfig upconfig = pptShiftConfigManager.GetById(hidden_update_barcode.Text);
+            if (upconfig.RealWeight == Convert.ToDecimal(this.modRealWeight.Text))
+            {
+                msg.Alert("提示", "新旧数据相同,请从新输入重量");
+                msg.Show();
+                return;
+            }
+            hidden_update_barcode.Text = "";
+            upconfig.BarcodeStart = strat;
+            upconfig.BarcodeEnd = end;
+            upconfig.MemNote = mem;
+            if (upconfig.UpdateFlag != "3")
+            {
+                upconfig.UpdateFlag = "1";
+            }
+            upconfig.RealWeight = Convert.ToDecimal(this.modRealWeight.Text);
+            pptShiftConfigManager.Update(upconfig);
+            pageToolBar.DoRefresh();
+            this.ModifyConfigWin.Close();
+            msg.Alert("操作", "更新成功");
+            msg.Show();
+        }
+        catch (Exception ex)
+        {
+            msg.Alert("操作", "更新失败：" + ex);
+            msg.Show();
+        }
+
+    }
+
+    #region 删改操作
+    /// <summary>
+    /// 点击修改激发的事件
+    /// sunyj   2013年3月27日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    [Ext.Net.DirectMethod()]
+    public void commandcolumn_direct_edit(string barcode)
+    {
+        this.modStartNum.Text = "1";
+        this.modEndNum.Text ="1";
+        hidden_update_barcode.Text = barcode;
+        PptShiftConfig config = pptShiftConfigManager.GetById(barcode);
+        this.modStartNum.Text = config.BarcodeStart.ToString();
+        this.modEndNum.Text = config.BarcodeEnd.ToString();
+        this.modRealWeight.Text = config.RealWeight.ToString();
+        this.ModifyConfigWin.Show();
+    }
+
+    /// <summary>
+    /// 点击删除触发的事件
+    /// sunyj   2013年3月27日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    /// <returns></returns>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string barcode)
+    {
+        try
+        {
+            pptShiftConfigManager.Delete(barcode);
+            //material.DeleteFlag = "1";
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+    #endregion
+}

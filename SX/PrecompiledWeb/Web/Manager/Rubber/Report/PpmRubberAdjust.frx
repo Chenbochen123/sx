@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/27/2014 23:12:16" ReportInfo.Modified="05/27/2014 23:17:53" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlq+rW0RkboK+/8CKGGYUID3ctBV8q9SvKYxl3iiE7vBnh7Tgou0+4WFf3NfmPSvHVFU2smk5DHNSAnw2XNsW1XdTNIwCGQmAI+dl6HqONUQTW1K3ZUnIatA0gxrf9f5cF/7/IOzpvGoNu5MX6OZBgaWEN+FvVlxdBzl2FqpFN9gZSlVcPGuhzOX+pUzBYavqTo">
+      <TableDataSource Name="Table" Alias="RubberAdjustReport" DataType="System.Int32" Enabled="true" SelectCommand="select '' as StorageName,'' as StoragePlaceName,'' as recorddate,'' as MaterialName,0 as realnum,0.0 as adjustweight,'' as ToStorageName">
+        <Column Name="StorageName" DataType="System.String"/>
+        <Column Name="StoragePlaceName" DataType="System.String"/>
+        <Column Name="recorddate" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="realnum" DataType="System.Int32"/>
+        <Column Name="adjustweight" DataType="System.Decimal"/>
+        <Column Name="ToStorageName" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1">
+    <DataBand Name="Data1" Width="718.2" Height="106.19" Border.Lines="All">
+      <MatrixObject Name="Matrix1" Left="56.7" Top="9.45" Width="514.6" Height="71.07" FixedRows="2" FixedColumns="3" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[RubberAdjustReport.recorddate]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[RubberAdjustReport.StorageName]"/>
+          <Header Expression="[RubberAdjustReport.ToStorageName]" Totals="false"/>
+          <Header Expression="[RubberAdjustReport.MaterialName]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[RubberAdjustReport.realnum]"/>
+          <Cell Expression="[RubberAdjustReport.adjustweight]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="89.44" AutoSize="true"/>
+        <TableColumn Name="Column2" Width="101.81" AutoSize="true"/>
+        <TableColumn Name="Column3" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column4" Width="64.69" AutoSize="true"/>
+        <TableColumn Name="Column5" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column6" Width="33.71" AutoSize="true"/>
+        <TableColumn Name="Column7" Width="33.71" AutoSize="true"/>
+        <TableRow Name="Row1" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell1" Border.Lines="All" Text="仓库" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="调拨仓库" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="[recorddate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell16"/>
+          <TableCell Name="Cell19" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell20"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell3"/>
+          <TableCell Name="Cell4"/>
+          <TableCell Name="Cell8"/>
+          <TableCell Name="Cell14" Border.Lines="All" Text="数量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell17" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell21" Border.Lines="All" Text="数量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell22" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="16.5" AutoSize="true">
+          <TableCell Name="Cell5" Border.Lines="All" Text="[StorageName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell6" Border.Lines="All" Text="[ToStorageName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" Text="[realnum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" Text="[adjustweight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell23" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell24" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell25" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="3"/>
+          <TableCell Name="Cell26"/>
+          <TableCell Name="Cell27"/>
+          <TableCell Name="Cell28" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell29" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

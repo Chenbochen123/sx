@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="10/15/2015 11:45:25" ReportInfo.Modified="08/05/2019 09:56:45" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqxfki+t8jnSxof6qn6ng9vddBbeBVVXv4oD/y1lgJzH7gklZhta9coyriFlAoVX7mMPCiiMK7m/s5POXNVobNMXfedkPF3FqE2zSOcY7jX6YxFiD5Df7WZC7dIs/VtgKikBM0hdeIcQ8D5EYQrZE9nLB7KlaS8FxEr6oph0jucoCPcNn/xBwp5IvhTVVkhZXc">
+      <TableDataSource Name="Table" Alias="Minstock" DataType="System.Int32" PropName="Table1" Enabled="true" SelectCommand="select t.Mater_barcode,t1.Mater_name,t.Pro_Date,t2.Fac_name  from Pst_Minstock t left join Pmt_material t1 on t1.Mater_code = t.Mater_code left join Pmt_factory t2 on t2.Fac_id=t.Fac_id">
+        <Column Name="Mater_barcode" DataType="System.String"/>
+        <Column Name="Mater_name" DataType="System.String"/>
+        <Column Name="Pro_Date" DataType="System.String"/>
+        <Column Name="Fac_name" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Parameter Name="Mater_barcode" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" RawPaperSize="9" FirstPageSource="15" OtherPagesSource="15" Guides="850.5,850.5">
+    <DataBand Name="Data1" Width="718.2" Height="396.9" DataSource="Table">
+      <BarcodeObject Name="Barcode1" Left="207.9" Top="37.8" Width="177.5" Height="94.5" DataColumn="Minstock.Mater_barcode"/>
+      <TextObject Name="Text1" Left="207.9" Top="179.55" Width="179.55" Height="28.35" Text="[Minstock.Fac_name]" HorzAlign="Right" Font="宋体, 10pt, style=Bold"/>
+      <TextObject Name="Text2" Left="207.9" Top="141.75" Width="179.55" Height="28.35" Text="[Minstock.Mater_name]" HorzAlign="Right" Font="宋体, 10pt, style=Bold"/>
+      <TextObject Name="Text3" Left="245.7" Top="217.35" Width="141.75" Height="28.35" Text="[Minstock.Pro_Date]" HorzAlign="Right" Font="宋体, 10pt, style=Bold"/>
+      <RichObject Name="Rich1" Left="179.55" Top="217.35" Width="66.15" Height="18.9" Text="{\rtf1\ansi\ansicpg936\deff0\nouicompat\deflang1033\deflangfe2052{\fonttbl{\f0\froman\fcharset134 \'ce\'a2\'c8\'ed\'d1\'c5\'ba\'da;}{\f1\fnil Tahoma;}}&#13;&#10;{\*\generator Riched20 10.0.17134}\viewkind4\uc1 &#13;&#10;\pard\f0\fs18\lang2052\'c9\'fa\'b2\'fa\'c8\'d5\'c6\'da\'a3\'ba\f1\fs17\par&#13;&#10;}&#13;&#10;"/>
+    </DataBand>
+  </ReportPage>
+</Report>

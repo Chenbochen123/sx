@@ -1,0 +1,290 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+using FastReport;
+
+public partial class Manager_Equipment_Environmental_MotorInfo : Mesnac.Web.UI.Page
+{
+    protected Eqm_MotorInfoManager manager = new Eqm_MotorInfoManager();
+    protected Eqm_MotorPlanManager planmanager = new Eqm_MotorPlanManager();
+  //  protected Eqm_lvdaiPlanManager planManager = new Eqm_lvdaiPlanManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            this.winPlanSave.Hidden = true;
+            bindList();
+
+        }
+    }
+
+
+    #region 初始化控件
+    
+
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select T.* ,CONVERT(varchar(100),DATEADD(M,T.CYCLE,T.LastDate),23) NEXTDAY from Eqm_MotorInfo T");
+        sb.AppendLine("WHERE 1=1 order by INo desc");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList();
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "电机信息管理导出");
+        }
+    }
+
+    #endregion
+
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Eqm_MotorInfo record = manager.GetById(int.Parse(ObjID));
+        manager.Delete(int.Parse(ObjID));
+        this.AppendWebLog("电机信息管理删除", "删除标准：" + record.INo.ToString());
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+    [DirectMethod]
+    public void pnlList_Add(int INo, string depName,
+                    string processName, string workshop, string equipName,
+                    string EquipPart, string motorType, decimal power,
+                    decimal voltage, string motorNo, string Cbtype,
+                    decimal DianShu, decimal LiCi, int Cycle,
+                    string checkstand, DateTime startDate, DateTime lastDate,
+                    string Memo, string beiyong)
+    {
+        if (Convert.ToInt32(INo) == 0)//新增
+        {
+            Eqm_MotorInfo record = new Eqm_MotorInfo();
+
+            record.DepName = depName;
+            record.ProcessName = processName;
+            record.Workshop = workshop;
+            record.EquipName = equipName;
+            record.EquipPart = EquipPart;
+            record.MotorType = motorType;
+            record.Power = power;
+            record.Voltage = voltage;
+            record.MotorNo = motorNo;
+            record.Cbtype = Cbtype;
+            record.DianShu = DianShu;
+            record.LiCi = LiCi;
+            record.Cycle = Cycle;
+            record.Checkstand = checkstand;
+            record.StartDate = startDate;
+            record.LastDate = lastDate;
+            record.Beiyong = beiyong;
+            record.Memo = Memo;
+            if (manager.Insert(record) >= 0)
+            {
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            Eqm_MotorInfo record = manager.GetById(INo);
+            record.DepName = depName;
+            record.ProcessName = processName;
+            record.Workshop = workshop;
+            record.EquipName = equipName;
+            record.EquipPart = EquipPart;
+            record.MotorType = motorType;
+            record.Power = power;
+            record.Voltage = voltage;
+            record.MotorNo = motorNo;
+            record.Cbtype = Cbtype;
+            record.DianShu = DianShu;
+            record.LiCi = LiCi;
+            record.Cycle = Cycle;
+            record.Checkstand = checkstand;
+            record.StartDate = startDate;
+            record.LastDate = lastDate;
+            record.Beiyong = beiyong;
+            record.Memo = Memo;
+            if (manager.Update(record) >= 0)
+            {
+                X.Msg.Alert("提示", "修改完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "修改失败！").Show();
+            }
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumn_direct_detail(string ObjID)
+    {
+        DataSet ds = planmanager.GetBySql("SELECT * FROM Eqm_MotorPlan where motorNo = '" + ObjID + "'").ToDataSet();
+        ds.Tables[0].TableName = "MotorInfo";
+        if (ds != null && ds.Tables[0].Rows.Count > 0)
+        {
+            winDetail.Hidden = false;
+            //加载模板
+            FastReport.Report report = this.WebReport.Report;
+            report.Load(Server.MapPath("../EquipRepairProtectPlan/MotorInfoNew.frx"));
+            report.SetParameterValue("motorNo", ds.Tables[0].Rows[0]["motorNo"].ToString());
+            //绑定信息
+            report.RegisterData(ds.Tables[0], "MotorInfo");
+            report.Refresh();
+            WebReport.Update();
+            WebReport.Refresh();
+        }
+    }
+    #endregion
+
+
+    protected void btnCreatePlan_Click(object sender, EventArgs e)
+    {
+        if (rowSelectMuti.SelectedRows.Count == 0)
+        {
+            X.Msg.Alert("提示", "您没有选择任何行,请选择").Show();
+            return;
+        }
+        string objid = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            objid = row.RecordID;
+            EntityArrayList<Eqm_MotorInfo> listEdit = manager.GetListByWhere(Eqm_MotorInfo._.INo == row.RecordID);
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此维修标准！").Show();
+                return;
+            }
+            Eqm_MotorInfo record = listEdit[0];
+            txtINo.Text = record.INo.ToString();
+            txtMotorNo.Text = record.MotorNo;
+            txtRealday.SetValue(DateTime.Now);
+            txtDianshu.Text = record.DianShu.ToString();
+            txtLici.Text = record.LiCi.ToString();
+            txtoutday.SetValue("");
+            txtinday.SetValue("");
+            hidePlanObjID.Text = row.RecordID;
+        }
+        this.winPlanSave.Hidden = false;
+    }
+
+    protected void btnPlanSave_Click(object sender, EventArgs e)
+    {
+        //EntityArrayList<Eqm_MotorPlan> listEdit = planmanager.GetListByWhere(Eqm_MotorPlan._.MotorNo == hidePlanObjID.Text);
+        //if (listEdit.Count == 0)
+        //{
+        //    X.Msg.Alert("提示", "无此检修计划，修改失败！").Show();
+        //    return;
+        //}
+        //Eqm_MotorPlan record = listEdit[0];
+        Eqm_MotorPlan record = new Eqm_MotorPlan();
+        if (record != null)
+        {
+            record.INo = Convert.ToInt32(txtINo.Text);
+            record.MotorNo = txtMotorNo.Text;
+            record.Realdate = txtRealday.SelectedDate;
+            record.Dianshu = Convert.ToDecimal(txtDianshu.Text);
+            record.LiCi = Convert.ToDecimal(txtLici.Text);
+            record.CheckUser = txtman.Text;
+            if (txtoutday.SelectedDate != DateTime.MinValue)
+            { record.OutDate = txtoutday.SelectedDate; }
+            if (txtoutday.SelectedDate != DateTime.MinValue)
+            { record.InDate = txtinday.SelectedDate; }
+            //record.OutDate = txtoutday.SelectedDate;
+            //record.InDate = txtinday.SelectedDate;
+            record.CheckInfo = txtInfo.Text;
+            record.CheckFac = txtFac.Text;
+            record.Memo = txtremark.Text;
+
+
+            if (planmanager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("电机维修记录添加完成", "完成编号：" + record.INo);
+                this.winPlanSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "完成成功！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "完成失败！").Show();
+            }
+        }
+    }
+
+    protected void btnPlanCancel_Click(object sender, EventArgs e)
+    {
+        winPlanSave.Hidden = true;
+    }
+}

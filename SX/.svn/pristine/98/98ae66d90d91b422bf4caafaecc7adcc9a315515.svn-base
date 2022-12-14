@@ -1,0 +1,119 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_ProducingPlan_BalanceCheck : Mesnac.Web.UI.Page
+{
+    protected Ppt_GeLiJiManager manager = new Ppt_GeLiJiManager();
+    protected BasEquipManager equipmanager = new BasEquipManager();
+    protected Pmt_materialManager matermanager = new Pmt_materialManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            datestart.SelectedDate = DateTime.Now;
+            dateend.SelectedDate = DateTime.Now;
+            bindList();
+        }
+    }
+
+
+    #region 初始化控件
+    
+
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+    
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"SELECT t.serialid,Plan_Date '生产日期',T1.Equip_name '机台',T2.ClassName '班组',T.scale_name '秤名称',T.scale_no '编号',set_weight '标准重量',error_allow '允许误差',real_weight '实际重量',T.operTime '校准时间',T.usercode '校准人' from ppt_balanceCheck T
+LEFT JOIN Pmt_equip T1 ON T1.Equip_code=T.equip_Code
+LEFT JOIN PptClass T2 ON T2.ObjID=T.shift  where 1=1");
+
+        if (!string.IsNullOrEmpty(datestart.Text))
+        {
+            sb.AppendLine("AND T.Plan_Date>='" + datestart.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        }
+        if (!string.IsNullOrEmpty(dateend.Text))
+        {
+            sb.AppendLine("AND T.Plan_Date<='" + dateend.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        }
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, DirectEventArgs e)
+    {
+        string fields = e.ExtraParams["fields"];
+        string records = e.ExtraParams["records"];
+        Newtonsoft.Json.JavaScriptArray jsArrayFields = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(fields) as Newtonsoft.Json.JavaScriptArray;
+        Newtonsoft.Json.JavaScriptArray jsArrayRecords = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(records) as Newtonsoft.Json.JavaScriptArray;
+
+        DataTable dt = new DataTable();
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectField in jsArrayFields)
+        {
+            if (jsObjectField["name"].ToString().ToLower() != "id")
+            {
+                dt.Columns.Add(new DataColumn(jsObjectField["name"].ToString(), typeof(string)));
+            }
+        }
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectRecord in jsArrayRecords)
+        {
+            DataRow dr = dt.NewRow();
+            foreach (DataColumn dc in dt.Columns)
+            {
+                dr[dc.ColumnName] = jsObjectRecord[dc.ColumnName];
+            }
+            dt.Rows.Add(dr);
+        }
+
+        if (dt.Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "没有找到符合条件的记录").Show();
+            return;
+        }
+
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(dt, "校秤记录导出");
+    }
+
+    #endregion
+
+}

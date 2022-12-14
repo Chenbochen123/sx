@@ -1,0 +1,230 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Equipment_Energy_EnergyManage : Mesnac.Web.UI.Page
+{
+    protected EQM_EnergyManageManager manager = new EQM_EnergyManageManager();
+    protected JCZL_SubFacManager facManager = new JCZL_SubFacManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            dStartDate.Text = DateTime.Now.AddDays(1 - DateTime.Now.Day).Date.ToString("yyyy-MM-dd");
+            dEndDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            xinjiandate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtdian.Text = "0";
+            txtfeng.Text = "0";
+            txtshui.Text = "0";
+            txtqi.Text = "0";
+            txtdianprice.Text = "0.500";
+            txtfengprice.Text = "1.000";
+            txtshuiprice.Text = "5.300";
+            txtqiprice.Text = "180.000";
+            bindList();
+            bindFac();
+
+        }
+    }
+
+
+    #region 初始化控件
+
+    private void bindFac()
+    {
+        cbxFac.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<JCZL_SubFac> list = facManager.GetListByWhereAndOrder(where, JCZL_SubFac._.Fac_Id.Asc);
+        foreach (JCZL_SubFac type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Fac_Name, type.Fac_Name);
+            cbxFac.Items.Add(item);
+        }
+    }
+
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select T.Serial_id,CONVERT(datetime,T.Start_date,101) Start_date,T.WorkShop_Code,T.End_Date,T.Rub_Weight,T.Dian,T.Feng,T.Water,
+						T.ZhengQi,T.Dian_price,T.Feng_Price,T.Water_price,T.Qi_price, T1.Fac_Name from EQM_EnergyManage T
+                        left join jczl_subfac T1 ON T.WorkShop_Code = T1.Fac_Id");
+        sb.AppendLine("WHERE 1=1");
+        if (dStartDate.SelectedDate != DateTime.MinValue)
+            sb.AppendLine("AND T.Start_date>='" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        if (dEndDate.SelectedDate != DateTime.MinValue)
+            sb.AppendLine("AND T.Start_date<='" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'");
+        sb.AppendLine("ORDER BY Serial_id desc");
+        #endregion
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        DataSet ds = css.ToDataSet();
+        if(ds.Tables.Count>0)
+        {
+            if(ds.Tables[0].Rows.Count>0)
+            {
+                hiddenDian_price.Text = ds.Tables[0].Rows[0]["Dian_price"].ToString();
+                hiddenFeng_Price.Text = ds.Tables[0].Rows[0]["Feng_Price"].ToString();
+                hiddenWater_price.Text = ds.Tables[0].Rows[0]["Water_price"].ToString();
+                hiddenQi_price.Text = ds.Tables[0].Rows[0]["Qi_price"].ToString();
+            }
+        }
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList();
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "设备能耗管理导出");
+        }
+    }
+
+
+    #endregion
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"insert into EQM_EnergyManage(Start_date,End_Date,WorkShop_Code,Dian,Feng,Water,ZhengQi,Dian_price,Feng_Price,Water_price,Qi_price)
+values('"+xinjiandate.SelectedDate.ToString("yyyy-MM-dd")+"','"+xinjiandate.SelectedDate.ToString("yyyy-MM-dd")+"','1','"+txtdian.Text+"','"+txtfeng.Text+"','"+txtshui.Text+"','"+txtqi.Text+"','"+txtdianprice.Text+"','"+txtfengprice.Text+"','"+txtshuiprice.Text+"','"+txtqiprice.Text+"')");
+
+        #endregion
+        manager.GetBySql(sb.ToString()).ToDataSet();
+        bindList();
+        X.Msg.Alert("提示", "添加成功！").Show(); return;
+    }
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        EQM_EnergyManage record = manager.GetById(int.Parse(ObjID));
+        manager.Delete(int.Parse(ObjID));
+        this.AppendWebLog("设备能耗管理删除", "删除标准：" + record.Serial_id.ToString());
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+    [DirectMethod]
+    public void pnlList_Add(string Serial_id, DateTime Start_date, string Fac_Name,
+                    decimal Dian, decimal Feng, decimal Water,
+                    decimal ZhengQi, decimal Dian_price, decimal Feng_Price,
+                    decimal Water_price, decimal Qi_price)
+    {
+        if (Convert.ToInt32(Serial_id) == 0)//新增
+        {
+            EQM_EnergyManage record = new EQM_EnergyManage();
+            record.Start_date = Start_date.ToString("yyyy-MM-dd");
+            record.End_Date = Start_date.ToString("yyyy-MM-dd");
+            EntityArrayList<JCZL_SubFac> list = facManager.GetListByWhereAndOrder(JCZL_SubFac._.Fac_Name == Fac_Name, JCZL_SubFac._.Fac_Id.Asc);
+            if(list.Count>0)
+            {
+                record.WorkShop_Code = Convert.ToInt16(list[0].Fac_Id);
+            }
+            record.Dian = Dian;
+            record.Feng = Feng;
+            record.Water = Water;
+            record.ZhengQi = ZhengQi;
+            record.Dian_price = Dian_price;
+            record.Feng_Price = Feng_Price;
+            record.Water_price = Water_price;
+            record.Qi_price = Qi_price;
+            if (manager.Insert(record) >= 0)
+            {
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            EQM_EnergyManage record = manager.GetById(int.Parse(Serial_id));
+            record.Start_date = Start_date.ToString("yyyy-MM-dd");
+            record.End_Date = Start_date.ToString("yyyy-MM-dd");
+            EntityArrayList<JCZL_SubFac> list = facManager.GetListByWhereAndOrder(JCZL_SubFac._.Fac_Name == Fac_Name, JCZL_SubFac._.Fac_Id.Asc);
+            if (list.Count > 0)
+            {
+                record.WorkShop_Code = Convert.ToInt16(list[0].Fac_Id);
+            }
+            record.Dian = Dian;
+            record.Feng = Feng;
+            record.Water = Water;
+            record.ZhengQi = ZhengQi;
+            record.Dian_price = Dian_price;
+            record.Feng_Price = Feng_Price;
+            record.Water_price = Water_price;
+            record.Qi_price = Qi_price;
+            if (manager.Update(record) >= 0)
+            {
+                X.Msg.Alert("提示", "修改完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "修改失败！").Show();
+            }
+        }
+    }
+    #endregion
+}

@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/22/2014 11:21:00" ReportInfo.Modified="05/22/2014 12:08:53" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;RubberStoreOut&quot;);
+      rowData.Init();
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      Table1.PrintRow(1);
+      Table1.PrintColumns();
+      while (rowData.HasMoreRows)
+      {
+        Table1.PrintRow(2);
+        Table1.PrintColumns();
+        rowData.Next();
+      }
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlq+rW0RkboK+/8CKGGYUID3ctBV8q9SvKYxl3iiE7vBnh7Tgou0+4WFf3NfmPSvHVFU2smk5DHNSAnw2XNsW1XdTNIwCGQmAI+dl6HqONUQTW1K3ZUnIatA0gxrf9f5cF/7/IOzpvGoNu5MX6OZBgaWEN+FvVlxdBzl2FqpFN9gZSUISQJ/dwZ3oJqWcTBx/pn">
+      <TableDataSource Name="Table" Alias="RubberStoreOut" DataType="System.Int32" Enabled="true" SelectCommand="select '' barcode,'' StorageName,'' StoragePlaceName,'' ToStorageName,'' ShelfNum, '' PlanDate,'' ShiftName,'' ClassName, '' EquipName,&#13;&#10;'' MaterialName,'' Weight,'' RecordDate,'' shelfnum,'' llbarcode,'' llmennote,'' memnote">
+        <Column Name="StorageName" DataType="System.String"/>
+        <Column Name="StoragePlaceName" DataType="System.String"/>
+        <Column Name="ToStorageName" DataType="System.String"/>
+        <Column Name="ShelfNum" DataType="System.String"/>
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="ShiftName" DataType="System.String"/>
+        <Column Name="ClassName" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="Weight" DataType="System.String"/>
+        <Column Name="RecordDate" DataType="System.String"/>
+        <Column Name="shelfnum1" Enabled="false" DataType="System.String"/>
+        <Column Name="llbarcode" DataType="System.String"/>
+        <Column Name="llmennote" DataType="System.String"/>
+        <Column Name="barcode" DataType="System.String"/>
+        <Column Name="memnote" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="5000" PaperHeight="5000">
+    <DataBand Name="Data1" Width="18824.4" Height="141.75" Border.Lines="All">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="1614.18" Height="75.6" Border.Lines="All" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="121.26"/>
+        <TableColumn Name="Column2" Width="121.26"/>
+        <TableColumn Name="Column3" Width="121.26"/>
+        <TableColumn Name="Column13" Width="121.26"/>
+        <TableColumn Name="Column14" Width="111.81"/>
+        <TableColumn Name="Column4" Width="111.81"/>
+        <TableColumn Name="Column5" Width="177.96"/>
+        <TableColumn Name="Column6" Width="177.96"/>
+        <TableColumn Name="Column7" Width="215.76"/>
+        <TableColumn Name="Column8" Width="74.01"/>
+        <TableColumn Name="Column9" Width="74.01"/>
+        <TableColumn Name="Column11" Width="64.56"/>
+        <TableColumn Name="Column12" Width="121.26"/>
+        <TableRow Name="Row6" Height="28.35">
+          <TableCell Name="Cell71" Border.Lines="All" Text="出库明细信息" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt" ColSpan="13"/>
+          <TableCell Name="Cell72" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell73" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell74" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell75" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell76" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell77" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell78" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell79" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell80" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell81" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell83" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell84" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+        </TableRow>
+        <TableRow Name="Row1" Height="28.35">
+          <TableCell Name="Cell1" Border.Lines="All" Text="条码号" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="仓库" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="库位" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell61" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell66" Border.Lines="All" Text="生产机台" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="出库地点" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="车次" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell26" Border.Lines="All" Text="玲珑车次" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="出库时间" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="班次" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell41" Border.Lines="All" Text="班组" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell51" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell56" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell6" Border.Lines="All" Text="[RubberStoreOut.barcode]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[RubberStoreOut.StorageName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[RubberStoreOut.StoragePlaceName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell62" Border.Lines="All" Text="[RubberStoreOut.MaterialName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell67" Border.Lines="All" Text="[RubberStoreOut.EquipName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[RubberStoreOut.ToStorageName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="[RubberStoreOut.memnote]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell27" Border.Lines="All" Text="[RubberStoreOut.llmennote]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="[RubberStoreOut.RecordDate]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell37" Border.Lines="All" Text="[RubberStoreOut.ShiftName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell42" Border.Lines="All" Text="[RubberStoreOut.ClassName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell52" Border.Lines="All" Text="[RubberStoreOut.ShelfNum]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell57" Border.Lines="All" Text="[RubberStoreOut.Weight]" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

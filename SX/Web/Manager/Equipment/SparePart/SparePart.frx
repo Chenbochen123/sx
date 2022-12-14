@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="10/15/2015 11:45:25" ReportInfo.Modified="07/25/2019 09:17:03" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqxfki+t8jnSxof6qn6ng9vddBbeBVVXv4oD/y1lgJzH7gklZhta9coyriFlAoVX7mMPCiiMK7m/s5POXNVobNMXfedkPF3FqE2zSOcY7jX6YxFiD5Df7WZC7dIs/VtgKikBM0hdeIcQ8D5EYQrZE9nLB7KlaS8FxEr6oph0jucoCS3ToCGvKMBMiVC5aMiY9+">
+      <TableDataSource Name="Table" Alias="SparePart" DataType="System.Int32" PropName="Table1" Enabled="true" SelectCommand=" select BJ_code,BJ_name from Eqm_bjsparecd">
+        <Column Name="BJ_code" DataType="System.String"/>
+        <Column Name="BJ_name" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Parameter Name="BJ_code" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" RawPaperSize="9" FirstPageSource="15" OtherPagesSource="15" Guides="850.5,850.5">
+    <DataBand Name="Data1" Width="718.2" Height="396.9">
+      <BarcodeObject Name="Barcode1" Left="207.9" Top="37.8" Width="177.5" Height="94.5" DataColumn="SparePart.BJ_code"/>
+      <TextObject Name="Text1" Left="207.9" Top="160.65" Width="179.55" Height="37.8" Text="[SparePart.BJ_name]" Font="宋体, 10pt, style=Bold"/>
+    </DataBand>
+  </ReportPage>
+</Report>

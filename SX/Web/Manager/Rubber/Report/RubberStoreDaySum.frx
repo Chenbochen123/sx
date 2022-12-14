@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/22/2014 11:21:00" ReportInfo.Modified="01/03/2020 10:11:02" ReportInfo.CreatorVersion="2013.3.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;RubberStoreDaySum&quot;);
+      rowData.Init();
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      Table1.PrintRow(1);
+      Table1.PrintColumns(); 
+      Table1.PrintRow(2);
+      Table1.PrintColumns();
+      while (rowData.HasMoreRows)
+      {
+        Table1.PrintRow(3);
+        Table1.PrintColumns();
+        rowData.Next();
+      }
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqPMdpJEaX+4XUPBP4rTcW6HXy1e++G1iiYEJnPnLnhm8FRbqQSEZoFynLk8FgEREZN2pP3HWMdBpFqYTTfh+7uhJZ6sgZC2d1CD6JXSwdmIWhPDyul3wkK3OZQiOIg6m75nvZ0ssvV/GC1m/chajkbowcgldg+r7vbh0E3lYmIfmlbz6OKOdNwDjtxj4qIpSJK5own19O1V0OcZ7oSRdqeA==">
+      <TableDataSource Name="Table" Alias="RubberStoreDaySum" DataType="System.Int32" Enabled="true" SelectCommand="select t.*,t1.Mater_name From ppm_rubdaysum t&#13;&#10;left join Pmt_material t1 on t1.Mater_code=t.mater_Code">
+        <Column Name="serialid" DataType="System.Int32"/>
+        <Column Name="plan_date" DataType="System.String"/>
+        <Column Name="dep_Code" DataType="System.String"/>
+        <Column Name="mater_Code" DataType="System.String"/>
+        <Column Name="last_num" DataType="System.Int32"/>
+        <Column Name="last_weight" DataType="System.Decimal"/>
+        <Column Name="BHG_num" DataType="System.Int32"/>
+        <Column Name="BHG_weight" DataType="System.Decimal"/>
+        <Column Name="in_num1" DataType="System.Int32"/>
+        <Column Name="in_weight1" DataType="System.Decimal"/>
+        <Column Name="in_num2" DataType="System.Int32"/>
+        <Column Name="in_weight2" DataType="System.Decimal"/>
+        <Column Name="in_num3" DataType="System.Int32"/>
+        <Column Name="in_weight3" DataType="System.Decimal"/>
+        <Column Name="in_numday" DataType="System.Int32"/>
+        <Column Name="in_weightday" DataType="System.Decimal"/>
+        <Column Name="out_num80_1" DataType="System.Int32"/>
+        <Column Name="out_weight80_1" DataType="System.Decimal"/>
+        <Column Name="out_num80_2" DataType="System.Int32"/>
+        <Column Name="out_weight80_2" DataType="System.Decimal"/>
+        <Column Name="out_num80_3" DataType="System.Int32"/>
+        <Column Name="out_weight80_3" DataType="System.Decimal"/>
+        <Column Name="out_num120_1" DataType="System.Int32"/>
+        <Column Name="out_weight120_1" DataType="System.Decimal"/>
+        <Column Name="out_num120_2" DataType="System.Int32"/>
+        <Column Name="out_weight120_2" DataType="System.Decimal"/>
+        <Column Name="out_num120_3" DataType="System.Int32"/>
+        <Column Name="out_weight120_3" DataType="System.Decimal"/>
+        <Column Name="out_numday" DataType="System.Int32"/>
+        <Column Name="out_weightday" DataType="System.Decimal"/>
+        <Column Name="store_num" DataType="System.Int32"/>
+        <Column Name="store_weight" DataType="System.Decimal"/>
+        <Column Name="out_num59_1" DataType="System.Int32"/>
+        <Column Name="out_weight59_1" DataType="System.Decimal"/>
+        <Column Name="out_num59_2" DataType="System.Int32"/>
+        <Column Name="out_weight59_2" DataType="System.Decimal"/>
+        <Column Name="out_num59_3" DataType="System.Int32"/>
+        <Column Name="out_weight59_3" DataType="System.Decimal"/>
+        <Column Name="Store_BHGNum" DataType="System.Int32"/>
+        <Column Name="Store_BhgWeight" DataType="System.Decimal"/>
+        <Column Name="Mater_name" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="5000" PaperHeight="5000">
+    <DataBand Name="Data1" Width="18824.4" Height="378">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="1861.59" Height="103.95" Border.Lines="All" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="111.81"/>
+        <TableColumn Name="Column2" Width="74.01"/>
+        <TableColumn Name="Column3" Width="74.01"/>
+        <TableColumn Name="Column13" Width="121.26"/>
+        <TableColumn Name="Column14" Width="111.81"/>
+        <TableColumn Name="Column4" Width="111.81"/>
+        <TableColumn Name="Column5" Width="130.71"/>
+        <TableColumn Name="Column6" Width="121.26"/>
+        <TableColumn Name="Column7" Width="121.26"/>
+        <TableColumn Name="Column8" Width="74.01"/>
+        <TableColumn Name="Column9" Width="74.01"/>
+        <TableColumn Name="Column11" Width="124.56"/>
+        <TableColumn Name="Column12" Width="121.26"/>
+        <TableColumn Name="Column13" Width="121.26"/>
+        <TableColumn Name="Column15"/>
+        <TableColumn Name="Column16"/>
+        <TableColumn Name="Column17"/>
+        <TableColumn Name="Column18"/>
+        <TableColumn Name="Column19" Width="103.95"/>
+        <TableRow Name="Row7">
+          <TableCell Name="Cell844" Border.Lines="All" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell845" Border.Lines="All" Text="前存" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2" RowSpan="2"/>
+          <TableCell Name="Cell846" Border.Lines="All" HorzAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell847" Border.Lines="All" Text="生产" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="6"/>
+          <TableCell Name="Cell848" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell849" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell850" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell851" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell852" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell853" Border.Lines="All" Text="付出" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="6"/>
+          <TableCell Name="Cell854" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell855" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell856" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell857" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell858" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell862" Border.Lines="All" Text="现场结存" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="4" RowSpan="2"/>
+          <TableCell Name="Cell866" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell870" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell874" Border.Lines="All" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="28.35">
+          <TableCell Name="Cell71" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell842" HorzAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell843" HorzAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell74" Border.Lines="All" Text="白班" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell75" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell76" Border.Lines="All" Text="夜班" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell77" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell78" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell79" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell80" Border.Lines="All" Text="白班" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell81" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell83" Border.Lines="All" Text="夜班" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell84" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell841" Border.Lines="All" Text="日付出" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell859" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell863" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell867" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell871" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell875" Border.Lines="All" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row1" Height="28.35">
+          <TableCell Name="Cell1" Border.Lines="All" Text="胶料名称" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell61" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell66" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell26" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell41" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell51" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell56" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell860" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell864" Border.Lines="All" Text="辊数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell868" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell872" Border.Lines="All" Text="掺用数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell876" Border.Lines="All" Text="掺用重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="28.35">
+          <TableCell Name="Cell6" Border.Lines="All" Text="[RubberStoreDaySum.Mater_name]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell62" Border.Lines="All" Text="[RubberStoreDaySum.last_num]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell67" Border.Lines="All" Text="[RubberStoreDaySum.last_weight]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[RubberStoreDaySum.in_num1]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="[RubberStoreDaySum.in_weight1]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell27" Border.Lines="All" Text="[RubberStoreDaySum.in_num3]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="[RubberStoreDaySum.in_weight3]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell37" Border.Lines="All" Text="[RubberStoreDaySum.in_numday]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell42" Border.Lines="All" Text="[RubberStoreDaySum.in_weightday]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell52" Border.Lines="All" Text="[RubberStoreDaySum.out_num80_1]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell57" Border.Lines="All" Text="[RubberStoreDaySum.out_weight80_1]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[RubberStoreDaySum.out_num80_3]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[RubberStoreDaySum.out_weight80_3]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell81" Border.Lines="All" Text="[RubberStoreDaySum.out_numday]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell861" Border.Lines="All" Text="[RubberStoreDaySum.out_weightday]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell865" Border.Lines="All" Text="[RubberStoreDaySum.store_num]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell869" Border.Lines="All" Text="[RubberStoreDaySum.store_weight]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell873" Border.Lines="All" Text="[RubberStoreDaySum.Store_BHGNum]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell877" Border.Lines="All" Text="[RubberStoreDaySum.Store_BhgWeight]" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

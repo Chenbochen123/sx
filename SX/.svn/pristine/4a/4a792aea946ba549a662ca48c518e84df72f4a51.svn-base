@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/22/2014 11:21:00" ReportInfo.Modified="05/27/2014 18:13:38" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;RubberAdjustReport&quot;);
+      rowData.Init();
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      Table1.PrintRow(1);
+      Table1.PrintColumns();
+      while (rowData.HasMoreRows)
+      {
+        Table1.PrintRow(2);
+        Table1.PrintColumns();
+        rowData.Next();
+      }
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlq+rW0RkboK+/8CKGGYUID3ctBV8q9SvKYxl3iiE7vBnh7Tgou0+4WFf3NfmPSvHVFU2smk5DHNSAnw2XNsW1XdTNIwCGQmAI+dl6HqONUQTW1K3ZUnIatA0gxrf9f5cF/7/IOzpvGoNu5MX6OZBgaWEN+FvVlxdBzl2FqpFN9gZSZHpiasEuyVyGsAqk7IEQO">
+      <TableDataSource Name="Table" Alias="RubberAdjustReport" DataType="System.Int32" Enabled="true" SelectCommand="select '' barcode,'' StorageName,'' StoragePlaceName,'' ToStorageName,'' RealNum, '' ShiftName,&#13;&#10;'' MaterialName,'' AdjustWeight,'' RecordDate">
+        <Column Name="StorageName" DataType="System.String"/>
+        <Column Name="StoragePlaceName" DataType="System.String"/>
+        <Column Name="ToStorageName" DataType="System.String"/>
+        <Column Name="ShiftName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="RecordDate" DataType="System.String"/>
+        <Column Name="barcode" DataType="System.String"/>
+        <Column Name="RealNum" DataType="System.String"/>
+        <Column Name="AdjustWeight" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="5000" PaperHeight="5000">
+    <DataBand Name="Data1" Width="18824.4" Height="141.75" Border.Lines="All">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="1072.44" Height="75.6" Border.Lines="All" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="121.26"/>
+        <TableColumn Name="Column2" Width="121.26"/>
+        <TableColumn Name="Column3" Width="121.26"/>
+        <TableColumn Name="Column13" Width="121.26"/>
+        <TableColumn Name="Column4" Width="111.81"/>
+        <TableColumn Name="Column7" Width="215.76"/>
+        <TableColumn Name="Column8" Width="74.01"/>
+        <TableColumn Name="Column11" Width="64.56"/>
+        <TableColumn Name="Column12" Width="121.26"/>
+        <TableRow Name="Row6" Height="28.35">
+          <TableCell Name="Cell71" Border.Lines="All" Text="调拨明细信息" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt" ColSpan="9"/>
+          <TableCell Name="Cell72" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell73" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell74" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell76" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell79" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell80" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell83" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+          <TableCell Name="Cell84" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 14pt"/>
+        </TableRow>
+        <TableRow Name="Row1" Height="28.35">
+          <TableCell Name="Cell1" Border.Lines="All" Text="条码号" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="仓库" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="库位" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell61" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="调拨地点" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="调拨时间" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="班次" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell51" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+          <TableCell Name="Cell56" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell6" Border.Lines="All" Text="[RubberAdjustReport.barcode]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[RubberAdjustReport.StorageName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[RubberAdjustReport.StoragePlaceName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell62" Border.Lines="All" Text="[RubberAdjustReport.MaterialName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[RubberAdjustReport.ToStorageName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="[RubberAdjustReport.RecordDate]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell37" Border.Lines="All" Text="[RubberAdjustReport.ShiftName]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell52" Border.Lines="All" Text="[RubberAdjustReport.RealNum]" Font="宋体, 9pt"/>
+          <TableCell Name="Cell57" Border.Lines="All" Text="[RubberAdjustReport.AdjustWeight]" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

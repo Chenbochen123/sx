@@ -1,0 +1,324 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="LotReport.aspx.cs" Inherits="Manager_Technology_Report_LotReport" %>
+
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="head" runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>工艺配方管理</title>
+    <!--通用-->
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <link href="<%= Page.ResolveUrl("~/") %>resources/css/examples.css" rel="stylesheet" />
+
+    <script src="<%= Page.ResolveUrl("~/") %>resources/js/default.js"></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js"></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery.PrintArea.js"></script>
+
+    <!--特殊-->
+    <script src="<%= Page.ResolveUrl("~/") %>resources/js/waitwindow.js"></script>
+    <script src="<%= Page.ResolveUrl("./") %>LotReport.js?_dc=<%= DateTime.Now.ToString("yyyyMMddHHmmss") %>"></script>
+    
+</head>
+<body>
+    <form id="form1" runat="server">
+        
+        <ext:ResourceManager ID="ResourceManager1" runat="server" />
+        <ext:ChartTheme ID="ChartTheme1" runat="server" ThemeName="Browser" Colors="<%#COLORS %>" AutoDataBind="true" />
+        <ext:Viewport ID="Viewport1" runat="server" Layout="BorderLayout">
+            <Items>
+                <ext:Panel ID="Panel20" runat="server" Region="North" AutoHeight="true">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="barUser">
+                            <Items>
+                                <ext:ToolbarSeparator ID="toolbarSeparator_begin" />
+                                <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearchFirstClick">
+                                            <EventMask ShowMask="true"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator1" />
+                                <ext:Button runat="server" Icon="ResultsetFirst" Text="首条" ID="btnSearchFirst">
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearchFirstClick">
+                                            <EventMask ShowMask="true"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="ResultsetPrevious" Text="上一条" ID="btnSearchPrevious">
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearchPreviousClick">
+                                            <EventMask ShowMask="true"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="ResultsetNext" Text="下一条" ID="btnSearchNext">
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearchNextClick">
+                                            <EventMask ShowMask="true"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="ResultsetLast" Text="最后一条" ID="btnSearchLast">
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearchLastClick">
+                                            <EventMask ShowMask="true"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator3" />
+                                <ext:Button runat="server" Icon="PictureSave" Text="导出折线图" ID="btnSaveChart">
+                                    <Listeners>
+                                        <Click Fn="saveChart"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator2" />
+                                <ext:Button runat="server" Icon="Printer" Text="打印折线图" ID="btnPrintChart">
+                                    <Listeners>
+                                        <Click Fn="printChart"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator5" />
+                                <ext:Button runat="server" Icon="PageWhite" Text="当前车详细信息" ID="btnShowRptPmtLotInfo">
+                                    <Listeners>
+                                        <Click Fn="ShowRptPmtLotInfo"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator_end" />
+                                <ext:ToolbarSpacer runat="server" ID="toolbarSpacer_end" />
+                                <ext:ToolbarFill ID="toolbarFill_end" />
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:Container ID="container1" runat="server" Layout="AnchorLayout" AutoHeight="true" Padding="2">
+                            <Items>
+                                <ext:Container ID="container4" runat="server" Layout="HBoxLayout" Padding="5">
+                                    <Items>
+                                        <ext:TriggerField ID="txtEquipName" runat="server" Flex="1" FieldLabel="机台名称" LabelAlign="Right" Editable="false">
+                                            <Triggers>
+                                                <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                                <ext:FieldTrigger Icon="Search" />
+                                            </Triggers>
+                                            <Listeners>
+                                                <TriggerClick Fn="QueryEquipInfo" />
+                                            </Listeners>
+                                        </ext:TriggerField>
+                                        <ext:FieldContainer ID="FieldContainer1" runat="server" FieldLabel="生产开始时间" Layout="HBoxLayout" LabelAlign="Right" Flex="1">
+                                            <Items>
+                                                <ext:DateField ID="txtBeginDate" runat="server" Format="yyyy-MM-dd" Flex="6" />
+                                                <ext:TextField ID="txtBeginTime" runat="server" Flex="4">
+                                                    <Plugins>
+                                                        <ext:InputMask ID="InputMask1" runat="server" Mask="ah:bm:cs">
+                                                            <MaskSymbols>
+                                                                <ext:MaskSymbol Name="a" Regex="[012]" Placeholder="h" />
+                                                                <ext:MaskSymbol Name="h" Regex="[0-9]" Placeholder="h" />
+                                                                <ext:MaskSymbol Name="b" Regex="[0-5]" Placeholder="i" />
+                                                                <ext:MaskSymbol Name="m" Regex="[0-9]" Placeholder="i" />
+                                                                <ext:MaskSymbol Name="c" Regex="[0-5]" Placeholder="s" />
+                                                                <ext:MaskSymbol Name="s" Regex="[0-9]" Placeholder="s" />
+                                                            </MaskSymbols>
+                                                        </ext:InputMask>
+                                                    </Plugins>
+                                                </ext:TextField>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer2" runat="server" FieldLabel="生产结束时间" Layout="HBoxLayout" LabelAlign="Right" Flex="1">
+                                            <Items>
+                                                <ext:DateField ID="txtEndDate" runat="server" Format="yyyy-MM-dd" Flex="6" />
+                                                <ext:TextField ID="txtEndTime" runat="server" Flex="4">
+                                                    <Plugins>
+                                                        <ext:InputMask ID="InputMask3" runat="server" Mask="ah:bm:cs">
+                                                            <MaskSymbols>
+                                                                <ext:MaskSymbol Name="a" Regex="[012]" Placeholder="h" />
+                                                                <ext:MaskSymbol Name="h" Regex="[0-9]" Placeholder="h" />
+                                                                <ext:MaskSymbol Name="b" Regex="[0-5]" Placeholder="i" />
+                                                                <ext:MaskSymbol Name="m" Regex="[0-9]" Placeholder="i" />
+                                                                <ext:MaskSymbol Name="c" Regex="[0-5]" Placeholder="s" />
+                                                                <ext:MaskSymbol Name="s" Regex="[0-9]" Placeholder="s" />
+                                                            </MaskSymbols>
+                                                        </ext:InputMask>
+                                                    </Plugins>
+                                                </ext:TextField>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container3" runat="server" Layout="HBoxLayout" Padding="5">
+                                    <Items>
+                                        <ext:ComboBox ID="txtPptShift" runat="server" SelectOnTab="true" Editable="false" LabelAlign="Right" FieldLabel="班次信息" MinWidth="150" Flex="1">
+                                        </ext:ComboBox>
+                                        <ext:ComboBox ID="txtPptClass" runat="server" SelectOnTab="true" Editable="false" LabelAlign="Right" FieldLabel="班组信息" MinWidth="150" Flex="1">
+                                        </ext:ComboBox>
+                                        <ext:TriggerField ID="txtPmtRecipe" runat="server" FieldLabel="配方信息" LabelAlign="Right" Editable="false" MinWidth="200" Flex="1">
+                                            <Triggers>
+                                                <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                                <ext:FieldTrigger Icon="Search" />
+                                            </Triggers>
+                                            <Listeners>
+                                                <TriggerClick Fn="QueryPmtRecipeInfo" />
+                                            </Listeners>
+                                        </ext:TriggerField>
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container2" runat="server" Layout="HBoxLayout" Padding="5">
+                                    <Items>
+                                        <ext:NumberField ID="txtLotBeginIndex" runat="server" LabelAlign="Right" Flex="1" MaxLength="4" DecimalPrecision="0" FieldLabel="车次开始" ReadOnly="true" Hidden="true" MinWidth="100">
+                                        </ext:NumberField>
+                                        <ext:NumberField ID="txtLotEndIndex" runat="server" LabelAlign="Right" Flex="1" MaxLength="4" DecimalPrecision="0" FieldLabel="车次结束" ReadOnly="true" Hidden="true" MinWidth="100">
+                                        </ext:NumberField>
+                                        <ext:NumberField ID="txtLotCount" runat="server" LabelAlign="Right" Flex="1" MaxLength="4" DecimalPrecision="0" FieldLabel="总车数" ReadOnly="true" Hidden="true" MinWidth="100">
+                                        </ext:NumberField>
+                                        <ext:NumberField ID="txtLotIndex" runat="server" LabelAlign="Right" Flex="1" MaxLength="4" DecimalPrecision="0" FieldLabel="当前车次" ReadOnly="true" Hidden="true" MinWidth="100">
+                                        </ext:NumberField>
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:Container>
+                        <ext:Hidden ID="hiddenPmtRecipeID" runat="server"></ext:Hidden>
+                        <ext:Hidden ID="hiddenEquipCode" runat="server"></ext:Hidden>
+                    </Items>
+                </ext:Panel>
+                
+                <ext:Panel ID="Panel1" runat="server" Region="Center" AutoHeight="true" Layout="BorderLayout">
+                    <Items>
+                        <ext:Panel ID="gridPanelCenter" runat="server" Region="Center" Layout="FitLayout" Frame="true" Title="密炼机工作曲线图" TitleAlign="Center">
+                            <Items>
+                                
+                                <ext:Chart ID="Chart1" runat="server" StyleSpec="background:#fff;font-size:9pt" Shadow="true"  Theme="Browser:gradients" Animate="true">
+                                    <LegendConfig Position="Right" />
+                                    <Store>
+                                        <ext:Store ID="Store1" runat="server">
+                                            <Model>
+                                                <ext:Model ID="Model1" runat="server">
+                                                    <Fields>
+                                                        <ext:ModelField Name="SecondSpan" />
+                                                        <ext:ModelField Name="MixingTemp" />
+                                                        <ext:ModelField Name="MixingPower" />
+                                                        <ext:ModelField Name="MixingEnergy" />
+                                                        <ext:ModelField Name="MixingPress" />
+                                                        <ext:ModelField Name="MixingSpeed" />
+                                                        <ext:ModelField Name="MixingPosition" />
+                                                         <ext:ModelField Name="L1" />
+                                                        <ext:ModelField Name="L2" />
+                                                        <ext:ModelField Name="L3" />
+                                                         <ext:ModelField Name="L4" />
+                                                          <ext:ModelField Name="L5" />
+                                                    </Fields>
+                                                </ext:Model>
+                                            </Model>
+                                        </ext:Store>
+                                    </Store>
+                                    <Axes>
+                                        <ext:NumericAxis Position="Left" Grid="true" MajorTickSteps="20" Maximum="210" Minimum="0"  Title="温度(℃)能量(KWH)压力(bar)转速(RPM)"   />
+                                        <ext:NumericAxis Position="Right" Grid="true" MajorTickSteps="20" Maximum="2100" Minimum="0" Title="功率(KW)" />
+                                        <ext:NumericAxis Position="Bottom" Grid="true" MajorTickSteps="20" Minimum="0" Title="时间(S)" />
+                                    </Axes>
+                                    <Series>
+                                        
+                                        <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="MixingTemp" Title="温度">
+                                            <Tips ID="Tips1" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                                
+                                        </ext:LineSeries>
+                                        <ext:LineSeries Axis="Right" ShowMarkers="false" XField="SecondSpan" YField="MixingPower" Title="功率">
+                                            <Tips ID="Tips2" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                        <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="MixingPress" Title="压力">
+                                            <Tips ID="Tips3" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                        <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="MixingEnergy" Title="能量">
+                                            <Tips ID="Tips4" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                        <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="MixingSpeed" Title="转速">
+                                            <Tips ID="Tips5" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                        <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="MixingPosition" Title="上顶栓">
+                                            <Tips ID="Tips6" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+
+                                         <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="L1" Title="侧壁温度">
+                                            <Tips ID="Tips7" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+
+                                         <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="L2" Title="转子温度">
+                                            <Tips ID="Tips8" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+
+                                         <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="L3" Title="卸料门温度">
+                                            <Tips ID="Tips9" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                          <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="L4" Title="捣胶1">
+                                            <Tips ID="Tips10" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                          <ext:LineSeries Axis="Left" ShowMarkers="false" XField="SecondSpan" YField="L5" Title="捣胶2">
+                                            <Tips ID="Tips11" runat="server" TrackMouse="true" Width="140" Height="100">
+                                                <Renderer Handler="TipsRenderer(this,storeItem); "></Renderer>
+                                            </Tips>
+                                        </ext:LineSeries>
+                                    </Series>
+                                </ext:Chart>
+                            </Items>
+                        </ext:Panel>
+
+                        <ext:FormPanel ID="DetailPanel" runat="server" Region="West" Layout="AnchorLayout" Collapsible="true" Title="密炼基本信息" Width="200" AutoScroll="true">
+                            <Items>
+                                <ext:Container ID="container5" runat="server" Layout="HBoxLayout" Padding="1">
+                                    <Items>
+                                        <ext:CheckboxGroup ID="CheckboxGroup4" runat="server" ColumnsNumber="1" AnchorHorizontal="true">
+                                            <Items>
+                                                <ext:TextField ID="txtShowBarcode" runat="server" ReadOnly="true" LabelAlign="Right" FieldLabel="条码号" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowShift" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="班次" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowClass" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="班组" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowRecipe" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="配方" InputWidth="100" LabelWidth="60" />
+
+                                                <ext:TextField ID="txtShowRecipeState" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="配方状态" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowStartDatetime" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="开始时间" InputWidth="100" LabelWidth="60" />
+
+                                                <ext:TextField ID="txtShowRecipeTime" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="配方时间" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowLotEnergy" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="累计能量" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowPjTemp" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="排胶温度" InputWidth="100" LabelWidth="60" />
+
+                                                <ext:TextField ID="txtShowSerialBatchID" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="设定车数" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowSerialID" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="车次" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowDoneRtime" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="炼胶时间"  InputWidth="100" LabelWidth="60"/>
+
+                                                <ext:TextField ID="txtShowPolyDisTime" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="加胶时间" InputWidth="100" LabelWidth="60" />
+                                                <ext:TextField ID="txtShowBwbTime" runat="server" ReadOnly="true" Flex="1" LabelAlign="Right" FieldLabel="间隔时间" InputWidth="100" LabelWidth="60" />
+                                            </Items>
+                                        </ext:CheckboxGroup>
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:FormPanel>
+                    </Items>
+                </ext:Panel>
+            </Items>
+        </ext:Viewport>
+        
+        <ext:Window ID="Manager_ReportCenter_CommonReportView_CommonReportView_Window" runat="server" Maximized="true" Title="车报表详细信息" Modal="true" Closable="true" Hidden="true" Html="<iframe src='Default.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>">
+        </ext:Window>
+    </form>
+</body>
+</html>

@@ -1,0 +1,34 @@
+﻿<head>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+	<title></title>
+</head>
+<h3 class="popupTitle">添加提醒</h3>
+
+<!-- The preview: -->
+<div id="previewNote" class="note yellow" style="left:0;top:65px;z-index:1">
+	<div class="body"></div>
+	<div class="author"></div>
+	<span class="data"></span>
+</div>
+
+<div id="noteData"> <!-- Holds the form -->
+<form action="" method="post" class="note-form">
+    
+<label for="note-body">提醒标题</label>
+<input type="text" name="note-name" id="note-title" class="pr-title" value="" />
+<label for="note-body">提醒内容</label>
+<textarea name="note-body" id="note-body" class="pr-body" cols="30" rows="8"></textarea>
+
+<!--<label for="note-name">创建人姓名</label>
+<input type="text" name="note-name" id="note-name" class="pr-author" value="" />-->
+
+<label>颜色</label> <!-- Clicking one of the divs changes the color of the preview -->
+<div class="color yellow"></div>
+<div class="color blue"></div>
+<div class="color green"></div>
+
+<!-- The green submit button: -->
+<a id="note-submit" href="" class="green-button">提交</a>
+
+</form>
+</div>

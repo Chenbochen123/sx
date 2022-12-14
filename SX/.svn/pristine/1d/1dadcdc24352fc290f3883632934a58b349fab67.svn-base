@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="06/16/2014 11:38:00" ReportInfo.Modified="06/16/2014 11:56:45" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqr2sEgbyd/XFgYBeuRgqcAwITHwmcAcaXgtHan72Tpvbs5F4j4M6ypRbXMcZrmvgEQiR/S3xwH2MMVUUaIHWYc4OH1OgfEZX1cW00cwQ/5OqQO/krE1U4hGMriLg5AklSED2xB7MrqTsNnvdaH5mMWFP1GzskERN6Nb5FHwB97Z7JOJAY/0voK85L30uGAIox">
+      <TableDataSource Name="Table" Alias="RubberYieldTotalReport" DataType="System.Int32" Enabled="true" SelectCommand="exec ProcPpmGetEquipYieldTotalReport '2', '', '2014-03', '','5'">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="UserName" DataType="System.String"/>
+        <Column Name="RecipeName" DataType="System.String"/>
+        <Column Name="RubName" DataType="System.String"/>
+        <Column Name="TotalNum" DataType="System.Int32"/>
+        <Column Name="TotalWeight" DataType="System.Decimal"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="5000" PaperHeight="5000">
+    <DataBand Name="Data1" Width="18824.4" Height="214.79" Border.Lines="All">
+      <MatrixObject Name="Matrix2" Left="18.9" Top="18.9" Width="591.6" Height="125.64" FixedRows="2" FixedColumns="4" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[RubberYieldTotalReport.PlanDate]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[RubberYieldTotalReport.UserName]"/>
+          <Header Expression="[RubberYieldTotalReport.MaterialName]"/>
+          <Header Expression="[RubberYieldTotalReport.RecipeName]"/>
+          <Header Expression="[RubberYieldTotalReport.RubName]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[RubberYieldTotalReport.TotalNum]"/>
+          <Cell Expression="[RubberYieldTotalReport.TotalWeight]"/>
+        </MatrixCells>
+        <TableColumn Name="Column9" Width="70.87" AutoSize="true"/>
+        <TableColumn Name="Column10" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column11" Width="83.25" AutoSize="true"/>
+        <TableColumn Name="Column12" Width="64.69" AutoSize="true"/>
+        <TableColumn Name="Column13" Width="70.87" AutoSize="true"/>
+        <TableColumn Name="Column14" Width="89.44" AutoSize="true"/>
+        <TableColumn Name="Column15" Width="58.43" AutoSize="true"/>
+        <TableColumn Name="Column16" Width="58.43" AutoSize="true"/>
+        <TableRow Name="Row5" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell41" Border.Lines="All" Text="主机手" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell42" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell47" Border.Lines="All" Text="配方类型" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell53" Border.Lines="All" Text="胶号" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell61" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell71"/>
+          <TableCell Name="Cell77" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell78"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell43"/>
+          <TableCell Name="Cell44"/>
+          <TableCell Name="Cell48"/>
+          <TableCell Name="Cell54"/>
+          <TableCell Name="Cell62" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell72" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell79" Border.Lines="All" Text="合计车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell80" Border.Lines="All" Text="合计重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row7" Height="16.5" AutoSize="true">
+          <TableCell Name="Cell45" Border.Lines="All" Text="[UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="4"/>
+          <TableCell Name="Cell46" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell49" Border.Lines="All" Text="[RecipeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell55" Border.Lines="All" Text="[RubName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell63" Border.Lines="All" Text="[TotalNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell73" Border.Lines="All" Text="[TotalWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell81" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell82" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row8" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell50"/>
+          <TableCell Name="Cell51"/>
+          <TableCell Name="Cell52"/>
+          <TableCell Name="Cell56" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell64" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell74" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell83" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell84" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row9" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell57"/>
+          <TableCell Name="Cell58"/>
+          <TableCell Name="Cell59" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell60"/>
+          <TableCell Name="Cell65" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell75" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell85" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell86" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row10" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell66"/>
+          <TableCell Name="Cell67" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="3"/>
+          <TableCell Name="Cell68"/>
+          <TableCell Name="Cell69"/>
+          <TableCell Name="Cell70" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell76" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell87" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell88" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row11" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell89" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="4"/>
+          <TableCell Name="Cell90"/>
+          <TableCell Name="Cell91"/>
+          <TableCell Name="Cell92"/>
+          <TableCell Name="Cell93" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell94" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell95" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell96" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

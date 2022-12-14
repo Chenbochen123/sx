@@ -1,0 +1,149 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.HtmlControls;
+using System.Data;
+
+using Mesnac.Web.UI;
+using Mesnac.Business.Interface;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using Ext.Net;
+using System.Text;
+
+public partial class Manager_Rubber_Report_RubberStoreOutDetailReport : System.Web.UI.Page
+{
+    protected PpmRubberStorageManager rubberStorageManager = new PpmRubberStorageManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+       
+        if (!X.IsAjaxRequest)
+        {
+            txtBeginTime.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+            txtEndTime.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+            txtBeginTime2.Text = "00:00:00";
+            txtEndTime2.Text = "23:59:59";
+        }
+
+    }
+    protected void btnSearch_Click(object sender, DirectEventArgs e)
+    {
+        PpmRubberStorageManager.QueryParams queryParams = new PpmRubberStorageManager.QueryParams();
+        queryParams.barcode = txtBarcode.Text;
+        queryParams.storageID = hiddenStorageID.Text;
+        queryParams.storagePlaceID = hiddenToStorageCheckID.Text;
+        queryParams.equipCode = hiddenEquipCode.Text;
+        queryParams.beginDate = Convert.ToDateTime( Convert.ToDateTime(txtBeginTime.Text).ToString("yyyy-MM-dd") + " " + txtBeginTime2.Text);
+        queryParams.endDate = Convert.ToDateTime(Convert.ToDateTime(txtEndTime.Text).ToString("yyyy-MM-dd") + " " + txtEndTime2.Text); 
+        queryParams.materCode = hiddenMaterCode.Text;
+        
+        queryParams.shiftID = cbxShift.SelectedItem.Value;
+        queryParams.shiftClassID = cbxShiftClass.SelectedItem.Value;
+        queryParams.Oper = hiddenMakerPerson.Text;
+        DataTable dt = GetTableStoreOutDetailReport(queryParams);
+        if (dt == null)
+        {
+            WebReport1.Report.Clear();
+            WebReport1.Report.Refresh();
+            WebReport1.Update();
+            WebReport1.Refresh();
+
+            X.Msg.Alert("提示", "没有找到符合条件的记录!").Show();
+            return;
+        }
+        //初始化报表控件
+        FastReport.Report report = this.WebReport1.Report;
+        report.Load(Server.MapPath("RubberStoreOutDetailReport.frx"));
+        //绑定数据源
+        report.RegisterData(dt, "RubberStoreOut");
+        report.Refresh();
+        WebReport1.Update();
+        WebReport1.Refresh();
+
+      //  X.Msg.Alert("提示", "查询完毕!").Show();
+    }
+
+    public DataTable GetTableStoreOutDetailReport(PpmRubberStorageManager.QueryParams queryParams)
+    {
+        StringBuilder sqlstr = new StringBuilder();
+        sqlstr.AppendLine(@"select A.BarCode,B.StorageName,'' as StoragePlaceName,S.dep_name as ToStorageName,A.BarcodeStart,
+	                                ShelfNum, PlanDate,  D.ShiftName,  E.ClassName,  D2.ShiftName as ShiftName2,  E2.ClassName as ClassName2, F.EquipName, 
+	                                 G.MaterialName, A.Weight, A.RecordDate, A.OperPerson,A.shelfnum,a.llbarcode,a.BarcodeEnd,A.Shelf_Text 
+                                from PpmRubberStoreout A
+                                left join BasStorage B on A.StorageID = B.StorageID
+                                left join jczl_dep S on A.Cust_Name = S.dep_num
+                                left join PptShift D on A.ShiftID = D.ObjID
+                                left join PptClass E on A.ShiftClassID = E.ObjID
+                                left join PptShift D2 on A.stockin_shiftid = D2.ObjID
+                                left join PptClass E2 on A.stockin_class = E2.ObjID
+                                left join BasEquip F on A.EquipCode = F.EquipCode
+                                left join BasMaterial G on A.MaterCode = G.MaterialCode
+                                where 1 = 1");
+        if (!string.IsNullOrEmpty(queryParams.barcode))
+        {
+            sqlstr.AppendLine(" AND A.Barcode like '%" + queryParams.barcode + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.storageID))
+        {
+            sqlstr.AppendLine(" AND A.StorageID = '" + queryParams.storageID + "'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.storagePlaceID))
+        {
+            sqlstr.AppendLine(" AND A.ToStorageID = '" + queryParams.storagePlaceID + "'");
+        }
+        if (queryParams.beginDate != DateTime.MinValue)
+        {
+            sqlstr.AppendLine(" AND A.RecordDate >= Convert( datetime,'" + queryParams.beginDate.ToString() + "',120)");
+        }
+        if (queryParams.endDate != DateTime.MinValue)
+        {
+            sqlstr.AppendLine(" AND A.RecordDate <= Convert( datetime,'" + queryParams.endDate.ToString() + "',120)");
+        }
+        if (!string.IsNullOrEmpty(queryParams.equipCode))
+        {
+            sqlstr.AppendLine(" AND A.EquipCode = '" + queryParams.equipCode + "'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.materCode))
+        {
+            sqlstr.AppendLine(" AND A.MaterCode = '" + queryParams.materCode + "'");
+        }
+
+        if (queryParams.shiftID != "all" && !string.IsNullOrEmpty(queryParams.shiftID))
+            sqlstr.AppendLine(" AND A.ShiftID = '" + queryParams.shiftID + "'");
+        if (queryParams.shiftClassID != "all" && !string.IsNullOrEmpty(queryParams.shiftClassID))
+            sqlstr.AppendLine(" AND A.ShiftClassID = '" + queryParams.shiftClassID + "'");
+        NBear.Data.CustomSqlSection css = rubberStorageManager.GetBySql(sqlstr.ToString());
+        return css.ToDataSet().Tables[0];
+
+    }
+    protected void btnExport_Click(object sender, EventArgs e)
+    {
+        if (WebReport1.Report.Pages.Count == 0)
+        {
+            X.Msg.Alert("提示", "请先查询出结果后再导出!").Show();
+            return;
+        }
+
+        WebReport1.Report.Prepare();
+
+        FastReport.Export.OoXML.Excel2007Export excelExport = new FastReport.Export.OoXML.Excel2007Export();
+
+        using (System.IO.MemoryStream strm = new System.IO.MemoryStream())
+        {
+            WebReport1.Report.Export(excelExport, strm);
+            Response.ClearContent();
+            Response.ClearHeaders();
+            Response.Buffer = true;
+            Response.ContentType = "Application/Excel";
+            Response.AddHeader("Content-Disposition", "attachment;filename=胶料出库统计.xlsx");
+            strm.Position = 0;
+            strm.WriteTo(Response.OutputStream);
+            Response.End();
+        }
+    }
+}

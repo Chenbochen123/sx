@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="09/06/2013 16:07:40" ReportInfo.Modified="12/07/2013 14:28:57" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Picture1_BeforePrint(object sender, EventArgs e)
+    {                                                                         
+      
+      Picture1.ImageLocation = ((String)Report.GetParameterValue(&quot;ImageUrl&quot;));
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqJUrEa/KIcQqhhcfnlqC6PGg5imbaGg6zUaNTAYc5sc03TfePxSblja2w5ZBQ6XB2F9eH3+qdXY5PpXWNgBxcCAgrygUTSLxMUpVBhRWw0mw/Sa/tZL90vdJ2ofYh6CVpVPP1OG06GWBIM/xffHKRlGIwZeRpFo9PV7qMtKfW0KwKXvSSOs/ruDAWb8xZXQGlCqWWnzMAG00uqIuTy0jl/A==">
+      <TableDataSource Name="Table" DataType="System.Int32" Enabled="true" SelectCommand="SELECT CONVERT(VARCHAR(50), '1') SerialId, CONVERT(VARCHAR(50), '2') MNNDValue, CONVERT(VARCHAR(50), '3') MNNDMark, CONVERT(VARCHAR(50), '2') MNJSValue, CONVERT(VARCHAR(50), '3') MNJSMark, CONVERT(VARCHAR(50), '2') YDValue, CONVERT(VARCHAR(50), '3') YDMark, CONVERT(VARCHAR(50), '4') BZValue, CONVERT(VARCHAR(50), '5') BZMark, CONVERT(VARCHAR(50), '2') MLValue, CONVERT(VARCHAR(50), '3') MLMark, CONVERT(VARCHAR(50), '2') MHValue, CONVERT(VARCHAR(50), '3') MHMark, CONVERT(VARCHAR(50), '2') Ts1Value, CONVERT(VARCHAR(50), '3') Ts1Mark, CONVERT(VARCHAR(50), '2') T25Value, CONVERT(VARCHAR(50), '3') T25Mark, CONVERT(VARCHAR(50), '2') T30Value, CONVERT(VARCHAR(50), '3') T30Mark, CONVERT(VARCHAR(50), '2') T60Value, CONVERT(VARCHAR(50), '3') T60Mark, CONVERT(VARCHAR(50), '2') T90Value, CONVERT(VARCHAR(50), '3') T90Mark, CONVERT(VARCHAR(50), '1') Grade, CONVERT(VARCHAR(50), '不合格') JudgeResult">
+        <Column Name="BZValue" DataType="System.String"/>
+        <Column Name="BZMark" DataType="System.String"/>
+        <Column Name="Grade" DataType="System.String"/>
+        <Column Name="SerialId" DataType="System.String"/>
+        <Column Name="MNNDValue" DataType="System.String"/>
+        <Column Name="MNNDMark" DataType="System.String"/>
+        <Column Name="MNJSValue" DataType="System.String"/>
+        <Column Name="MNJSMark" DataType="System.String"/>
+        <Column Name="YDValue" DataType="System.String"/>
+        <Column Name="YDMark" DataType="System.String"/>
+        <Column Name="MLValue" DataType="System.String"/>
+        <Column Name="MLMark" DataType="System.String"/>
+        <Column Name="MHValue" DataType="System.String"/>
+        <Column Name="MHMark" DataType="System.String"/>
+        <Column Name="Ts1Value" DataType="System.String"/>
+        <Column Name="Ts1Mark" DataType="System.String"/>
+        <Column Name="T25Value" DataType="System.String"/>
+        <Column Name="T25Mark" DataType="System.String"/>
+        <Column Name="T30Value" DataType="System.String"/>
+        <Column Name="T30Mark" DataType="System.String"/>
+        <Column Name="T60Value" DataType="System.String"/>
+        <Column Name="T60Mark" DataType="System.String"/>
+        <Column Name="JudgeResult" DataType="System.String"/>
+        <Column Name="T90Value" DataType="System.String"/>
+        <Column Name="T90Mark" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Parameter Name="MaterName" DataType="System.String"/>
+    <Parameter Name="PlanDate" DataType="System.String"/>
+    <Parameter Name="EquipName" DataType="System.String"/>
+    <Parameter Name="ShiftName" DataType="System.String"/>
+    <Parameter Name="SerialIdStartEnd" DataType="System.String"/>
+    <Parameter Name="JudgeResult" DataType="System.String"/>
+    <Parameter Name="Barcode" DataType="System.String"/>
+    <Parameter Name="TotalWeight" DataType="System.String"/>
+    <Parameter Name="RealWeight" DataType="System.String"/>
+    <Parameter Name="ProdDate" DataType="System.String"/>
+    <Parameter Name="RealProdDate" DataType="System.String"/>
+    <Parameter Name="UserName" DataType="System.String"/>
+    <Parameter Name="CheckTime" DataType="System.String"/>
+    <Parameter Name="PrintTime" DataType="System.String"/>
+    <Parameter Name="JudgeMemo" DataType="System.String"/>
+    <Parameter Name="ZJSName" DataType="System.String"/>
+    <Parameter Name="SerialCount" DataType="System.String"/>
+    <Parameter Name="ImageUrl" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="180" PaperHeight="210" LeftMargin="4" RightMargin="0" FirstPageSource="15" OtherPagesSource="15">
+    <ReportTitleBand Name="ReportTitle1" Width="665.28" Height="283.5" Guides="396.9,396.9,396.9,387.45,387.45,378,387.45,378,387.45,387.45,387.45,387.45,387.45,406.35">
+      <PictureObject Name="Picture1" Left="122.85" Top="56.7" Width="264.6" Height="207.9" BeforePrintEvent="Picture1_BeforePrint" Image=""/>
+      <TextObject Name="Text13" Left="207.9" Width="132.3" Height="18.9" Text="胶料快检卡片" HorzAlign="Center" Font="宋体, 14pt"/>
+      <TextObject Name="Text14" Left="359.1" Top="18.9" Width="132.3" Height="18.9" Text="编号：" VertAlign="Bottom" Font="宋体, 10pt"/>
+      <TextObject Name="Text15" Left="66.15" Top="47.25" Width="94.5" Height="28.35" Border.Lines="All" Text="胶料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text16" Left="160.65" Top="47.25" Width="122.85" Height="28.35" Border.Lines="All" Text="[MaterName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text17" Left="283.5" Top="47.25" Width="85.05" Height="28.35" Border.Lines="All" Text="班次班组" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text18" Left="368.55" Top="47.25" Width="122.85" Height="28.35" Border.Lines="All" Text="[ShiftName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text19" Left="66.15" Top="75.6" Width="94.5" Height="28.35" Border.Lines="All" Text="机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text20" Left="160.65" Top="75.6" Width="122.85" Height="28.35" Border.Lines="All" Text="[EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text21" Left="283.5" Top="75.6" Width="85.05" Height="28.35" Border.Lines="All" Text="主机手" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text22" Left="368.55" Top="75.6" Width="122.85" Height="28.35" Border.Lines="All" Text="[ZJSName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text23" Left="66.15" Top="103.95" Width="94.5" Height="28.35" Border.Lines="All" Text="计划日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text24" Left="160.65" Top="103.95" Width="122.85" Height="28.35" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text25" Left="283.5" Top="103.95" Width="85.05" Height="28.35" Border.Lines="All" Text="车次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text26" Left="368.55" Top="103.95" Width="122.85" Height="28.35" Border.Lines="All" Text="[SerialIdStartEnd]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text27" Left="66.15" Top="132.3" Width="94.5" Height="28.35" Border.Lines="All" Text="设定重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text28" Left="160.65" Top="132.3" Width="122.85" Height="28.35" Border.Lines="All" Text="[TotalWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text29" Left="283.5" Top="132.3" Width="85.05" Height="28.35" Border.Lines="All" Text="实际重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text30" Left="368.55" Top="132.3" Width="122.85" Height="28.35" Border.Lines="All" Text="[RealWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text31" Left="66.15" Top="160.65" Width="94.5" Height="28.35" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text32" Left="160.65" Top="160.65" Width="122.85" Height="28.35" Border.Lines="All" Text="[SerialCount]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text35" Left="66.15" Top="189" Width="94.5" Height="28.35" Border.Lines="All" Text="质检日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text36" Left="160.65" Top="189" Width="330.75" Height="28.35" Border.Lines="All" Text="[CheckTime]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text39" Left="66.15" Top="217.35" Width="94.5" Height="28.35" Border.Lines="All" Text="生产日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text40" Left="160.65" Top="217.35" Width="330.75" Height="28.35" Border.Lines="All" Text="[ProdDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text41" Left="66.15" Top="245.7" Width="94.5" Height="28.35" Border.Lines="All" Text="有效日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text42" Left="160.65" Top="245.7" Width="330.75" Height="28.35" Border.Lines="All" Text="[RealProdDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text66" Left="283.5" Top="160.65" Width="85.05" Height="28.35" Border.Lines="All" Text="质检结果" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text67" Left="368.55" Top="160.65" Width="122.85" Height="28.35" Border.Lines="All" Text="[JudgeMemo]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="287.5" Width="665.28" Height="18.9">
+      <TextObject Name="Text3" Left="56.7" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="门尼" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text4" Left="18.9" Width="37.8" Height="18.9" Border.Lines="All" Fill.Color="White" Text="车次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text6" Left="101.95" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="焦烧" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text8" Left="147.42" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="硬度" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text12" Left="556.1" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="判级" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text44" Left="192.78" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="比重" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text47" Left="238.14" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="ML" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text50" Left="283.5" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="MH" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text53" Left="328.86" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="Ts1" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text56" Left="374.22" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="T25" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text59" Left="419.58" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="T30" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text62" Left="464.94" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="T60" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text68" Left="510.3" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="T90" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="310.4" Width="665.28" Height="41.8" DataSource="Table">
+      <TextObject Name="Text1" Left="18.9" Width="37.8" Height="37.8" Border.Lines="All" Fill.Color="White" Text="[Table.SerialId]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text2" Left="56.7" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MNNDValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text5" Left="102.06" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MNJSValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text7" Left="192.78" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.BZValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text9" Left="192.78" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.BZMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text11" Left="555.55" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.Grade]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text33" Left="56.7" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Text="[Table.MNNDMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text43" Left="102.06" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MNJSMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text45" Left="147.42" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.YDValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text46" Left="147.42" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.YDMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text48" Left="238.14" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MLValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text49" Left="238.14" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MLMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text52" Left="283.5" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MHMark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text51" Left="283.5" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.MHValue]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text55" Left="328.86" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.Ts1Value]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text54" Left="328.86" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.Ts1Mark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text57" Left="374.22" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T25Value]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text58" Left="374.22" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T25Mark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text61" Left="419.58" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T30Mark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text60" Left="419.58" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T30Value]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text63" Left="464.94" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T60Value]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text64" Left="464.94" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.T60Mark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text65" Left="555.55" Top="18.9" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="[Table.JudgeResult]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text10" Left="510.3" Width="45.36" Height="18.9" Border.Lines="All" Text="[Table.T90Value]" Font="宋体, 9pt"/>
+      <TextObject Name="Text34" Left="510.3" Top="18.9" Width="45.36" Height="18.9" Border.Lines="All" Text="[Table.T90Mark]" Font="宋体, 9pt"/>
+    </DataBand>
+    <ColumnFooterBand Name="ColumnFooter1" Top="356.2" Width="665.28" Height="56.7">
+      <BarcodeObject Name="Barcode3" Left="85.05" Width="271.45" Height="56.7" Fill.Color="White" AutoSize="false" Expression="[Barcode]" Text="123456789012345678" HideIfNoData="false" NoDataText="123456789012345678" Barcode="Code128" Barcode.WideBarRatio="4" Barcode.AutoEncode="true"/>
+    </ColumnFooterBand>
+  </ReportPage>
+</Report>

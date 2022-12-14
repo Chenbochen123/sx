@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/08/2014 19:59:43" ReportInfo.Modified="04/09/2014 13:07:25" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;PpmScanCalcDetail&quot;);
+      rowData.Init();
+      
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      
+      while (rowData.HasMoreRows)
+      {
+        Table1.PrintRow(1);
+        Table1.PrintColumns();
+        
+        rowData.Next();
+      }
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3ENODz5fbaivE2ssSFKxtemQ==">
+      <TableDataSource Name="Table" Alias="PpmScanCalcDetail" DataType="System.Int32" Enabled="true" SelectCommand="exec ProcPpmScanCalcDetail '2014-04-03', '2014-04-05', ''">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="MaterCode" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="ShiftID" DataType="System.Int32"/>
+        <Column Name="ShiftName" DataType="System.String"/>
+        <Column Name="SerialCount" DataType="System.Int32"/>
+        <Column Name="ScanRate" DataType="System.String"/>
+        <Column Name="UserName" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="20000" Guides="670.95,652.05">
+    <DataBand Name="Data1" Width="718.2" Height="75.6">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="614.16" Height="60.48" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="102.36"/>
+        <TableColumn Name="Column2" Width="102.36"/>
+        <TableColumn Name="Column3" Width="102.36"/>
+        <TableColumn Name="Column4" Width="102.36"/>
+        <TableColumn Name="Column5" Width="102.36"/>
+        <TableColumn Name="Column6" Width="102.36"/>
+        <TableRow Name="Row1" Height="22.68">
+          <TableCell Name="Cell1" Border.Lines="All" Text="计划日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="物料名称" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="班次" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="主机手" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="生产车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+          <TableCell Name="Cell16" Border.Lines="All" Text="扫描率" HorzAlign="Center" VertAlign="Center" Font="宋体, 10.5pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell6" Border.Lines="All" Text="[PpmScanCalcDetail.PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[PpmScanCalcDetail.MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[PpmScanCalcDetail.ShiftName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[PpmScanCalcDetail.UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="[PpmScanCalcDetail.SerialCount]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell17" Border.Lines="All" Text="[PpmScanCalcDetail.ScanRate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3">
+          <TableCell Name="Cell11" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell13" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell14" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

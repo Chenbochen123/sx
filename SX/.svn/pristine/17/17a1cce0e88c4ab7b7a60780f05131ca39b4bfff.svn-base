@@ -1,0 +1,374 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Data;
+
+namespace Mesnac.Data.Implements
+{
+    using NBear.Common;
+    using Mesnac.Data.Components;
+    using Mesnac.Entity;
+    using Mesnac.Data.Interface;
+    /// <summary>
+    /// PmtRecipeService 实现类
+    /// 孙本强 @ 2013-04-03 13:02:28
+    /// </summary>
+    /// <remarks></remarks>
+    public class PmtRecipeService : BaseService<PmtRecipe>, IPmtRecipeService
+    {
+        #region 构造方法
+
+        /// <summary>
+        /// 类 PmtRecipeService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:28
+        /// </summary>
+        /// <remarks></remarks>
+        public PmtRecipeService() : base() { }
+
+        /// <summary>
+        /// 类 PmtRecipeService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:28
+        /// </summary>
+        /// <param name="connectStringKey">The connect string key.</param>
+        /// <remarks></remarks>
+        public PmtRecipeService(string connectStringKey) : base(connectStringKey) { }
+
+        /// <summary>
+        /// 类 PmtRecipeService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:28
+        /// </summary>
+        /// <param name="way">The way.</param>
+        /// <remarks></remarks>
+        public PmtRecipeService(NBear.Data.Gateway way) : base(way) { }
+
+        #endregion 构造方法
+
+        #region 信息查询
+        #region 查询条件类定义
+        /// <summary>
+        /// 查询条件定义类
+        /// 孙本强 @ 2013-04-03 13:02:28
+        /// </summary>
+        /// <remarks></remarks>
+        public class QueryParams
+        {
+            /// <summary>
+            /// 类 QueryParams 构造函数
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <remarks></remarks>
+            
+            public QueryParams()
+            {
+                PageParams = new PageResult<PmtRecipe>();
+                MaterialCode = null;
+                RecipeType = null;
+                RecipeState = null;
+                RecipeEquipName = null;
+                RecipeWorkShopCode = null;
+                RecipeMaterialName = null;
+                RecipeVersionID = null;
+                EquipType = null;
+            }
+            /// <summary>
+            /// Gets or sets the page params.
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <value>The page params.</value>
+            /// <remarks></remarks>
+            public PageResult<PmtRecipe> PageParams { get; set; }
+            /// <summary>
+            /// Gets or sets the workshop code.
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <value>The workshop code.</value>
+            /// <remarks></remarks>
+            public string RecipeWorkShopCode { get; set; }
+            /// <summary>
+            /// Gets or sets the material code.
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <value>The material code.</value>
+            /// <remarks></remarks>
+            public string MaterialCode { get; set; }
+            /// <summary>
+            /// Gets or sets the type of the recipe.
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <value>The type of the recipe.</value>
+            /// <remarks></remarks>
+            public string RecipeType { get; set; }
+            /// <summary>
+            /// Gets or sets the state of the recipe.
+            /// 孙本强 @ 2013-04-03 13:02:28
+            /// </summary>
+            /// <value>The state of the recipe.</value>
+            /// <remarks></remarks>
+            public string RecipeState { get; set; }
+            /// <summary>
+            /// Gets or sets the recipe equip code.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The recipe equip code.</value>
+            /// <remarks></remarks>
+            public string RecipeEquipCode { get; set; }
+            /// <summary>
+            /// Gets or sets the name of the recipe equip.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The name of the recipe equip.</value>
+            /// <remarks></remarks>
+            public string RecipeEquipName { get; set; }
+            /// <summary>
+            /// Gets or sets the name of the recipe material.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The name of the recipe material.</value>
+            /// <remarks></remarks>
+            public string RecipeMaterialName { get; set; }
+            /// <summary>
+            /// Gets or sets the recipe version ID.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The recipe version ID.</value>
+            /// <remarks></remarks>
+            public string RecipeVersionID { get; set; }
+            /// <summary>
+            /// Gets or sets the type of the equip.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The type of the equip.</value>
+            /// <remarks></remarks>
+            public string EquipType { get; set; }
+            /// <summary>
+            /// Gets or sets the begin time.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The begin time.</value>
+            /// <remarks></remarks>
+            public string BeginTime { get; set; }
+            /// <summary>
+            /// Gets or sets the end time.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The end time.</value>
+            /// <remarks></remarks>
+            public string EndTime { get; set; }
+            /// <summary>
+            /// Gets or sets the rub code.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The rub code.</value>
+            /// <remarks></remarks>
+            public string RubCode { get; set; }
+            /// <summary>
+            /// Gets or sets the audit flag.
+            /// 孙本强 @ 2013-04-03 13:02:29
+            /// </summary>
+            /// <value>The audit flag.</value>
+            /// <remarks></remarks>
+            public string AuditFlag { get; set; }
+        }
+        #endregion
+        /// <summary>
+        /// 根据物料名称获取物料配方别名信息
+        /// 孙宜建
+        /// 2013-2-25
+        /// 孙本强 @ 2013-04-03 13:02:29
+        /// </summary>
+        /// <param name="recipeMaterialName">物料名称</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        public DataSet GetRecipeNameByRecipeMaterialName(string recipeMaterialName)
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.AppendLine("select distinct [RecipeName] from [pmtRecipe] ");
+            sql.AppendLine("where RecipeState=1 and AuditFlag=1 AND RecipeMaterialName = '" + recipeMaterialName + "'");
+            DataSet ds = new DataSet();
+            ds = this.GetBySql(sql.ToString()).ToDataSet();
+            return ds;
+        }
+        /// <summary>
+        /// 获取物料信息
+        /// 孙本强 @ 2013-04-03 12:55:24
+        /// 孙本强 @ 2013-04-03 13:02:29
+        /// </summary>
+        /// <param name="queryParams">查询参数</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        public EntityArrayList<BasMaterial> GetBasMaterial(QueryParams queryParams)
+        {
+            StringBuilder sqlstr = new StringBuilder();
+
+            sqlstr.AppendLine(@" select  DISTINCT C.* from Pmt_Recipe A 
+                                 join Pmt_weight B on A.Mater_code=B.Recipe_code and A.Equip_Code=B.Equip_Code and A.Edt_code=B.Edt_code
+                                 left join BasMaterial C on B.Mater_Code=C.MaterialCode
+                                 where 1=1
+                                 AND MaterialCode is not null
+                                 AND B.Recipe_code='" + queryParams.MaterialCode + "'");
+            if (!string.IsNullOrWhiteSpace(queryParams.RecipeType))
+            {
+                sqlstr.AppendLine(" AND Recipe_Type=" + queryParams.RecipeType + "");
+            }
+            if (!string.IsNullOrWhiteSpace(queryParams.RecipeState))
+            {
+                sqlstr.AppendLine(" AND Recipe_State='" + queryParams.RecipeState + "'");
+            }
+            sqlstr.AppendLine(@" union 
+                                 select * from BasMaterial
+                                 where MaterialCode = '" + queryParams.MaterialCode + @"'
+                                 order by MaterialCode desc");
+            return this.GetBySql(sqlstr.ToString()).ToArrayList<BasMaterial>();
+        }
+        /// <summary>
+        /// 获取分页数据集
+        /// 孙本强 @ 2013-04-03 13:02:30
+        /// </summary>
+        /// <param name="queryParams">查询参数</param>
+        /// <returns>分页数据集</returns>
+        /// <remarks></remarks>
+        public PageResult<PmtRecipe> GetTablePageDataBySql(QueryParams queryParams)
+        {
+            PageResult<PmtRecipe> pageParams = queryParams.PageParams;
+            StringBuilder sqlstr = new StringBuilder();
+            sqlstr.Append(@" SELECT t1.*,t2.EquipName,t3.MaterialName,t4.ItemName AS RecipeTypeName,
+                            t5.ItemName AS RecipeStateName,
+                            t6.ItemName AS AuditFlagName
+                            FROM  dbo.PmtRecipe t1
+                            INNER JOIN dbo.BasEquip t2 ON t1.RecipeEquipCode=t2.EquipCode
+                            INNER JOIN dbo.BasMaterial t3 ON t1.RecipeMaterialCode = t3.MaterialCode
+                            LEFT JOIN dbo.SysCode t4 ON t4.ItemCode=t1.RecipeType AND t4.TypeID='PmtType'
+                            LEFT JOIN dbo.SysCode t5 ON t5.ItemCode=t1.RecipeState AND t5.TypeID='PmtState'
+                            LEFT JOIN dbo.SysCode t6 ON t6.ItemCode=t1.AuditFlag AND t6.TypeID='Audit'
+                            WHERE 1=1 ");
+            if (!string.IsNullOrEmpty(queryParams.AuditFlag))
+            {
+                sqlstr.AppendLine("AND t1.AuditFlag= '" + queryParams.AuditFlag + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RubCode))
+            {
+                sqlstr.AppendLine("AND t3.RubCode= '" + queryParams.RubCode + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.BeginTime))
+            {
+                queryParams.BeginTime = queryParams.BeginTime.ToString().Replace('/', '-');
+                sqlstr.AppendLine("AND t1.RecipeModifyTime >= '" + queryParams.BeginTime + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.EndTime))
+            {
+                queryParams.EndTime = queryParams.EndTime.ToString().Replace('/', '-');
+                sqlstr.AppendLine("AND t1.RecipeModifyTime <= '" + queryParams.EndTime + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.EquipType))
+            {
+                sqlstr.AppendLine("AND t2.EquipType = '" + queryParams.EquipType + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.MaterialCode))
+            {
+                sqlstr.AppendLine("AND t1.RecipeMaterialCode = '" + queryParams.MaterialCode + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeEquipCode))
+            {
+                sqlstr.AppendLine("AND t1.RecipeEquipCode = '" + queryParams.RecipeEquipCode + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeEquipName))
+            {
+                sqlstr.AppendLine("AND t2.EquipName LIKE '%" + queryParams.RecipeEquipName + "%'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeMaterialName))
+            {
+                sqlstr.AppendLine("AND t3.MaterialName LIKE '%" + queryParams.RecipeMaterialName + "%'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeVersionID))
+            {
+                sqlstr.AppendLine("AND t1.RecipeVersionID = '" + queryParams.RecipeVersionID + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeType))
+            {
+                sqlstr.AppendLine("AND t1.RecipeType = '" + queryParams.RecipeType + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.RecipeState))
+            {
+                sqlstr.AppendLine("AND t1.RecipeState = '" + queryParams.RecipeState + "'");
+            }
+            pageParams.QueryStr = sqlstr.ToString();
+            if (pageParams.PageSize < 0)
+            {
+                NBear.Data.CustomSqlSection css = this.GetBySql(sqlstr.ToString());
+                pageParams.DataSet = css.ToDataSet();
+                return pageParams;
+            }
+            else
+            {
+                return this.GetPageDataBySql(pageParams);
+            }
+        }
+        /// <summary>
+        /// Gets the distinct recipe material name and code.
+        /// 孙本强 @ 2013-04-03 13:02:30
+        /// </summary>
+        /// <param name="top">The top.</param>
+        /// <param name="equipCode">The equip code.</param>
+        /// <param name="searchKey">The search key.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        public EntityArrayList<PmtRecipe> GetDistinctRecipeMaterialNameAndCode(int top, string equipCode, string searchKey)
+        {
+            EntityArrayList<PmtRecipe> recipeList = new EntityArrayList<PmtRecipe>();
+            string sqlstr = "";
+            sqlstr = @"    SELECT DISTINCT  RecipeMaterialCode , RecipeMaterialName FROM PmtRecipe 
+                                    WHERE RecipeEquipCode = '{0}' AND AuditFlag = '1' AND RecipeState = '1' AND [dbo].[FuncSysGetPY](RecipeMaterialName) like '%{1}%' ";
+            sqlstr = String.Format(sqlstr, equipCode, searchKey);
+            //            string sqlstr = "";
+            //            sqlstr = @"    SELECT DISTINCT  RecipeMaterialCode , RecipeMaterialName FROM PmtRecipe 
+            //                                    WHERE RecipeEquipCode = '{0}' AND AuditFlag = '1' AND RecipeState = '1' AND [dbo].[FuncSysGetPY](RecipeMaterialName) like '%{1}%' ";
+            //            sqlstr = String.Format(sqlstr, equipCode, searchKey);
+            //            String sql = @"union all select distinct BasMaterial.MaterialCode,MaterialName from BasMaterialDL 
+            //left join BasMaterial on BasMaterialDL.MaterialCode =BasMaterial.MaterialCode
+            //where BasMaterialDL.deleteflag = '0' and BasMaterialDL.EquipCode='" + equipCode + "' and MaterialName like '%" + searchKey + "%'";
+            //            sqlstr = sqlstr + sql;
+            DataSet ds = this.GetBySql(sqlstr.ToString()).ToDataSet();
+            foreach (DataRow row in ds.Tables[0].Rows)
+            {
+                PmtRecipe recipe = new PmtRecipe();
+                recipe.RecipeMaterialCode = row["RecipeMaterialCode"].ToString();
+                recipe.RecipeMaterialName = row["RecipeMaterialName"].ToString();
+                recipeList.Add(recipe);
+            }
+            return recipeList;
+        }
+        #endregion
+
+        #region 生成日志
+        /// <summary>
+        /// 保存工艺配方日志
+        /// 孙本强 @ 2013-04-03 12:55:25
+        /// 孙本强 @ 2013-04-03 13:02:30
+        /// </summary>
+        /// <param name="pmtRecipeID">The PMT recipe ID.</param>
+        /// <remarks></remarks>
+        public void SavePmtRecipeLog(string pmtRecipeID)
+        {
+            NBear.Data.StoredProcedureSection sps = this.defaultGateway.FromStoredProcedure("ProcSavePmtRecipeLog");
+            sps.AddInputParameter("RecipeID", this.TypeToDbType(pmtRecipeID.GetType()), pmtRecipeID);
+            sps.ExecuteNonQuery();
+        }
+        /// <summary>
+        /// 刷新工艺配方，主要针对小料修改
+        /// 孙本强 @ 2013-04-03 12:55:25
+        /// 孙本强 @ 2013-04-03 13:02:30
+        /// </summary>
+        /// <param name="pmtRecipeID">The PMT recipe ID.</param>
+        /// <remarks></remarks>
+        public void RefreshPmtRecipe(string pmtRecipeID)
+        {
+            NBear.Data.StoredProcedureSection sps = this.defaultGateway.FromStoredProcedure("ProcRefreshPmtRecipe");
+            sps.AddInputParameter("RecipeID", this.TypeToDbType(pmtRecipeID.GetType()), pmtRecipeID);
+            sps.ExecuteNonQuery();
+        }
+        #endregion
+
+
+        
+    }
+}

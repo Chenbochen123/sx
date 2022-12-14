@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/28/2014 10:28:03" ReportInfo.Modified="05/28/2014 10:32:09" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlq+rW0RkboK+/8CKGGYUID3ctBV8q9SvKYxl3iiE7vBnh7Tgou0+4WFf3NfmPSvHVFU2smk5DHNSAnw2XNsW1XdTNIwCGQmAI+dl6HqONUQTW1K3ZUnIatA0gxrf9f5cF/7/IOzpvGoNu5MX6OZBgaWEN+FvVlxdBzl2FqpFN9gZTEshuUMOOy1pGTMfpuFYnk">
+      <TableDataSource Name="Table" Alias="RubberBackReport" DataType="System.Int32" Enabled="true" SelectCommand="select '' as StorageName,'' as StoragePlaceName,'' as ToStorageName,'' recorddate,'' MaterialName,0.0 as weight">
+        <Column Name="StorageName" DataType="System.String"/>
+        <Column Name="StoragePlaceName" DataType="System.String"/>
+        <Column Name="ToStorageName" DataType="System.String"/>
+        <Column Name="recorddate" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="weight" DataType="System.Decimal"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="10000" PaperHeight="10000">
+    <DataBand Name="Data1" Width="37724.4" Height="115.64">
+      <MatrixObject Name="Matrix1" Left="28.35" Top="18.9" Width="403.83" Height="52.88" FixedRows="1" FixedColumns="3" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[RubberBackReport.recorddate]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[RubberBackReport.StorageName]"/>
+          <Header Expression="[RubberBackReport.ToStorageName]" Totals="false"/>
+          <Header Expression="[RubberBackReport.MaterialName]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[RubberBackReport.weight]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="89.44" AutoSize="true"/>
+        <TableColumn Name="Column2" Width="101.81" AutoSize="true"/>
+        <TableColumn Name="Column3" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column4" Width="83.25" AutoSize="true"/>
+        <TableColumn Name="Column5" Width="33.71" AutoSize="true"/>
+        <TableRow Name="Row1" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell1" Border.Lines="All" Text="仓库" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="源仓库" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="[recorddate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell16" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="16.5" AutoSize="true">
+          <TableCell Name="Cell3" Border.Lines="All" Text="[StorageName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="[ToStorageName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell14" Border.Lines="All" Text="[weight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell17" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell5" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="3"/>
+          <TableCell Name="Cell6"/>
+          <TableCell Name="Cell9"/>
+          <TableCell Name="Cell15" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

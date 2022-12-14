@@ -1,0 +1,154 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Data;
+
+namespace Mesnac.Data.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Data.Interface;
+    public class PpmReturnRubberService : BaseService<PpmReturnRubber>, IPpmReturnRubberService
+    {
+		#region 构造方法
+
+        public PpmReturnRubberService() : base(){ }
+
+        public PpmReturnRubberService(string connectStringKey) : base(connectStringKey){ }
+
+        public PpmReturnRubberService(NBear.Data.Gateway way) : base(way){ }
+
+        #endregion 构造方法
+
+        public class QueryParams
+        {
+            public string barcode { get; set; }
+            public string equipCode { get; set; }
+            public string materCode { get; set; }
+            public DateTime beginDate { get; set; }
+            public DateTime endDate { get; set; }
+            public string shiftClassID { get; set; }
+            public string stockInFlag { get; set; }
+            public string deleteFlag { get; set; }
+            public string chejianCode { get; set; }
+            public PageResult<PpmReturnRubber> pageParams { get; set; }
+        }
+
+        public PageResult<PpmReturnRubber> GetTablePageDataBySql(QueryParams queryParams)
+        {
+            PageResult<PpmReturnRubber> pageParams = queryParams.pageParams;
+            StringBuilder sqlstr = new StringBuilder();
+            sqlstr.AppendLine(@" select A.Barcode, A.ShelfBarcode, A.BarcodeStart, A.BarcodeEnd, A.PlanDate, A.EquipCode, B.EquipName, A.ShiftID, C.ShiftName,
+                                    A.ShiftClassID, D.ClassName, A.MaterCode, E.MaterialName, A.ReturnWeight, A.RealWeight, A.OperDate,
+                                    A.BackFlag, A.CustCode, F.DepName,F2.DepName as DepName2, A.OperPerson, G.UserName, A.ReturnReason, A.prodDate, A.StockInSign,
+                                    A.StockNo, A.Mem_Note, A.ValidDate, I.UserName ScanPerson, '' as StorageName, '' as StoragePlaceName, A.MadeLine, L.WorkShopName
+                                from PpmReturnRubber A
+                                    left join BasEquip B on A.EquipCode = B.EquipCode
+                                    left join PptShift C on A.ShiftID = C.ObjID
+                                    left join PptClass D on A.ShiftClassID = D.ObjID
+                                    left join BasMaterial E on A.MaterCode = E.MaterialCode
+                                    left join BasDept F on A.dep_Code = F.DepCode
+ left join BasDept F2 on A.Cust_Name = F2.DepCode
+                                    left join BasUser G on A.ZJSID = G.HRCode
+                                    left join BasUser I on A.OperPerson = I.WorkBarcode
+                                    left join BasWorkShop L on A.WorkShopCode = L.ObjID
+                                where 1 = 1 and A.DeleteFlag = '0'");
+            if (!string.IsNullOrEmpty(queryParams.barcode))
+            {
+                sqlstr.AppendLine(" AND A.Barcode = '" + queryParams.barcode + "'");
+            }
+            if (queryParams.equipCode != "全部")
+            {
+                sqlstr.AppendLine(" AND A.MadeLine = '" + queryParams.equipCode + "'");
+            }
+            if (!string.IsNullOrEmpty(queryParams.materCode))
+            {
+                sqlstr.AppendLine(" AND A.MaterCode = '" + queryParams.materCode + "'");
+            }
+
+            if (queryParams.beginDate != DateTime.MinValue)
+                sqlstr.AppendLine(" AND A.PlanDate >=convert(datetime, '" + queryParams.beginDate.ToString() + "', 120)"); 
+
+            if (queryParams.endDate != DateTime.MinValue)
+                sqlstr.AppendLine(" AND A.PlanDate <= convert(datetime, '" + queryParams.endDate.ToString() + "', 120)"); 
+
+            if (queryParams.shiftClassID != "all")
+                sqlstr.AppendLine(" AND A.ShiftClassID = '" + queryParams.shiftClassID + "'");
+
+            //if (queryParams.stockInFlag != "all")
+            //    sqlstr.AppendLine(" AND A.StockInSign = '" + queryParams.stockInFlag + "'");
+
+            if (queryParams.chejianCode != "all")
+                sqlstr.AppendLine(" AND A.Cust_Name = '" + queryParams.chejianCode + "'");
+            
+            pageParams.QueryStr = sqlstr.ToString();
+            if (pageParams.PageSize < 0)
+            {
+                NBear.Data.CustomSqlSection css = this.GetBySql(sqlstr.ToString());
+                pageParams.DataSet = css.ToDataSet();
+                return pageParams;
+            }
+            else
+            {
+                return this.GetPageDataBySql(pageParams);
+            }
+        }
+
+        public string SubmitReturnRubber(string storageID, string storagePlaceID, string barcode, decimal realWeight, string operPerson, string shiftID, string shiftClassID)
+        {
+            NBear.Data.StoredProcedureSection sps = this.defaultGateway.FromStoredProcedure("ProcPpmSubmitReturnRubberin");
+            sps.AddInputParameter("StorageID", this.TypeToDbType(storageID.GetType()), storageID);
+            sps.AddInputParameter("StoragePlaceID", this.TypeToDbType(storagePlaceID.GetType()), storagePlaceID);
+            sps.AddInputParameter("Barcode", this.TypeToDbType(barcode.GetType()), barcode);
+            sps.AddInputParameter("RealWeight", this.TypeToDbType(realWeight.GetType()), realWeight);
+            sps.AddInputParameter("OperPerson", this.TypeToDbType(operPerson.GetType()), operPerson);
+            sps.AddInputParameter("ShiftID", this.TypeToDbType(shiftID.GetType()), shiftID);
+            sps.AddInputParameter("ShiftClassID", this.TypeToDbType(shiftClassID.GetType()), shiftClassID);
+
+            return sps.ToDataSet().Tables[0].Rows[0][0].ToString();
+        }
+
+        public string CancelReturnRubber(string storageID, string storagePlaceID, string barcode)
+        {
+            NBear.Data.StoredProcedureSection sps = this.defaultGateway.FromStoredProcedure("ProcPpmCancelReturnRubberin");
+            sps.AddInputParameter("StorageID", this.TypeToDbType(storageID.GetType()), storageID);
+            sps.AddInputParameter("StoragePlaceID", this.TypeToDbType(storagePlaceID.GetType()), storagePlaceID);
+            sps.AddInputParameter("Barcode", this.TypeToDbType(barcode.GetType()), barcode);
+
+            return sps.ToDataSet().Tables[0].Rows[0][0].ToString();
+        }
+
+        public DataSet GetDayReport(string PlanDate, string workShopCode)
+        {
+            string sql = @"select '轮胎' + D.WorkShopName + '胶料返回率日报表' WorkShopName, '(" + PlanDate.Substring(0, 10) + @")' PlanDate,  case A.MadeLine when '一线' then '1' when '二线' then '2' 
+	                            when '三线' then '3' when '四线' then '4' when '五线' then '5' 
+	                            when '内二' then '6' when '内三' then '7' else A.MadeLine end MadeLineID,
+	                            A.MadeLine, B.MaterialName, A.ShiftClassID, C.ClassName + '班' ClassName, A.ReturnWeight
+                            from PpmReturnRubber A
+	                            left join BasMaterial B on A.MaterCode = B.MaterialCode
+	                            left join PptClass C on A.ShiftClassID = C.ObjID
+                                left join BasWorkShop D on A.WorkShopCode = D.ObjID
+                            where A.MadeLine is not null and PlanDate = '" + PlanDate + "'";
+            //if (!string.IsNullOrEmpty(workShopCode))
+            //{
+            //    sql += " and A.WorkShopCode = '" + workShopCode + "'";
+            //}
+            return GetBySql(sql).ToDataSet();
+        }
+
+        public DataSet GetReturnRubberInfo(string barcode)
+        {
+            string sql = @"select '轮胎' + D.WorkShopName , 
+                              PlanDate,  
+	                           A.MadeLine , B.MaterialName, case  A.ShiftClassID when '1'then '中' when '2' then '夜' else 
+	                             '早' end shiftname, C.ClassName + '班' ClassName, A.ReturnWeight,h.UserName
+                            from PpmReturnRubber A
+	                            left join BasMaterial B on A.MaterCode = B.MaterialCode
+	                            left join PptClass C on A.ShiftClassID = C.ObjID
+                                left join BasWorkShop D on A.WorkShopCode = D.ObjID
+                                left join BasUser h on a.ZJSID=h.HRCode
+                            where barcode = '" + barcode+"'";
+            return GetBySql(sql).ToDataSet();
+        }
+    }
+}

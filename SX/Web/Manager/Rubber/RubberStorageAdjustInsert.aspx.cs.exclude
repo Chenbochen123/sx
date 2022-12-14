@@ -1,0 +1,399 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberStorageAdjustInsert : Mesnac.Web.UI.Page
+{
+    protected BasUserManager userManager = new BasUserManager();
+    protected BasDeptManager deptManager = new BasDeptManager();
+    protected BasMaterialManager materialManager = new BasMaterialManager();
+    protected BasStorageManager basStorageManager = new BasStorageManager();
+    protected BasStoragePlaceManager basStoragePlaceManager = new BasStoragePlaceManager();
+    protected PpmStorageManager storageManager = new PpmStorageManager();
+    protected PpmStorageDetailManager storageDetailManager = new PpmStorageDetailManager();
+
+    protected PpmRubberAdjustManager adjustManager = new PpmRubberAdjustManager();
+    protected PpmRubberAdjustDetailManager adjustDetailManager = new PpmRubberAdjustDetailManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            cbxEmptyFlag.SelectedItem.Value = "0";
+            txtAdjustDate1.Text = Convert.ToString(DateTime.Now);
+            txtMakerPerson1.Text = userManager.GetListByWhere(BasUser._.WorkBarcode == this.UserID)[0].UserName;
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                BindData(Request.QueryString["BillNo"].ToString());
+            }
+            else
+            {
+                hiddenBillNo.Text = Guid.NewGuid().ToString();
+            }
+        }
+    }
+
+    #region 分页相关方法
+
+    private PageResult<PpmRubberAdjustDetail> GetPageResultData1(PageResult<PpmRubberAdjustDetail> pageParams)
+    {
+        PpmRubberAdjustDetailManager.QueryParams queryParams = new PpmRubberAdjustDetailManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = hiddenBillNo.Text;
+
+        return adjustDetailManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindDataDetail(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberAdjustDetail> pageParams = new PageResult<PpmRubberAdjustDetail>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "OrderID ASC";
+
+        PageResult<PpmRubberAdjustDetail> lst = GetPageResultData1(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    private PageResult<PpmStorage> GetPageResultData(PageResult<PpmStorage> pageParams)
+    {
+        PpmStorageManager.QueryParams queryParams = new PpmStorageManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.storageID = hiddenStorageID.Text;
+        queryParams.storagePlaceID = hiddenStoragePlaceID.Text;
+        queryParams.materCode = hiddenMaterCode.Text;
+        if (!string.IsNullOrEmpty(txtBeginTime.Text))
+            queryParams.beginDate = Convert.ToDateTime(txtBeginTime.Text);
+        if (!string.IsNullOrEmpty(txtEndTime.Text))
+            queryParams.endDate = Convert.ToDateTime(txtEndTime.Text);
+        queryParams.IsEmptyWeight = cbxEmptyFlag.SelectedItem.Value;
+
+        return storageManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmStorage> pageParams = new PageResult<PpmStorage>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "Barcode ASC";
+
+        PageResult<PpmStorage> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    public void BindData(string billNo)
+    {
+        PpmRubberAdjust storeOut = adjustManager.GetById(Request.QueryString["BillNo"].ToString());
+        txtBillNo1.Text = storeOut.BillNo;
+        hiddenBillNo.Text = storeOut.BillNo;
+        txtAdjustDate1.Text = storeOut.AdjustDate.ToString();
+        txtTargetStorage1.Text = basStorageManager.GetStorageName(storeOut.TargetStorage);
+        hiddenTargetStorageID.Text = storeOut.TargetStorage;
+        txtMakerPerson1.Text = userManager.GetListByWhere(BasUser._.WorkBarcode == this.UserID)[0].UserName;
+        txtSourceStorage1.Text = basStorageManager.GetStorageName(storeOut.SourceStorage);
+        hiddenSourceStorageID.Text = storeOut.SourceStorage;
+        txtRemark1.Text = storeOut.Remark;
+        GenStorageOut.Disabled = true;
+        EntityArrayList<PpmRubberAdjustDetail> adjustDetail = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == billNo);
+
+        this.store1.DataSource = adjustDetail;
+        this.store1.DataBind();
+    }
+
+    #endregion
+
+    protected void btnInport_Click(object sender, EventArgs e)
+    {
+        this.winAdd.Show();
+    }
+
+    public void btnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAdd.Close();
+        this.winModifyDetail.Close();
+    }
+
+    protected void AddStoreIn(object sender, DirectEventArgs e)
+    {
+        EntityArrayList<PpmRubberAdjustDetail> adjustDetail = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == hiddenBillNo.Text);
+
+        ChangeRecords<PpmStorageTemp> PpmStorages = new StoreDataHandler(e.ExtraParams["data"]).BatchObjectData<PpmStorageTemp>();
+        if (PpmStorages.Updated.Count == 0)
+        {
+            X.MessageBox.Alert("提示", "您没有选择任何项，请选择！").Show();
+            return;
+        }
+        foreach (PpmStorageTemp PpmStorage in PpmStorages.Updated)
+        {
+            if (PpmStorage.Num < PpmStorage.NewNum)
+            {
+                X.MessageBox.Alert("提示", "物料(" + PpmStorage.MaterialName + ")库存数量为" + PpmStorage.Num + ",您输入的数量超过库存数量").Show();
+                return;
+            }
+        }
+
+        hiddenSourceStorageID.Text = PpmStorages.Updated[0].StorageID;
+        hiddenSourceStoragePlaceID.Text = PpmStorages.Updated[0].StoragePlaceID;
+        txtSourceStorage1.Text = PpmStorages.Updated[0].StorageName;
+
+        for (int i = 0; i < PpmStorages.Updated.Count; i++)
+        {
+            PpmStorage storage = storageManager.GetListByWhere(PpmStorage._.Barcode == PpmStorages.Updated[i].Barcode && PpmStorage._.StorageID == hiddenSourceStorageID.Text && PpmStorage._.StoragePlaceID == hiddenSourceStoragePlaceID.Text)[0];
+            for (int j = 0; j < adjustDetail.Count; j++)
+            {
+                if (storage.Barcode == adjustDetail[j].Barcode)
+                {
+                    X.MessageBox.Alert("操作", "操作失败，已存在条码为" + storage.Barcode + "的数据，不能插入重复数据！").Show();
+                    return;
+                }
+            }
+
+            PpmRubberAdjustDetail adjustDetailEntity = new PpmRubberAdjustDetail();
+            adjustDetailEntity.BillNo = hiddenBillNo.Text;
+            adjustDetailEntity.Barcode = storage.Barcode;
+            adjustDetailEntity.OrderID = i + 1;
+            adjustDetailEntity.ProductNo = storage.ProductNo;
+            adjustDetailEntity.SourceStoragePlace = storage.StoragePlaceID;
+            //adjustDetailEntity.TargetStoragePlace = storage.StoragePlaceID;
+            adjustDetailEntity.MaterCode = storage.MaterCode;
+            adjustDetailEntity.ProcDate = storage.ProcDate;
+            adjustDetailEntity.AdjustNum = PpmStorages.Updated[i].NewNum;
+            adjustDetailEntity.PieceWeight = storage.PieceWeight;
+            if (PpmStorages.Updated[i].Num == PpmStorages.Updated[i].NewNum)
+                adjustDetailEntity.AdjustWeight = storage.RealWeight;
+            else
+                adjustDetailEntity.AdjustWeight = PpmStorages.Updated[i].NewNum * storage.PieceWeight;
+            adjustDetailEntity.DeleteFlag = "0";
+
+            adjustDetailManager.Insert(adjustDetailEntity);
+
+        }
+
+        PagingToolbar2.DoRefresh();
+        this.winAdd.Close();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void DeleteStorage(string barcode)
+    {
+        PpmRubberAdjustDetail detail = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == hiddenBillNo.Text && PpmRubberAdjustDetail._.Barcode == barcode)[0];
+
+        adjustDetailManager.Delete(detail);
+
+        PagingToolbar2.DoRefresh();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnSave_Click()
+    {
+        EntityArrayList<PpmRubberAdjustDetail> adjustDetailCounts = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == hiddenBillNo.Text && PpmRubberAdjustDetail._.DeleteFlag == "0");
+        if (adjustDetailCounts.Count == 0)
+        {
+            return "false";
+        }
+
+        for (int i = 0; i < adjustDetailCounts.Count; i++)
+        {
+            PpmStorage storage = storageManager.GetListByWhere(PpmStorage._.Barcode == adjustDetailCounts[i].Barcode && PpmStorage._.StorageID == hiddenSourceStorageID.Text && PpmStorage._.StoragePlaceID == adjustDetailCounts[i].SourceStoragePlace)[0];
+            if (storage.Num < adjustDetailCounts[i].AdjustNum || storage.RealWeight < adjustDetailCounts[i].AdjustWeight)
+            {
+                return "false1";
+            }
+        }
+
+        //EntityArrayList<BasStoragePlace> storagePlace = basStoragePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenSourceStorageID.Text && BasStoragePlace._.DeleteFlag == "0");
+        //int IsHave = 0;
+        //for (int i = 0; i < storagePlace.Count; i++)
+        //{
+        //    for (int j = 0; j < adjustDetailCounts.Count; j++)
+        //    {
+        //        if (adjustDetailCounts[j].TargetStoragePlace == storagePlace[i].StoragePlaceID)
+        //        {
+        //            IsHave = 1;
+        //        }
+        //    }
+        //}
+
+        //if (IsHave == 0)
+        //{
+        //    return "false2";
+        //}
+
+        if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+        {
+            PpmRubberAdjust adjust = adjustManager.GetListByWhere(PpmRubberAdjust._.BillNo == Request.QueryString["BillNo"].ToString())[0];
+            //storeOut.DeptCode = hiddenDeptCode.Text;
+            adjust.TargetStorage = hiddenTargetStorageID.Text;
+            adjust.AdjustDate = Convert.ToDateTime(txtAdjustDate1.Text);
+            if (Convert.ToDateTime(txtAdjustDate1.Text).ToShortDateString() == DateTime.Now.ToShortDateString())
+                adjust.AdjustDate = DateTime.Now;
+            else
+                adjust.AdjustDate = Convert.ToDateTime(txtAdjustDate1.Text);
+            adjust.SourceInaccountDuration = string.Format("{0:yyyyMM}", adjust.AdjustDate);
+            adjust.TargetInaccountDuration = string.Format("{0:yyyyMM}", adjust.AdjustDate);
+            adjust.MakerPerson = this.UserID;
+            adjust.Remark = txtRemark1.Text;
+
+            adjustManager.Update(adjust);
+        }
+        else
+        {
+            PpmRubberAdjust adjust = new PpmRubberAdjust();
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+                adjust.BillNo = hiddenBillNo.Text;
+            else
+                adjust.BillNo = adjustManager.GetBillNo();
+            adjust.SourceStorage = hiddenSourceStorageID.Text;
+            adjust.TargetStorage = hiddenTargetStorageID.Text;
+            adjust.MakerPerson = this.UserID;
+            if (Convert.ToDateTime(txtAdjustDate1.Text).ToShortDateString() == DateTime.Now.ToShortDateString())
+                adjust.AdjustDate = DateTime.Now;
+            else
+                adjust.AdjustDate = Convert.ToDateTime(txtAdjustDate1.Text);
+            adjust.SourceInaccountDuration = string.Format("{0:yyyyMM}", adjust.AdjustDate);
+            adjust.TargetInaccountDuration = string.Format("{0:yyyyMM}", adjust.AdjustDate);
+            adjust.ChkResultFlag = "0";
+            adjust.DeleteFlag = "0";
+            adjust.Remark = userManager.UserID + "添加";
+            adjustManager.Insert(adjust);
+
+            adjustDetailManager.Update(new PropertyItem[] { PpmRubberAdjustDetail._.BillNo }, new object[] { adjust.BillNo }, PpmRubberAdjustDetail._.BillNo == adjustDetailCounts[0].BillNo);
+
+            EntityArrayList<PpmRubberAdjustDetail> details = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == adjust.BillNo);
+            BasStoragePlace place = basStoragePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenTargetStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (string.IsNullOrEmpty(details[i].TargetStoragePlace))
+                {
+                    details[i].TargetStoragePlace = place.StoragePlaceID;
+                    adjustDetailManager.Update(details[i]);
+                }
+            }
+        }
+
+        txtTargetStorage1.Text = string.Empty;
+        txtSourceStorage1.Text = string.Empty;
+        hiddenSourceStorageID.Text = string.Empty;
+        hiddenTargetStorageID.Text = string.Empty;
+
+        store1.Data = null;
+        store1.DataBind();
+
+        return "执行成功";
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumndetail_direct_edit(string barcode)
+    {
+        PpmRubberAdjustDetail adjustDetail = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == hiddenBillNo.Text && PpmRubberAdjustDetail._.Barcode == barcode)[0];
+
+        txtBarcode2.Text = adjustDetail.Barcode;
+        hiddenOrderID.Text = adjustDetail.OrderID.ToString();
+        txtProductNo2.Text = adjustDetail.ProductNo;
+        string storageID = basStoragePlaceManager.GetListByWhere(BasStoragePlace._.StoragePlaceID == adjustDetail.SourceStoragePlace)[0].StorageID;
+        txtSourceStoragePlaceName2.Text = basStoragePlaceManager.GetStoragePlaceName(storageID, adjustDetail.SourceStoragePlace);
+        hiddenStoragePlaceID.Text = adjustDetail.SourceStoragePlace;//txtTargetStoragePlaceName2.Text = string.Empty;
+        txtMaterialName2.Text = materialManager.GetMaterName(adjustDetail.MaterCode);
+        //hiddenMaterCode.Text = adjustDetail.MaterCode;
+        txtProcDate2.Text = adjustDetail.ProcDate.ToString();
+        txtAdjustNum2.Text = adjustDetail.AdjustNum.ToString();
+        hiddenOpenEdit.Text = "1";
+        txtPieceWeight2.Text = adjustDetail.PieceWeight.ToString();
+        txtAdjustWeight2.Text = adjustDetail.AdjustWeight.ToString();
+        txtRemark2.Text = adjustDetail.Remark;
+
+        this.winModifyDetail.Show();
+    }
+
+    protected void btnModifyDetailSave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            PpmRubberAdjustDetail adjustDetail = adjustDetailManager.GetListByWhere(PpmRubberAdjustDetail._.BillNo == hiddenBillNo.Text && PpmRubberAdjustDetail._.Barcode == txtBarcode2.Text && PpmRubberAdjustDetail._.OrderID == hiddenOrderID.Text)[0];
+
+            adjustDetail.TargetStoragePlace = hiddenStoragePlaceID.Text;
+            adjustDetail.AdjustNum = Convert.ToInt32(txtAdjustNum2.Text);
+            adjustDetail.AdjustWeight = Convert.ToDecimal(txtAdjustWeight2.Text);
+
+            adjustDetailManager.Update(adjustDetail);
+            txtAdjustNum2.Text = string.Empty;
+            PagingToolbar2.DoRefresh();
+            this.winModifyDetail.Close();
+        }
+        catch (Exception ex)
+        {
+            X.MessageBox.Alert("操作", "更新失败：" + ex).Show();
+        }
+    }
+
+    public void txtAdjustNum2_Change(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(txtAdjustNum2.Text) && !string.IsNullOrEmpty(txtPieceWeight2.Text))
+            {
+                if (hiddenOpenEdit.Text == "1")
+                    hiddenOpenEdit.Text = "0";
+                else
+                    txtAdjustWeight2.Text = Convert.ToString(Convert.ToInt32(txtAdjustNum2.Text) * Convert.ToDecimal(txtPieceWeight2.Text));
+            }
+        }
+        catch
+        { }
+    }
+
+    #region 校验方法
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+
+    protected void CheckCombo(object sender, RemoteValidationEventArgs e)
+    {
+        ComboBox combo = (ComboBox)sender;
+
+        if (combo.SelectedItem.Value != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须选择！";
+        }
+    }
+    #endregion
+}

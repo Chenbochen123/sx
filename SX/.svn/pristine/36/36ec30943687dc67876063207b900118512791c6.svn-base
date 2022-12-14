@@ -1,0 +1,552 @@
+﻿using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using System;
+using System.Data;
+
+/// <summary>
+/// Manager_Technology_Manage_MaterialRecipeDetail_Main 实现类
+/// 孙本强 @ 2013-04-03 13:06:22
+/// </summary>
+/// <remarks></remarks>
+public partial class Manager_Technology_Manage_MaterialRecipeDetail_Main : Mesnac.Web.UI.Page
+{
+
+    #region 属性注入
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private ISysCodeManager sysCodeManager = new SysCodeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private IBasUserManager basUserManager = new BasUserManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private IPmtConfigManager pmtConfigManager = new PmtConfigManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private IPmtRecipeManager pmtRecipeManager = new PmtRecipeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private IBasEquipManager basEquipManager = new BasEquipManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:23
+    /// </summary>
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+    #endregion
+
+    /// <summary>
+    /// Inis the main info.
+    /// 孙本强 @ 2013-04-03 13:06:24
+    /// </summary>
+    /// <remarks></remarks>
+    private void IniMainInfo()
+    {
+        string recipe = GetRequest("Recipe");
+        string material = GetRequest("Material");
+        bool isMixing = true;
+        if (!string.IsNullOrWhiteSpace(material))
+        {
+            EntityArrayList<BasMaterial> lst = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == material);
+            if (lst.Count > 0)
+            {
+                BasMaterial m = lst[0];
+                if (m.MajorTypeID.ToString().Trim() == "2")
+                {
+                    isMixing = false;
+                }
+            }
+        }
+        txtLotDoneTime.Hidden = !isMixing;
+        txtOverTimeSetTime.Hidden = !isMixing;
+        txtOverTempSetTemp.Hidden = !isMixing;
+        txtOverTempMinTime.Hidden = !isMixing;
+        txtInPolyMaxTemp.Hidden = !isMixing;
+        txtInPolyMinTemp.Hidden = !isMixing;
+        txtMakeUpTemp.Hidden = !isMixing;
+        txtCarbonRecycleType.Hidden = !isMixing;
+        //txtFactory.Hidden = !isMixing;
+        txtCarbonRecycleTime.Hidden = !isMixing;
+        //Label1.Hidden = !isMixing;
+        txtIsUseAreaTemp.Hidden = !isMixing;
+        txtSideTemp.Hidden = !isMixing;
+        Label2.Hidden = !isMixing;
+        txtRollTemp.Hidden = !isMixing;
+        txtDdoorTemp.Hidden = !isMixing;
+        txtPackWeight.Hidden = isMixing;
+    }
+
+    /// <summary>
+    /// Handles the Load event of the Page control.
+    /// 孙本强 @ 2013-04-03 13:06:24
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        IniMainInfo();
+        FillCheckboxGroup(PmtConfigManager.TypeCode.AuditUser, CheckboxGroupAuditUser);
+        if (isShowCurrentUser.Text == "0")
+        {
+            for (int i = 0; i < CheckboxGroupAuditUser.Items.Count; i++)
+            {
+                if (((Ext.Net.Checkbox)CheckboxGroupAuditUser.Items[i]).InputValue == this.UserID)
+                {
+                    CheckboxGroupAuditUser.Items.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+        if (false) //更改了方式
+        {
+            FillComboBox(PmtConfigManager.TypeCode.Equip, txtRecipeEquipCode);
+            if (true)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = "　";
+                item.Value = "　";
+                txtRecipeEquipCode.Items.Insert(0, item);
+                txtRecipeEquipCode.Text = "　";
+            }
+        }
+        IniSysCodeComboBox();
+        FillComboBoxMaterial();
+        IniPage();
+        X.Call("SetEditable");
+    }
+    /// <summary>
+    /// Inis the sys code combo box.
+    /// 孙本强 @ 2013-04-03 13:06:24
+    /// </summary>
+    /// <param name="cb">The cb.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniSysCodeComboBox(ComboBox cb, EntityArrayList<SysCode> lst)
+    {
+        cb.Items.Clear();
+        string ss = string.Empty;
+        foreach (SysCode m in lst)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(m.ItemName, m.ItemCode.ToString());
+            cb.Items.Add(item);
+        }
+        if (cb.Items.Count > 0)
+        {
+            cb.Text = (cb.Items[0].Value);
+        }
+    }
+
+    /// <summary>
+    /// Inis the sys code combo box.
+    /// 孙本强 @ 2013-04-03 13:06:24
+    /// </summary>
+    /// <remarks></remarks>
+    private void IniSysCodeComboBox()
+    {
+
+        WhereClip where = new WhereClip();
+        OrderByClip order = new OrderByClip();
+        #region 配方类型
+        where = new WhereClip();
+        order = new OrderByClip();
+        order = SysCode._.Remark.Asc;
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtType.ToString());
+        EntityArrayList<SysCode> lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        //IniSysCodeComboBox(txtRecipeType, lst);
+
+
+       String sql = @"  select * from SysCode 
+  where TYPEID='PmtType'
+            order by DisplayID";
+
+        DataSet ds = sysCodeManager.GetBySql(sql).ToDataSet();
+
+        Ext.Net.ListItem allitem ;
+        txtRecipeType.Items.Clear();
+        
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(dr["ItemName"].ToString(), dr["ItemCode"].ToString());
+            txtRecipeType.Items.Add(item);
+        }
+        if (txtRecipeType.Items.Count > 0)
+        {
+            txtRecipeType.Text = (txtRecipeType.Items[0].Value);
+        }
+
+
+
+        #endregion
+
+        #region 配方状态
+        where = new WhereClip();
+        order = new OrderByClip();
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtState.ToString());
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniSysCodeComboBox(txtRecipeState, lst);
+        txtRecipeState.Text = "1";
+
+        #endregion
+
+        #region 是否
+        where = new WhereClip();
+        order = new OrderByClip();
+        order = SysCode._.ItemCode.Desc;
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.YesNo.ToString());
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniSysCodeComboBox(txtCarbonRecycleType, lst);
+
+        where = new WhereClip(); order = SysCode._.ItemCode.Asc;
+        where.And(SysCode._.TypeID == "FactoryCode");
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniSysCodeComboBox(txtFactory, lst);
+
+        where = new WhereClip(); order = SysCode._.ItemCode.Asc;
+        where.And(SysCode._.TypeID == "JieDuanCode");
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniSysCodeComboBox(txJieDuan, lst);
+
+
+        where = new WhereClip(); order = SysCode._.ItemCode.Asc;
+        where.And(SysCode._.TypeID == "NeedCC");
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniSysCodeComboBox(ComboBoxCC, lst);
+        #endregion
+    }
+
+    /// <summary>
+    /// Fills the combo box material.
+    /// 孙本强 @ 2013-04-03 13:06:25
+    /// </summary>
+    /// <remarks></remarks>
+    private void FillComboBoxMaterial()
+    {
+        string command = GetRequest("Command").ToLower();
+        string material = GetRequest("Material");
+        txtRecipeMaterialCode.Items.Clear();
+        WhereClip where = new WhereClip();
+        where.And(BasMaterial._.DeleteFlag == 0);
+        if (!command.Contains("add"))
+        {
+            where.And(BasMaterial._.MaterialCode == material);
+        }
+        else
+        {
+            if (command.Contains("upload"))
+            {
+                where.And(BasMaterial._.MaterialCode.SubString(0, 3) >= material);
+                where.And(BasMaterial._.MaterialCode.SubString(material.Length - 4, 4) == material.Substring(material.Length - 4, 4));
+            }
+            if (command.Contains("download"))
+            {
+                if (material.Length >= 13)
+                {
+                    where.And(BasMaterial._.MaterialCode == material);
+                }
+                else
+                {
+                    where.And(BasMaterial._.RubCode == material);
+                }
+
+            }
+        }
+        EntityArrayList<BasMaterial> lst = basMaterialManager.GetListByWhereAndOrder(where, BasMaterial._.MaterialCode.Desc);
+        foreach (BasMaterial m in lst)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem();
+            item.Text = m.MaterialName;
+            item.Value = m.MaterialCode;
+            txtRecipeMaterialCode.Items.Add(item);
+        }
+        if (txtRecipeMaterialCode.Items.Count > 0)
+        {
+            txtRecipeMaterialCode.Text = (txtRecipeMaterialCode.Items[0].Value);
+        }
+    }
+    /// <summary>
+    /// Fills the combo box.
+    /// 孙本强 @ 2013-04-03 13:06:25
+    /// </summary>
+    /// <param name="typeCode">The type code.</param>
+    /// <param name="cb">The cb.</param>
+    /// <remarks></remarks>
+    private void FillComboBox(PmtConfigManager.TypeCode typeCode, Ext.Net.ComboBox cb)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == typeCode.ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        DataSet data = pmtConfigManager.GetBySql(sqlstr).ToDataSet();
+        cb.Items.Clear();
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Text = dr["ShowInfo"].ToString();
+                item.Value = dr["ValueInfo"].ToString();
+                cb.Items.Add(item);
+            }
+        }
+        if (cb.Items.Count > 0)
+        {
+            cb.Text = (cb.Items[0].Value);
+        }
+    }
+    /// <summary>
+    /// Fills the checkbox group.
+    /// 孙本强 @ 2013-04-03 13:06:25
+    /// </summary>
+    /// <param name="typeCode">The type code.</param>
+    /// <param name="cb">The cb.</param>
+    /// <remarks></remarks>
+    private void FillCheckboxGroup(PmtConfigManager.TypeCode typeCode, Ext.Net.CheckboxGroup cb)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == typeCode.ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        DataSet data = pmtConfigManager.GetBySql(sqlstr).ToDataSet();
+        cb.Items.Clear();
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                Ext.Net.Checkbox item = new Ext.Net.Checkbox();
+                item.BoxLabel = dr["ShowInfo"].ToString();
+                item.InputValue = dr["ValueInfo"].ToString();
+                cb.Add(item);
+            }
+        }
+    }
+    /// <summary>
+    /// Gets the request.
+    /// 孙本强 @ 2013-04-03 13:06:25
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string GetRequest(string key)
+    {
+        if (this.Request[key] != null)
+        {
+            return this.Request[key].ToString();
+        }
+        return string.Empty;
+    }
+    /// <summary>
+    /// Gets the material by code.
+    /// 孙本强 @ 2013-04-03 13:06:26
+    /// </summary>
+    /// <param name="code">The code.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private BasMaterial GetMaterialByCode(string code)
+    {
+        return basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == code)[0];
+    }
+    /// <summary>
+    /// Gets the name of the sys code item.
+    /// 孙本强 @ 2013-04-03 13:06:26
+    /// </summary>
+    /// <param name="TypeID">The type ID.</param>
+    /// <param name="ItemCode">The item code.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    public string GetSysCodeItemName(SysCodeManager.SysCodeType TypeID, string ItemCode)
+    {
+        string Result = ItemCode;
+        WhereClip where = new WhereClip();
+        where.And(SysCode._.TypeID == TypeID.ToString());
+        where.And(SysCode._.ItemCode == ItemCode);
+        EntityArrayList<SysCode> lst = sysCodeManager.GetListByWhere(where);
+        if (lst.Count > 0)
+        {
+            Result = lst[0].ItemName;
+        }
+        return Result;
+    }
+    /// <summary>
+    /// Gets the name of the bas user.
+    /// 孙本强 @ 2013-04-03 13:06:26
+    /// </summary>
+    /// <param name="workBarcode">The work barcode.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    public string GetBasUserName(string workBarcode)
+    {
+        if (string.IsNullOrWhiteSpace(workBarcode))
+        {
+            return workBarcode;
+        }
+        string Result = workBarcode;
+        WhereClip where = new WhereClip();
+        where.And(BasUser._.WorkBarcode == workBarcode);
+        EntityArrayList<BasUser> lst = basUserManager.GetListByWhere(where);
+        if (lst.Count > 0)
+        {
+            Result = lst[0].UserName;
+        }
+        return Result;
+    }
+
+    /// <summary>
+    /// Inis the page.
+    /// 孙本强 @ 2013-04-03 13:06:27
+    /// </summary>
+    /// <remarks></remarks>
+    private void IniPage()
+    {
+        txtIsUseAreaTemp.Checked = false;
+        txtSideTemp.Text = "0";
+        txtRollTemp.Text = "0";
+        //txtRollTempDiff.Text = "0";
+        txtDdoorTemp.Text = "0";
+        txtInPolyMaxTemp.Text = "200";
+        txtCarbonRecycleType.Text = "0";
+        txtFactory.Text = "0";
+        ComboBoxCC.Text = "0";
+        txJieDuan.Text = "0";
+        string recipe = GetRequest("Recipe");
+        if (string.IsNullOrWhiteSpace(recipe))
+        {
+            return;
+        }
+        PmtRecipe m = null;
+        try
+        {
+            m = pmtRecipeManager.GetListByWhere(PmtRecipe._.ObjID == recipe)[0];
+        }
+        catch
+        {
+            return;
+        }
+        if (m == null)
+        {
+            return;
+        }
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        txtRecipeName.Text = converter.ToString(m.RecipeName);   //配方编号
+        if (string.IsNullOrWhiteSpace(txtRecipeName.Text))
+        {
+            txtRecipeName.Text = recipe;
+        }
+        txtRecipeMaterialCode.Text = converter.ToString(m.RecipeMaterialCode);    //物料名称
+        txtRecipeEquipCode.Text = converter.ToString(m.RecipeEquipCode);   //机台名称
+        txtRecipeEquipName.Text = basEquipManager.GetListByWhere(BasEquip._.EquipCode == converter.ToString(m.RecipeEquipCode))[0].EquipName;   //机台名称
+        txtRecipeType.Text = converter.ToString(m.RecipeType);   //配方类型
+        txtRecipeState.Text = converter.ToString(m.RecipeState);   //配方状态
+        txtRecipeVersionID.Text = converter.ToString(m.RecipeVersionID);   //版本号
+        txtLotDoneTime.Text = converter.ToString(m.LotDoneTime);   //每车标准时间
+        txtLotTotalWeight.Text = converter.ToString(m.LotTotalWeight);   //配方总重
+        txtShelfLotCount.Text = converter.ToString(m.ShelfLotCount);   //每架车数
+        txtOverTimeSetTime.Text = converter.ToString(m.OverTimeSetTime);   //超时排胶时间
+        txtOverTempSetTemp.Text = converter.ToString(m.OverTempSetTemp);   //紧急排胶温度
+        txtOverTempMinTime.Text = converter.ToString(m.OverTempMinTime);   //超温排胶最短时间
+        txtInPolyMaxTemp.Text = converter.ToString(m.InPolyMaxTemp);   //最高进胶温度
+        txtInPolyMinTemp.Text = converter.ToString(m.InPolyMinTemp);   //最低进胶温度
+        txtMakeUpTemp.Text = converter.ToString(m.MakeUpTemp);   //补偿温度
+        txtCarbonRecycleType.Text = converter.ToString(m.CarbonRecycleType);   //炭黑是否回收
+        //txtFactory.Text = converter.ToString(m.FactoryCode);   //供应商
+        //ComboBoxCC.Text = converter.ToString(m.CloseCC);   //关闭除尘
+        //txJieDuan.Text = converter.ToString(m.JieDuan);   //供应商
+        txtCarbonRecycleTime.Text = converter.ToString(m.CarbonRecycleTime);   //炭黑回收时间
+        txtIsUseAreaTemp.Checked = converter.ToString(m.IsUseAreaTemp) == "1";   //使用三区温度
+        txtSideTemp.Text = converter.ToString(m.SideTemp);   //侧壁温度
+        txtRollTemp.Text = converter.ToString(m.RollTemp);   //转子温度
+        //txtRollTempDiff.Text = converter.ToString(m.RollTempDiff);   //转子温差
+        txtDdoorTemp.Text = converter.ToString(m.DdoorTemp);   //卸料门温度
+        txtSapVersionId.Text = converter.ToString(m.SAPVersionID); //SAP版本号
+        txtPackWeight.Text = converter.ToString(m.Packweight);
+        txtbanben.Text = converter.ToString(m.RearchCode);//工艺版本号
+        #region 闫志旭 添加版本信息和修改类型 2015-6-15
+        txtB_Version.Text = converter.ToString(m.B_Version);
+        txtR_Version.Text = converter.ToString(m.R_Version);
+
+        //if (!String.IsNullOrEmpty(m.B_Version))
+        if(1==2)
+        {
+
+
+            WhereClip where = new WhereClip();
+            OrderByClip order = new OrderByClip();
+          
+            where = new WhereClip();
+            order = new OrderByClip();
+            order = SysCode._.Remark.Asc;
+            where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtTypeNew.ToString());
+            EntityArrayList<SysCode> lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+            IniSysCodeComboBox(txtRecipeType, lst);
+            txtRecipeType.Text = converter.ToString(m.RecipeType);
+        }
+        #endregion
+        #region 审核人
+        string str = converter.ToString(m.CanAuditUser);
+        if (!string.IsNullOrWhiteSpace(str))
+        {
+            string[] ss = str.Split('|');
+            foreach (string s in ss)
+            {
+                for (int i = 0; i < CheckboxGroupAuditUser.Items.Count; i++)
+                {
+                    if (s == ((Ext.Net.Checkbox)CheckboxGroupAuditUser.Items[i]).InputValue)
+                    {
+                        ((Ext.Net.Checkbox)CheckboxGroupAuditUser.Items[i]).Checked = true;
+                    }
+                }
+            }
+        }
+        #endregion
+
+        if (converter.ToString(m.AuditFlag) != "1")
+        {
+            txtAuditFlag.Cls = "HighlightHint";
+        }
+        txtAuditFlag.Text = GetSysCodeItemName(SysCodeManager.SysCodeType.Audit, converter.ToString(m.AuditFlag));   //审核状态
+        txtRecipeModifyUser.Text = GetBasUserName(converter.ToString(m.RecipeModifyUser));  //修改人
+        txtRecipeModifyTime.Text = converter.ToString(m.RecipeModifyTime);  //修改时间
+        txtAuditUser.Text = GetBasUserName(converter.ToString(m.AuditUser)); //审核人
+        txtAuditDateTime.Text = converter.ToString(m.AuditDateTime); //审核时间
+
+    }
+
+    #region 选择机台后对一次法预分散、开炼信息的显示处理。
+    [DirectMethod]
+    public string OneMixDeal(string equipCode)
+    {
+        EntityArrayList<BasEquip> equipList =  basEquipManager.GetListByWhere(BasEquip._.EquipCode == equipCode);
+        if (equipList.Count > 0)
+        {
+            BasEquip equip = equipList[0];
+            if (equip.EquipCode.Equals("01038"))
+            { return "2"; }
+            if (equip.EquipCode.Equals("01039"))
+            {
+                return "1";
+            }
+        
+          
+        }
+        return "0";
+    }
+    #endregion
+   
+
+}

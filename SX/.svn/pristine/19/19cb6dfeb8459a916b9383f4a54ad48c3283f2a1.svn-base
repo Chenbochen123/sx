@@ -1,0 +1,392 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="BJStock.aspx.cs" Inherits="Manager_Equipment_SparePart_BJStock" %>
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<%@ Register Assembly="FastReport.Web" Namespace="FastReport.Web" TagPrefix="cc1" %>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>备件库存管理</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js" ></script>
+     <style type="text/css">
+        .x-grid-body .x-grid-cell-Cost
+        {
+            background-color: #f1f2f4;
+        }
+        
+        .x-grid-row-summary .x-grid-cell-Cost .x-grid-cell-inner
+        {
+            background-color: #e1e2e4;
+        }
+        
+        .task .x-grid-cell-inner
+        {
+            padding-left: 15px;
+        }
+        
+        .x-grid-row-summary .x-grid-cell-inner
+        {
+            font-weight: bold;
+            font-size: 11px;
+            background-color: #f1f2f4;
+        }
+    </style>
+    <script type="text/javascript">
+        var prepareGroupToolbar = function (grid, toolbar, groupId, records) {
+            // you can prepare ready toolbar
+        };
+
+        var onGroupCommand = function (column, command, group) {
+            if (command === 'SelectGroup') {
+                column.grid.getSelectionModel().select(group.children, true);
+                return;
+            }
+
+            Ext.Msg.alert(command, 'Group name: ' + group.name + '<br/>Count - ' + group.children.length);
+        };
+
+        var getAdditionalData = function (data, idx, record, orig) {
+            var o = Ext.grid.feature.RowBody.prototype.getAdditionalData.apply(this, arguments),
+                d = data;
+
+            Ext.apply(o, {
+                rowBodyColspan: record.fields.getCount(),
+                rowBody: Ext.String.format('<div style=\'padding:0 5px 5px 5px;\'>The {0} [{1}] requires light conditions of <i>{2}</i>.<br /><b>Price: {3}</b></div>', d.Common, d.Botanical, d.Light, Ext.util.Format.usMoney(d.Price)),
+                rowBodyCls: ""
+            });
+
+            return o;
+        };
+
+    </script>
+    <script type="text/javascript">
+        function deleteuser() {
+        }
+    </script>
+    <style>
+        /* style rows on mouseover */
+        .x-grid-row-over .x-grid-cell-inner
+        {
+            font-weight: bold;
+        }
+    </style>
+    
+    <script type="text/javascript">
+        //树形结构点击刷新右侧方法
+        //点击tree产生配方相信信息 绑定到Gridpanel
+        var menuItemClick = function (view, rcd, item, idx, event, eOpts) {
+            var s = rcd.get('qtip');
+            App.direct.LoadGridData(s, {
+                success: function (result) {
+                },
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('Failure', errorMsg);
+                }
+            });
+        };
+        var commandcolumn_direct_detail = function (record) {
+            var ObjID = record.data.Batch_Code;
+            App.direct.commandcolumn_direct_detail(ObjID, {
+                success: function (result) {
+                },
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+
+        //点击修改按钮
+        var cmdcol_click = function (command, record) {
+            if (command == "Edit") {
+                App.direct.pnlList_Edit(record.data.Batch_Code, {
+                    success: function () { },
+                    failure: function () { }
+                });
+            }
+            else if (command == "Delete") {
+                Ext.Msg.confirm("提示", '您确定需要删除此信息？删除后将不能恢复！', function (btn) { deleteStopRecord(btn, record) });
+            }
+            else if (command == "detail") {
+                commandcolumn_direct_detail(record);
+            }
+        }
+
+        var deleteStopRecord = function (btn, record) {
+            if (btn != "yes") {
+                return;
+            }
+            var Batch_Code = record.data.Batch_Code;
+            App.direct.pnlList_Delete(Batch_Code, {
+                success: function () { },
+                failure: function () { }
+            });
+        }
+
+        var ImportBill = function () {
+            App.WinUpLoadBill.show();
+        }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <asp:Button ID="btnExportSubmit" runat="server" Text="Button" OnClick="btnExportSubmit_Click" Style="display:none" />
+      <ext:ResourceManager ID="ResourceManager1" runat="server">
+    </ext:ResourceManager>
+    <ext:Viewport ID="vwUnit" runat="server" Layout="BorderLayout">
+        <Items>
+            <ext:Panel ID="Panel1" runat="server" Region="West" Width="180" Split="true" Layout="BorderLayout">
+                <Items>
+                    <ext:TreePanel ID="treeEquip" runat="server" Title="备件分类信息" Region="Center" Icon="FolderGo"
+                        AutoHeight="true" RootVisible="false">
+                        <Store>
+                            <ext:TreeStore ID="treeDeptStore" runat="server">
+                                <Proxy>
+                                    <ext:PageProxy>
+                                        <RequestConfig Method="GET" Type="Load" />
+                                    </ext:PageProxy>
+                                </Proxy>
+                                <Root>
+                                    <ext:Node NodeID="root" Expanded="true" />
+                                </Root>
+                            </ext:TreeStore>
+                        </Store>
+                        <Listeners>
+                            <ItemClick Fn="menuItemClick">
+                            </ItemClick>
+                        </Listeners>
+                    </ext:TreePanel>
+                </Items>
+            </ext:Panel>
+            
+                <ext:Panel ID="pnlStopType" runat="server" Region="North" AutoHeight="true">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="barStopType">
+                            <Items>
+                                <ext:Button runat="server" Icon="Add" Text="添加" ID="btnAdd">
+                                    <ToolTips><ext:ToolTip ID="ToolTip1" runat="server" Html="点击进行添加" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnAdd_Click"/></DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                    <ToolTips><ext:ToolTip ID="ToolTip2" runat="server" Html="点击进行查询" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnSearch_Click">
+                                        <EventMask ShowMask="true" Target="Page"></EventMask>
+                                    </Click></DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="PageWhiteExcel" Text="导出" ID="btnExcel">
+                                    <ToolTips><ext:ToolTip ID="ToolTip3" runat="server" Html="点击进行结果导出" /></ToolTips>
+                                    <Listeners>
+                                        <Click Handler="$('#btnExportSubmit').click();"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:FormPanel ID="container_top" runat="server" Layout="ColumnLayout" AutoHeight="true" BodyPadding="5">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                 <ext:Container ID="container1" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:TextField ID="txtBJ_code" Vtype="integer" runat="server" FieldLabel="备件代码" LabelAlign="Right" />
+
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container2" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:TextField ID="txtBJ_name" Vtype="integer" runat="server" FieldLabel="备件名称" LabelAlign="Right" />
+
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container3" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:ComboBox ID="cbxType" runat="server" FieldLabel="备件分类" LabelAlign="Right"
+                                            Editable="false">
+                                            <Items>
+                                                <ext:ListItem Text="A" Value="A">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="B" Value="B">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="C" Value="C">
+                                                </ext:ListItem>
+                                            </Items>
+                                            <Triggers>
+                                                <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                </ext:FieldTrigger>
+                                            </Triggers>
+                                            <Listeners>
+                                                <TriggerClick Handler="this.setValue('');" />
+                                            </Listeners>
+                                        </ext:ComboBox>
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:FormPanel>
+                    </Items>
+
+                </ext:Panel>
+            <ext:GridPanel ID="pnlList" runat="server" Region="Center">
+                    <Store>
+                        <ext:Store ID="store" runat="server" PageSize="50">
+                            <Model>
+                                <ext:Model ID="model" runat="server" IDProperty="BJ_CODE,Batch_Code,Dep_Code">
+                                    <Fields>
+                                        <ext:ModelField Name="BJ_tpname" />
+                                        <ext:ModelField Name="BJ_CODE" />
+                                        <ext:ModelField Name="Batch_Code" />
+                                        <ext:ModelField Name="BJ_Name" />
+                                        <ext:ModelField Name="BJ_specType" />
+                                        <ext:ModelField Name="Stock_num" />
+                                        <ext:ModelField Name="Total_Price" />
+                                        <ext:ModelField Name="Fac_Name" />
+                                        <ext:ModelField Name="BJ_Class" />
+                                        <ext:ModelField Name="Pos_Name" />
+                                        <ext:ModelField Name="bjprice" />
+                                        <ext:ModelField Name="KULING" />
+                                        <ext:ModelField Name="planuser" />
+                                        <ext:ModelField Name="low_reserve" />
+                                        <ext:ModelField Name="high_reserve" />
+                                        <ext:ModelField Name="memo" />
+                                    </Fields>
+                                </ext:Model>
+                            </Model>
+                        </ext:Store>
+                    </Store>
+                    <ColumnModel ID="colModel" runat="server">
+                        <Columns>
+                            <ext:Column ID="Column15" runat="server" Text="BJ_CODE" DataIndex="BJ_CODE" Width="65" Hidden="true" />
+                            <ext:Column ID="Column16" runat="server" Text="Batch_Code" DataIndex="Batch_Code" Width="65" Hidden="true" />
+                            <ext:Column ID="Column6" runat="server" Text="Dep_Code" DataIndex="Dep_Code" Width="65" Hidden="true" />
+                            <ext:Column ID="BJ_cde" runat="server" Text="备件分类" DataIndex="BJ_tpname" Width="120" />
+                            <ext:Column ID="Column3" runat="server" Text="备件代码" DataIndex="BJ_CODE" Width="120" />
+                            <ext:Column ID="Column7" runat="server" Text="批次号" DataIndex="Batch_Code" Width="120" />
+                            <ext:Column ID="Column12" runat="server" Text="备件名称" DataIndex="BJ_Name" Width="230" />
+                            <ext:Column ID="clOil_name" runat="server" Text="规格型号" DataIndex="BJ_specType" Width="120" />
+                            <ext:Column ID="Column11" runat="server" Text="当前数量" DataIndex="Stock_num" Width="85" />
+                            <ext:Column ID="Column4" runat="server" Text="当前金额" DataIndex="Total_Price" Width="85" />
+                            <ext:Column ID="Column5" runat="server" Text="部门" DataIndex="Fac_Name" Width="85" />
+                            <ext:Column ID="Column8" runat="server" Text="ABC分类" DataIndex="BJ_Class" Width="85" />
+                            <ext:Column ID="Column9" runat="server" Text="货位" DataIndex="Pos_Name" Width="85" />
+                            <ext:Column ID="Column20" runat="server" Text="单价" DataIndex="bjprice" Width="180" />
+                            <ext:Column ID="Column1" runat="server" Text="库龄（天）" DataIndex="KULING" Width="85" />
+                            <ext:Column ID="Column2" runat="server" Text="计划人" DataIndex="planuser" Width="85" />
+                            <ext:Column ID="Column10" runat="server" Text="最低库存" DataIndex="low_reserve" Width="180" />
+                            <ext:Column ID="Column13" runat="server" Text="最高库存" DataIndex="high_reserve" Width="85" />
+                            <ext:Column ID="Column14" runat="server" Text="备注" DataIndex="memo" Width="180" />
+                            <ext:CommandColumn ID="cmdCol" runat="server" Align="Center" Text="操作" Width="185">
+                                <Commands>
+                                    <ext:GridCommand Icon="TableEdit" CommandName="Edit" Text="修改"/>
+                                    <ext:GridCommand Icon="TableDelete" CommandName="Delete" Text="删除"/>
+                                    <ext:GridCommand Icon="ApplicationViewDetail" CommandName="detail" Text="打印" />
+                                            <ext:CommandSeparator />
+                                </Commands>
+                                <Listeners>
+                                    <Command Handler="cmdcol_click(command, record);" />
+                                </Listeners>
+                            </ext:CommandColumn>
+                        </Columns>
+                    </ColumnModel>
+                    <SelectionModel>
+                        <ext:RowSelectionModel ID="rowSelectMuti" runat="server" Mode="Single">
+                            <Listeners>
+                                <Select Handler="#{detailStore}.reload();" Buffer="250" />
+                            </Listeners>
+                        </ext:RowSelectionModel>
+                    </SelectionModel>
+                    <BottomBar>
+                        <ext:PagingToolbar ID="pageToolBar" runat="server">
+                            <Plugins>
+                                <ext:ProgressBarPager ID="ProgressBarPager" runat="server"/>
+                            </Plugins>
+                        </ext:PagingToolbar>
+                    </BottomBar>
+                </ext:GridPanel>
+                <ext:Window ID="winSave" runat="server" Icon="MonitorAdd" Closable="false" Title="备件库存管理" Width="550" Height="500" Resizable="false" Modal="true" BodyStyle="background-color:#fff;" BodyPadding="5" Layout="FormLayout">
+                    <Items>
+                        <ext:FormPanel ID="pnlAdd" runat="server" BodyPadding="5" Layout="FormLayout">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="LabelWidth" Value="70" Mode="Raw" />
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Hidden runat="server" ID="hideObjID" />
+                                <ext:FieldSet runat="server" Title="备件库存管理" Layout="AnchorLayout" DefaultAnchor="100%">
+                                    <Items>
+                                        <ext:FieldContainer ID="FieldContainer2" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:TextField ID="txtbjcode" runat="server" Width="200" LabelAlign="Right" Enabled="true" FieldLabel="备件代码"  AllowBlank="false"/>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer3" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:TextField ID="txtspectype" runat="server" Width="200" LabelAlign="Right" Enabled="true" FieldLabel="规格型号"  />
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer4" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:TextField ID="txtnum" runat="server" Width="200" LabelAlign="Right" Enabled="true" FieldLabel="库存数量"  AllowBlank="false"/>
+                                                 <ext:TextField ID="txtmoney" runat="server" Width="200" LabelAlign="Right" Enabled="true" FieldLabel="价值金额"  AllowBlank="false"/>
+
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer6" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:TextField ID="txtman" runat="server" Width="200" LabelAlign="Right" Enabled="true" FieldLabel="计划人" AllowBlank="false" />
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                    </Items>
+                                </ext:FieldSet>
+                            </Items>
+                            <Listeners>
+                                <ValidityChange Handler="#{btnSave}.setDisabled(!valid);" />
+                            </Listeners>
+                        </ext:FormPanel>
+                        <ext:Hidden runat="server" ID="hideMode" Text="Add" />
+                    </Items>
+                    <Buttons>
+                        <ext:Button ID="btnSave" runat="server" Text="确定" Icon="Accept" Disabled="true">
+                            <DirectEvents>
+                                <Click OnEvent="btnSave_Click">
+                                    <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                                </Click>
+                            </DirectEvents>
+                        </ext:Button>
+                        <ext:Button ID="btnCancel" runat="server" Text="取消" Icon="Cancel">
+                            <DirectEvents>
+                                <Click OnEvent="btnCancel_Click" />
+                            </DirectEvents>
+                        </ext:Button>
+                    </Buttons>
+                </ext:Window>
+
+            <ext:Window ID="winDetail" runat="server" Icon="MonitorAdd" Closable="true" Title="备件库存打印" AutoScroll="true" Width="1000" Height="500" Resizable="false" Hidden="true" Modal="false" BodyStyle="background-color:#fff;" BodyPadding="5">
+                <Content>
+                    <cc1:webreport id="WebReport" runat="server" backcolor="White" font-bold="False" width="99%" height="98%" zoom="1"
+                        padding="3, 3, 3, 3" toolbarcolor="Lavender" printinpdf="True" layers="False" />
+                </Content>
+            </ext:Window>
+
+            <ext:Hidden ID="hidden_equip_code" runat="server">
+            </ext:Hidden>
+            <ext:Hidden ID="hidden_type" runat="server">
+            </ext:Hidden>
+        </Items>
+    </ext:Viewport>
+    </form>
+</body>
+</html>

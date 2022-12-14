@@ -1,0 +1,103 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberStorageInfo : Mesnac.Web.UI.Page
+{
+    protected BasUserManager userManager = new BasUserManager();
+    protected PpmStorageManager storageManager = new PpmStorageManager();
+    protected PpmStorageDetailManager storageDetailManager = new PpmStorageDetailManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            
+        }
+    }
+
+    #region 分页相关方法
+    private PageResult<PpmStorage> GetPageResultData(PageResult<PpmStorage> pageParams)
+    {
+        PpmStorageManager.QueryParams queryParams = new PpmStorageManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.storageID = hiddenStorageID.Text;
+        queryParams.storagePlaceID = hiddenStoragePlaceID.Text;
+        queryParams.materCode = hiddenMaterCode.Text;
+        queryParams.productNo = txtProductNo.Text;
+        queryParams.barcode = txtBarcode.Text;
+
+        return storageManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmStorage> pageParams = new PageResult<PpmStorage>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = prms.Sort[0].Property + " " + prms.Sort[0].Direction;
+
+        PageResult<PpmStorage> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    protected void RowSelect(object sender, StoreReadDataEventArgs e)
+    {
+        string barcode = e.Parameters["Barcode"];
+        string storageID = e.Parameters["StorageID"];
+        string storagePlaceID = e.Parameters["StoragePlaceID"];
+
+        this.storeDetail.DataSource = storageDetailManager.GetByInfo(barcode, storageID, storagePlaceID);
+        this.storeDetail.DataBind();
+    }
+    #endregion
+
+    #region 校验方法
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+
+    protected void CheckCombo(object sender, RemoteValidationEventArgs e)
+    {
+        ComboBox combo = (ComboBox)sender;
+
+        if (combo.SelectedItem.Value != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须选择！";
+        }
+    }
+    #endregion
+}

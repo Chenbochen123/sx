@@ -1,0 +1,227 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberChkBill : Mesnac.Web.UI.Page
+{
+    private PpmRubberChkManager manager = new PpmRubberChkManager();
+    private PpmRubberChkDetailManager detailManager = new PpmRubberChkDetailManager();
+    private BasFactoryInfoManager facManager = new BasFactoryInfoManager();
+    private BasMaterialManager materManager = new BasMaterialManager();
+    private BasUserManager userManager = new BasUserManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNO"]))
+            {
+                string billNo = Request.QueryString["BillNO"].ToString();
+                string barcode = Request.QueryString["Barcode"].ToString();
+                string orderID = Request.QueryString["OrderID"].ToString();
+
+                txtBillNo.Text = billNo;
+                this.storeDetail.DataSource = detailManager.GetByOtherBillNo(billNo, barcode, orderID);
+                this.storeDetail.DataBind();
+            }
+            cbxFiledFlag.SelectedItem.Value = "0";
+        }
+    }
+
+    #region 分页相关方法
+    private PageResult<PpmRubberChk> GetPageResultData(PageResult<PpmRubberChk> pageParams)
+    {
+        PpmRubberChkManager.QueryParams queryParams = new PpmRubberChkManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = txtBillNo.Text;
+        queryParams.noticeNo = txtNoticeNo.Text;
+        queryParams.factoryID = hiddenFactoryID.Text;
+        queryParams.beginDate = Convert.ToDateTime(txtBeginTime.Text);
+        queryParams.endDate = Convert.ToDateTime(txtEndTime.Value);
+
+        if (cbxSendChkFlag.SelectedItem.Value != "all")
+            queryParams.sendChkFlag = cbxSendChkFlag.SelectedItem.Value;
+        if (cbxFiledFlag.SelectedItem.Value != "all")
+            queryParams.filedFlag = cbxFiledFlag.SelectedItem.Value;
+        queryParams.deleteFlag = "0";
+
+        return manager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberChk> pageParams = new PageResult<PpmRubberChk>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "BillNo desc";
+
+        PageResult<PpmRubberChk> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    protected void RowSelect(object sender, StoreReadDataEventArgs e)
+    {
+        string billNo = e.Parameters["BillNo"];
+
+        this.storeDetail.DataSource = detailManager.GetByBillNo(billNo, string.Empty);
+        this.storeDetail.DataBind();
+    }
+    #endregion
+
+    #region 增删改查按钮激发的事件
+    [Ext.Net.DirectMethod()]
+    public string btnBatchSend_Click()
+    {
+        string strBillNo = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            strBillNo += "'" + row.RecordID + "', ";
+            PpmRubberChk chk = manager.GetById(row.RecordID);
+            if (chk.SendChkFlag == "1")
+                return "该单据已经审核";
+
+        }
+
+        bool result = manager.UpdateSendChkFlag(strBillNo.Remove(strBillNo.Length - 2, 1), this.UserID);
+        if (result == true)
+        {
+            pageToolBar.DoRefresh();
+            return "送检审核成功！";
+        }
+        else
+        {
+            return "送检审核失败！";
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnCancelSend_Click()
+    {
+        string strBillNo = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            strBillNo += "'" + row.RecordID + "', ";
+            PpmRubberChk chk = manager.GetById(row.RecordID);
+            if (chk.SendChkFlag == "0")
+                return "该单据未审核，不能撤销！";
+            EntityArrayList<PpmRubberChkDetail> detailList = detailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == chk.BillNo && PpmRubberChkDetail._.DeleteFlag == "0");
+            for (int i = 0; i < detailList.Count; i++)
+            {
+                if (detailList[i].StoreInNum > 0 || detailList[i].StoreInWeight > 0)
+                {
+                    return "该单据已经入库，不能撤销！";
+                }
+            }
+        }
+
+        bool result = manager.CancelSendChk(strBillNo.Remove(strBillNo.Length - 2, 1), this.UserID);
+        if (result == true)
+        {
+            pageToolBar.DoRefresh();
+            return "撤销成功！";
+        }
+        else
+        {
+            return "撤销失败！";
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string billNo)
+    {
+        try
+        {
+            EntityArrayList<PpmRubberChkDetail> details = detailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == billNo && PpmRubberChkDetail._.ChkResultFlag == "1");
+            if (details.Count > 0)
+            {
+                return "false";
+            }
+            PpmRubberChk store = manager.GetById(billNo);
+            store.DeleteFlag = "1";
+
+            manager.Update(store);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_filed(string billNo)
+    {
+        try
+        {
+            //判断是否可以归档，根据是该数据所对应的明细数据全部全部处理完毕，SendChkFlag标志为1
+            EntityArrayList<PpmRubberChkDetail> list = detailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == billNo && PpmRubberChkDetail._.SendChkFlag == null && PpmRubberChkDetail._.DeleteFlag == "0");
+            if (list.Count > 0)
+            {
+                return "不能归档：该送检单没有处理完毕，请首先处理该数据对应的明细数据！";
+            }
+
+            PpmRubberChk store = manager.GetById(billNo);
+            store.FiledFlag = "1";
+
+            manager.Update(store);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "操作失败：" + e;
+        }
+        return "已归档";
+    }
+
+    #endregion
+
+    #region 校验方法
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+
+    protected void CheckCombo(object sender, RemoteValidationEventArgs e)
+    {
+        ComboBox combo = (ComboBox)sender;
+
+        if (combo.SelectedItem.Value != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须选择！";
+        }
+    }
+    #endregion
+}

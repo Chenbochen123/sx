@@ -1,0 +1,41 @@
+﻿System系统管理说明
+	|
+	|-----PagePermission(用户权限)
+	|				|
+	|				|-----UserRole.aspx(用户角色定义)
+	|
+	|
+	|-----RubPowerUser(胶料对应用户权限设置页面)
+	|				|
+	|				|-----RubPowerUser.aspx(胶料对应用户权限设置页面)
+	|
+	|-----SysProblemRecord(系统问题记录页面)
+	|				|
+	|				|-----SysProblemRecord.aspx(系统问题记录页面)
+	|
+	|-----SysTaskRemind(待办任务提醒页面)
+	|				|
+	|				|-----SysTaskRemind.aspx(待办任务提醒页面)
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|

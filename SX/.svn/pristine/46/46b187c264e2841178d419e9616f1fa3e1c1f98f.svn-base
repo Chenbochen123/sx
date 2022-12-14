@@ -1,0 +1,276 @@
+﻿
+
+var refreshRowNum = function (store) {
+    for (var i = 0; i < store.data.items.length; i++) {
+        store.data.items[i].index = i;
+    }
+    store.loadRecords(store.data.items, true);
+};
+//点击插入按钮
+var commandcolumn_add = function (command, store, index) {
+    if (command.toLowerCase() != "add") {
+        return;
+    }
+    var errorAllow = 0;
+    for (var i = store.data.items.length - 1; i >= 0; i--) {
+        errorAllow = store.data.items[i].data.ErrorAllow;
+        if (errorAllow > 0) {
+            break;
+        }
+    }
+    var modelName = store.model.getName();
+    var r = Ext.create(modelName, {
+        ActCode: "0",
+        ErrorAllow: errorAllow
+    })
+    store.data.add(r);
+    refreshRowNum(store);
+};
+var processEvent = function (view, record, node, index, event) {
+    // Load the event with the extra information needed by the mappings
+    event.view = view;
+    event.store = view.getStore();
+    event.record = record;
+    event.index = index;
+    return event;
+};
+var KeyMapClick = function (keyCode, e) {
+    var record = e.record;
+    if ((record) && (record.data.MaterialCode) && (record.data.MaterialCode.length > 0)
+        && (record.data.SetWeight) && (record.data.SetWeight > 0)
+        && (record.data.ErrorAllow) && (record.data.ErrorAllow > 0)
+        && (e.store.data.length == e.index + 1)) {
+        commandcolumn_add("add", e.store, e.index);
+        return false;
+    }
+}
+//点击插入按钮
+var commandcolumn_insert = function (command, store, index) {
+    if (command.toLowerCase() != "insert") {
+        return;
+    }
+    var errorAllow = 0;
+    for (var i = store.data.items.length - 1; i >= 0; i--) {
+        errorAllow = store.data.items[i].data.ErrorAllow;
+        if (errorAllow > 0) {
+            break;
+        }
+    }
+    var modelName = store.model.getName();
+    var r = Ext.create(modelName, {
+        ActCode: "0",
+        ErrorAllow: errorAllow
+    })
+    store.data.insert(index, r);
+    refreshRowNum(store);
+};
+//点击删除按钮
+var commandcolumn_delete = function (command, store, index) {
+    if (command.toLowerCase() != "delete") {
+        return;
+    }
+    for (i = 0; i < store.data.items.length ; i++) {
+        if (store.data.items[i].index == index) {
+            store.data.removeAt(i);
+            break;
+        }
+    }
+    if (store.data.items.length == 0) {
+        var modelName = store.model.getName();
+        var r = Ext.create(modelName, {
+            ActCode: "0"
+        })
+        store.data.add(r);
+    }
+    refreshRowNum(store);
+};
+//根据按钮类别进行删除和编辑操作
+var commandcolumn_click = function (column, command, record) {
+    var index = record.index;
+    var store = column.grid.store;
+    commandcolumn_add(command, store, index);
+    commandcolumn_insert(command, store, index);
+    commandcolumn_delete(command, store, index);
+    return false;
+};
+var updateTotal = function (grid, totalcontainer) {
+    if (!grid.view.rendered) {
+        return;
+    }
+    var simpleRenderer = function (v) {
+        return v;
+    };
+    var getCount = function (store) {
+        var count = 0;
+        for (var i = 0; i < store.data.items.length; i++) {
+            var item = store.data.items[i];
+            if ((item.data.MaterialCode.trim().length > 0)) {
+                count++;
+            }
+        }
+        return count;
+    }
+    var setGridTitle = function (grid, count) {
+        var title = grid.title;
+        if (title.indexOf("=") > 0) {
+            title = title.substring(0, title.indexOf("="))
+        }
+        grid.setTitle(title + "=" + count);
+    }
+    var getSummary = function (store, type, field) {
+        if (type) {
+            switch (type) {
+                case 'count':
+                    return "共" + getCount(store) + "条";
+                case 'min':
+                    return "最小" + store.min(field).toFixed(3);
+                case 'max':
+                    return "最大" + store.max(field).toFixed(3);
+                case 'sum':
+                    return store.sum(field);
+                case 'average':
+                    return "平均" + store.average(field).toFixed(3);
+                default:
+                    return '';
+
+            }
+        }
+    };
+    var field, value, width, c;
+    var cs = grid.headerCt.getVisibleGridColumns();
+    setGridTitle(grid, getCount(grid.store));
+    totalcontainer.suspendLayout = true;
+    for (var i = 1; i < cs.length; i++) {
+        c = cs[i];
+        if (c.summaryType) {
+            value = getSummary(grid.store, c.summaryType.toLowerCase(), c.dataIndex);
+        }
+        else {
+            value = "";
+        }
+        field = totalcontainer.down('component[name="' + c.dataIndex + '"]');
+        totalcontainer.remove(field, false);
+        totalcontainer.insert(i, field);
+        width = c.getWidth();
+        if (i == 1) {
+            width = width + cs[0].getWidth();
+            value = grid.title;
+        }
+        else {
+            if (value.length > 0) {
+                //value = c.text + "：" + value;
+            }
+        }
+       field.setWidth(width - 1);
+        var r = c.renderer || simpleRenderer;
+        var fvalue = r(value, {}, c.dataIndex);
+        if (i == cs.length - 1) {
+            fvalue = value;
+        }
+        field.setValue(fvalue);
+    }
+    totalcontainer.items.each(function (field) {
+        try {
+            var column = grid.headerCt.down('component[dataIndex="' + field.name + '"]');
+            field.setVisible(column.isVisible());
+        }
+        catch
+            (ex) {
+        }
+    });
+
+    totalcontainer.suspendLayout = false;
+    totalcontainer.doLayout();
+};
+
+var weightTotal = function () {
+    var weightGridTotal = function (grid) {
+        var field = grid.headerCt.getVisibleGridColumns()[4].dataIndex;
+        return grid.store.sum(field);
+    }
+    var total = 0;
+    for (var i = 0; i < App.pnlWeight.items.items.length; i++) {
+        var item = App.pnlWeight.items.items[i];
+        total = total + weightGridTotal(item);
+    }
+    Ext.Msg.alert('合计', '称量合计 ' + total.toFixed(3) + ' 千克');
+}
+
+var showInfo = function (value, items, record) {
+    if (!value) {
+        return value;
+    }
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].data.field1.toString().trim() == value.toString().trim()) {
+            //record.data.MaterialName = items[i].data.field2;
+            return items[i].data.field2;
+        }
+    }
+    return "";
+};
+var RendererGridColumnComboBox = function (value, metadata, record, rowIndex, colIndex, store, view) {
+    if (!view) {
+        return value;
+    }
+    var cs = view.panel.headerCt.getGridColumns();
+    var items = cs[colIndex].getEditor().items.items[0].store.data.items;
+    var ss = showInfo(value, items, record);
+    if (ss == "卸料" && record.data.ErrorAllow > 0) {
+        record.set("SetWeight", 0);
+        record.set("ErrorAllow", 0);
+        record.set("MaterialCode", "");
+        record.set("MaterialName", "");
+        record.set("RecipeMaterialCode", "");
+        record.set("RecipeEquipCode", "");
+        //try { refreshRowNum(store); } catch (ex) { }
+    }
+    return ss;
+};
+
+
+var showInfoSearch = function (value, items, record) {
+    if (!value) {
+        return value;
+    }
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].data.field1.toString().trim() == value.toString().trim()) {
+            record.set("MaterialCode", items[i].data.field1);
+            record.set("MaterialName", items[i].data.field2);
+            record.set("RecipeMaterialCode", items[i].data.field2);
+            record.set("RecipeEquipCode", items[i].data.RecipeEquipCode);
+            break;
+        }
+    }
+};
+var RendererGridColumnComboBoxSearch = function (value, metadata, record, rowIndex, colIndex, store, view) {
+    if (!view) {
+        return value;
+    }
+    var level = record.data.RecipeEquipCode;
+    var cs = view.panel.headerCt.getGridColumns();
+    var items = cs[colIndex].getEditor().items.items[0].store.data.items;
+    showInfoSearch(value, items, record);
+    if (record.data.MaterialName != record.data.RecipeMaterialCode) {
+        record.set("MaterialCode", "");
+        record.set("MaterialName", "");
+        record.set("RecipeMaterialCode", "");
+        record.set("RecipeEquipCode", "");
+    }
+    if (level != record.data.RecipeEquipCode) {
+        //try { refreshRowNum(store); } catch (ex) { }
+    }
+    return record.data.RecipeMaterialCode;
+
+};
+
+
+var enableEdit = function () {
+    var can = true;
+    try {
+        can = !parent.App.btnSave.disabled;
+    }
+    catch (ex) {
+    }
+    return can;
+}
+

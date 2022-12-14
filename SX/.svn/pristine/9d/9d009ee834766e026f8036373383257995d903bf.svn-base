@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="06/13/2013 08:51:36" ReportInfo.Modified="06/19/2013 17:08:47" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {     
+      // get the data source by its name
+      DataSourceBase rowData = Report.GetDataSource(&quot;ShopConsumeTotal&quot;);
+      // init the data source
+      rowData.Init();
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      decimal sumValue = 0;
+      int count = 0;
+      decimal totalweight = 0;
+      // now enumerate the data source and print the table body
+      while (rowData.HasMoreRows)
+      {
+        Cell6.Text = rowData.Report.GetColumnValue(&quot;ShopConsumeTotal.EquipGroup&quot;).ToString();
+        Cell10.Text = rowData.Report.GetColumnValue(&quot;ShopConsumeTotal.MaterialName&quot;).ToString();
+        Cell26.Text = rowData.Report.GetColumnValue(&quot;ShopConsumeTotal.MaterCode&quot;).ToString();
+        Cell22.Text = rowData.Report.GetColumnValue(&quot;ShopConsumeTotal.TotalWeight&quot;).ToString();
+        totalweight += Convert.ToDecimal(rowData.Report.GetColumnValue(&quot;ShopConsumeTotal.TotalWeight&quot;).ToString());
+        Table1.PrintRow(1);
+        Table1.PrintColumns();
+        rowData.Next();
+        count++;
+      }
+      
+      Cell27.Text = &quot;共&quot;+count+&quot;条记录&quot;;
+      Cell23.Text = totalweight.ToString();
+        
+      Table1.PrintRow(2);
+      Table1.PrintColumns();
+      
+    }
+  }
+}
+</ScriptText>
+  <Dictionary/>
+  <ReportPage Name="Page1">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="103.95" CanShrink="true">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="661.12" Height="85.05" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="165.28"/>
+        <TableColumn Name="Column5" Width="165.28"/>
+        <TableColumn Name="Column7" Width="165.28"/>
+        <TableColumn Name="Column6" Width="165.28"/>
+        <TableRow Name="Row1" Height="28.35">
+          <TableCell Name="Cell1" Border.Lines="All" Border.Color="DarkGray" Fill="Glass" Fill.Color="LightGray" Fill.Blend="0.52" Fill.Hatch="false" Text="部门" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell5" Border.Lines="All" Border.Color="DarkGray" Fill="Glass" Fill.Color="LightGray" Fill.Blend="0.52" Fill.Hatch="false" Text="物料名称" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell25" Border.Lines="All" Border.Color="DarkGray" Fill="Glass" Fill.Color="LightGray" Fill.Blend="0.52" Fill.Hatch="false" Text="物料编码" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell21" Border.Lines="All" Border.Color="DarkGray" Fill="Glass" Fill.Color="LightGray" Fill.Blend="0.52" Fill.Hatch="false" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="28.35">
+          <TableCell Name="Cell6" Border.Lines="All" Border.Color="DarkGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Border.Color="DarkGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell26" Border.Lines="All" Border.Color="DarkGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell22" Border.Lines="All" Border.Color="DarkGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="28.35">
+          <TableCell Name="Cell11" Border.Lines="All" Border.Color="DarkGray" Fill.Color="LightGray" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" ColSpan="2"/>
+          <TableCell Name="Cell15" Border.Lines="All" Border.Color="LightGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell27" Border.Lines="All" Border.Color="DarkGray" Fill.Color="LightGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell23" Border.Lines="All" Border.Color="DarkGray" Fill.Color="LightGray" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+      </TableObject>
+    </ReportTitleBand>
+  </ReportPage>
+</Report>

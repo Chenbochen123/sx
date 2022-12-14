@@ -1,0 +1,285 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Mixing.aspx.cs" Inherits="Manager_Technology_Manage_MaterialRecipeDetail_Mixing" %>
+
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="head" runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>工艺配方明细-步骤</title>
+    <!--通用-->
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <link href="<%= Page.ResolveUrl("~/") %>resources/css/examples.css" rel="stylesheet" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js"></script>
+    <script type="text/javascript">
+        var gridPanelRefresh = function () {
+            App.gridPanelMinxing.store.currentPage = 1;
+            App.gridPanelMinxing.store.reload();
+            return false;
+        }
+    </script>
+     <%--表格加竖线--%>
+    <style type="text/css">
+        .x-grid-cell-inner {
+            border-right:1px solid
+                #d6d3d3;
+        }
+        .x-grid-row td, .x-grid-summary-row td {
+            padding-right: 0px;
+        }
+        .x-grid-row {
+            border-top-width:0px;
+            border-bottom-width:0px;
+        }
+        </style>
+    <!--特殊-->
+    <script src="<%= Page.ResolveUrl("~/") %>resources/js/waitwindow.js"></script>
+    <script src="<%= Page.ResolveUrl("./") %>Mixing.js?_dc=<%= DateTime.Now.ToString("yyyyMMddHHmmss") %>"></script>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <asp:Button ID="btnExportSubmit" Style="display:none" runat="server" Text="Button" OnClick="btnExportSubmit_Click" />
+        <ext:ResourceManager ID="ResourceManager1" runat="server" />
+        <ext:Viewport ID="Viewport1" runat="server" Layout="BorderLayout">
+            <Items>
+                <ext:Panel ID="pnlMixing" runat="server" Region="Center" Header="false" Layout="BorderLayout">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="Toolbar2">
+                            <Items>
+                                <ext:ToolbarSeparator ID="toolbarSeparator_begin" />
+                                <ext:Button runat="server" Icon="PackageIn" Text="调用混炼信息" ID="Button7">
+                                    <Listeners>
+                                        <Click Handler="QueryPmtRecipeInfo()"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="Reload" Text="刷新混炼信息" ID="Button8">
+                                    <Listeners>
+                                        <Click Handler="gridPanelRefresh()"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator1" />
+                                <ext:Checkbox ID="cbPageCanEdit" runat="server" FieldLabel="编辑当前信息" LabelAlign="Right"
+                                    Disabled="true" Hidden="true">
+                                </ext:Checkbox>
+                                <ext:Button runat="server" Icon="PageWhiteExcel" Text="导出" ID="btnExport">
+                                    <Listeners>
+                                        <Click Handler="$('#btnExportSubmit').click();"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator ID="toolbarSeparator_end" />
+                                <ext:ToolbarSpacer runat="server" ID="toolbarSpacer_end" />
+                                <ext:ToolbarFill ID="toolbarFill_end" />
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:GridPanel ID="gridPanelMinxing" Region="Center" runat="server" Frame="true">
+                            <Store>
+                                <ext:Store ID="storeMinxing" runat="server" PageSize="30">
+                                    <Proxy>
+                                        <ext:PageProxy DirectFn="App.direct.MinxingGridPanelBindData" />
+                                    </Proxy>
+                                    <Model>
+                                        <ext:Model ID="model" runat="server" Name="gridPanelMinxingModel">
+                                            <Fields>
+                                               <ext:ModelField Name="Time_diff" />
+                                                <ext:ModelField Name="Temp_diff" />
+                                                <ext:ModelField Name="Ener_diff" />
+                                                <ext:ModelField Name="ObjID" />
+                                                <ext:ModelField Name="RecipeObjID" />
+                                                <ext:ModelField Name="RecipeEquipCode" />
+                                                <ext:ModelField Name="RecipeMaterialCode" />
+                                                <ext:ModelField Name="RecipeVersionID" />
+                                                <ext:ModelField Name="MixingStep" />
+                                                <ext:ModelField Name="TermCode" />
+                                                <ext:ModelField Name="MixingTime" />
+                                                <ext:ModelField Name="MixingTemp" />
+                                                <ext:ModelField Name="MixingEnergy" />
+                                                <ext:ModelField Name="MixingPower" />
+                                                <ext:ModelField Name="MixingPress" />
+                                                <ext:ModelField Name="MixingSpeed" />
+                                                <ext:ModelField Name="ActionCode" />
+                                             
+                                            </Fields>
+                                        </ext:Model>
+                                    </Model>
+                                    <Listeners>
+                                        <Load Handler="App.txtRecipeObjID.setValue('');"></Load>
+                                    </Listeners>
+                                </ext:Store>
+                            </Store>
+                            <ColumnModel ID="columnModel" runat="server">
+                                <Listeners>
+                                    <HeaderClick Fn="HeaderClick"></HeaderClick>
+                                </Listeners>
+                                <Columns>
+                                    <ext:RowNumbererColumn ID="rowNum1" runat="server" Text="步骤" Width="50" Align="Center" />
+                                    <ext:Column ID="TermCode" DataIndex="TermCode" runat="server" Text="条件设定" Width="120" Sortable="false" >
+                                        <Editor>
+                                            <ext:ComboBox ID="setTemCode" runat="server" SelectOnTab="true" Editable="false">
+                                            </ext:ComboBox>
+                                        </Editor>
+                                        <Renderer Handler="return RendererGridColumnComboBox(value,metadata,record,rowIndex,colIndex,store,view)"></Renderer>
+                                    </ext:Column>
+                                    <ext:Column ID="MixingTime" DataIndex="MixingTime" runat="server" DecimalPrecision="0" Text="时间" Align="Center" Width="40" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField2" runat="server" MinValue="0"  DecimalPrecision="0"/>
+                                
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                     <ext:Column ID="MixingTimeDif" DataIndex="Time_diff" runat="server" DecimalPrecision="0" Text="时间公差" Align="Center" Width="60" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField1" runat="server" MinValue="0"  DecimalPrecision="0"/>
+                                
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:Column ID="MixingTemp" DataIndex="MixingTemp" runat="server" DecimalPrecision="0" Text="温度" Align="Center" Width="40" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField4" runat="server" DecimalPrecision="0"/>
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                     <ext:Column ID="MixingTempDif" DataIndex="Temp_diff" runat="server" DecimalPrecision="0" Text="温度公差" Align="Center" Width="60" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField3" runat="server" DecimalPrecision="0"/>
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:Column ID="MixingEnergy" DataIndex="MixingEnergy" runat="server" DecimalPrecision="0" Text="能量" Align="Center" Width="40" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField5" runat="server" DecimalPrecision="1"/>
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                       <ext:Column ID="MixingEnergyDif" DataIndex="Ener_diff" runat="server" DecimalPrecision="0" Text="能量公差" Align="Center" Width="60" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField9" runat="server" DecimalPrecision="1"/>
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''};if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:Column ID="MixingPower" DataIndex="MixingPower" runat="server" DecimalPrecision="0" Text="功率" Align="Center" Width="40" Sortable="false">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField6" runat="server" />
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''}; if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:Column ID="ActionCode" DataIndex="ActionCode" runat="server" Text="动作" Width="120" Sortable="false">
+                                        <Editor>
+                                            <ext:ComboBox ID="setActionCode" runat="server" SelectOnTab="true" Editable="false">
+                                            </ext:ComboBox>
+                                        </Editor>
+                                        <Renderer Handler="return RendererGridColumnComboBox(value,metadata,record,rowIndex,colIndex,store,view)"></Renderer>
+                                    </ext:Column>
+                                    <ext:Column ID="MixingSpeed" DataIndex="MixingSpeed" runat="server" Text="转速" DecimalPrecision="0" Align="Center" Width="40" Sortable="false" ToolTip="单机表头可批量修改">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField7" runat="server" MinValue="0" />
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''}; if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:Column ID="MixingPress" DataIndex="MixingPress" runat="server" Text="压力" DecimalPrecision="0" Align="Center" Width="40" Sortable="false" ToolTip="单机表头可批量修改">
+                                        <Editor>
+                                            <ext:NumberField ID="NumberField8" runat="server" MinValue="0" />
+                                        </Editor>
+                                        <Renderer Handler="if (!value){return ''}; if (value==0) {return '';} else {return value;}" />
+                                    </ext:Column>
+                                    <ext:CommandColumn ID="commandCol" runat="server" Width="120" Text="操作" Align="Center" Sortable="false">
+                                        <Commands>
+                                            <ext:GridCommand Icon="TableEdit" CommandName="Insert" Text="插入">
+                                                <ToolTip Text="本条之前插入数据" />
+                                            </ext:GridCommand>
+                                            <ext:CommandSeparator />
+                                            <ext:GridCommand Icon="Delete" CommandName="Delete" Text="删除">
+                                                <ToolTip Text="删除本条数据" />
+                                            </ext:GridCommand>
+                                        </Commands>
+                                        <PrepareToolbar />
+                                        <Listeners>
+                                            <Command Handler="return commandcolumn_click(this,command, record);" />
+                                        </Listeners>
+                                    </ext:CommandColumn>
+                                </Columns>
+                            </ColumnModel>
+                            <SelectionModel>
+                                <ext:CellSelectionModel ID="CellSelectionModel1" runat="server" />
+                            </SelectionModel>
+                            <Plugins>
+                                <ext:CellEditing ID="cellEditing1" runat="server" ClicksToEdit="1">
+                                    <Listeners>
+                                        <BeforeEdit Fn="enableEdit"></BeforeEdit>
+                                    </Listeners>
+                                </ext:CellEditing>
+                            </Plugins>
+                            <BottomBar>
+                                <ext:PagingToolbar ID="pageToolbar" runat="server">
+                                    <Plugins>
+                                        <ext:ProgressBarPager ID="progressBarPager" runat="server" />
+                                    </Plugins>
+                                </ext:PagingToolbar>
+                            </BottomBar>
+                        </ext:GridPanel>
+                        <ext:Hidden ID="txtRecipeObjID" runat="server"></ext:Hidden>
+                    </Items>
+                </ext:Panel>
+            </Items>
+        </ext:Viewport>
+        <ext:Window ID="winHeaderClick" runat="server" Icon="MonitorAdd" Closable="true" Title="批量修改"
+            Width="300" Height="200" Resizable="false" Hidden="true" Modal="true" BodyStyle="background-color:#fff;"
+            BodyPadding="5" Layout="Form">
+            <Items>
+                <ext:FormPanel ID="pnlAdd" runat="server" BodyPadding="5">
+                    <FieldDefaults>
+                        <CustomConfig>
+                            <ext:ConfigItem Name="LabelWidth" Value="80" Mode="Raw" />
+                            <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                        </CustomConfig>
+                    </FieldDefaults>
+                    <Items>
+                        <ext:Container ID="Container1" runat="server" Layout="ColumnLayout" AutoHeight="true">
+                            <Items>
+                                <ext:Container ID="Container2" runat="server" Layout="FormLayout" ColumnWidth=".5"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:NumberField ID="txtStepStart" runat="server" FieldLabel="步骤开始" LabelAlign="Right" Enabled="true" MaxLength="20" />
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="Container3" runat="server" Layout="FormLayout" ColumnWidth=".5"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:NumberField ID="txtStepEnd" runat="server" FieldLabel="步骤结束" LabelAlign="Right" Enabled="true" MaxLength="20" />
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:Container>
+
+                        <ext:Container ID="Container4" runat="server" Layout="ColumnLayout" AutoHeight="true">
+                            <Items>
+                                <ext:Container ID="Container5" runat="server" Layout="FormLayout" ColumnWidth="1"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:NumberField ID="txtSetValue" runat="server" FieldLabel="批量设置[转速]的值为" LabelWidth="150" LabelAlign="Right" Enabled="true" MaxLength="20" />
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:Container>
+                        <ext:Hidden ID="hiddenDataIndex" runat="server"></ext:Hidden>
+                    </Items>
+                </ext:FormPanel>
+            </Items>
+            <Buttons>
+                <ext:Button ID="btnAddSave" runat="server" Text="确定" Icon="Accept">
+                    <Listeners>
+                        <Click Fn="SetValueByHeader"></Click>
+                    </Listeners>
+                </ext:Button>
+                <ext:Button ID="btnAddCancel" runat="server" Text="取消" Icon="Cancel">
+                    <Listeners>
+                        <Click Handler="#{winHeaderClick}.close()"></Click>
+                    </Listeners>
+                </ext:Button>
+            </Buttons>
+        </ext:Window>
+    </form>
+</body>
+</html>

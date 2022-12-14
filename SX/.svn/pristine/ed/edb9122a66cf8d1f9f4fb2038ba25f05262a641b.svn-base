@@ -1,0 +1,419 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Storage_MaterialInventoryInsert : Mesnac.Web.UI.Page
+{
+    protected PstMaterialChkManager chkManager = new PstMaterialChkManager();
+    protected PstMaterialChkDetailManager chkdetailManager = new PstMaterialChkDetailManager();
+    protected BasUserManager userManager = new BasUserManager();
+    protected BasMaterialManager materManager = new BasMaterialManager();
+    protected BasFactoryInfoManager facManager = new BasFactoryInfoManager();
+    protected BasStorageManager storageManager = new BasStorageManager();
+    protected BasStoragePlaceManager storagePlaceManager = new BasStoragePlaceManager();
+    protected PstMaterialStoreinManager storeInManager = new PstMaterialStoreinManager();
+    protected PstMaterialStoreinDetailManager storeinDetailManager = new PstMaterialStoreinDetailManager();
+    protected PstMaterialInventoryManager inventoryManager = new PstMaterialInventoryManager();
+    protected PstMaterialInventoryDetailManager inventoryDetailManager = new PstMaterialInventoryDetailManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            txtMakerPerson.Text = userManager.GetListByWhere(BasUser._.WorkBarcode == this.UserID)[0].UserName;
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                BindData(Request.QueryString["BillNo"].ToString());
+            }
+            else
+            {
+                txtInventoryDate.Text = DateTime.Now.ToString();
+                hiddenBillNo.Text = Guid.NewGuid().ToString();
+            }
+        }
+    }
+
+    private PageResult<PstMaterialInventoryDetail> GetPageResultData1(PageResult<PstMaterialInventoryDetail> pageParams)
+    {
+        PstMaterialInventoryDetailManager.QueryParams queryParams = new PstMaterialInventoryDetailManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = hiddenBillNo.Text;
+
+        return inventoryDetailManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindDetail(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PstMaterialInventoryDetail> pageParams = new PageResult<PstMaterialInventoryDetail>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+
+        PageResult<PstMaterialInventoryDetail> lst = GetPageResultData1(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    public void BindData(string billNo)
+    {
+        PstMaterialInventory inventoryBill = inventoryManager.GetById(Request.QueryString["BillNo"].ToString());
+        txtBillNo.Text = inventoryBill.BillNo;
+        hiddenBillNo.Text = inventoryBill.BillNo;
+        txtStorageName.Text = storageManager.GetStorageName(inventoryBill.StorageID);
+        hiddenStorageID.Text = inventoryBill.StorageID;
+        txtInventoryDate.Text = inventoryBill.InventoryDate.ToString();
+        txtInventoryDate.ReadOnly = true;
+        txtRemark.Text = inventoryBill.Remark;
+        btnSave.Disabled = false;
+        btnInport.Disabled = true;
+        txtStorageName.ReadOnly = true;
+        DataSet ds = inventoryDetailManager.GetByBillNo(billNo);
+        EntityArrayList<PstMaterialInventoryDetail> inventoryDetail = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == billNo);
+
+        this.store.DataSource = ds;
+        this.store.DataBind();
+    }
+
+    protected void btnAddDetail_Click(object sender, EventArgs e)
+    {
+        //EntityArrayList<PstMaterialStoreinDetail> storeinDetails = storeinDetailManager.GetListByWhere(PstMaterialStoreinDetail._.BillNo == hiddenBillNo.Text && PstMaterialStoreinDetail._.Barcode == txtBarcode3.Text);
+        //if (storeinDetails.Count > 0)
+        //{
+        //    X.MessageBox.Alert("操作", "列表中已存在" + txtBarcode3.Text + "的条码,不能重复！").Show();
+        //    return;
+        //}
+        EntityArrayList<PstMaterialInventoryDetail> details = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.Barcode == txtBarcode3.Text);
+        foreach (PstMaterialInventoryDetail inventoryDetail1 in details)
+        {
+            if (inventoryDetail1.MaterCode != hiddenMaterCode.Text)
+            {
+                X.MessageBox.Alert("操作", "其他单据已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                return;
+            }
+        }
+
+        EntityArrayList<PstMaterialInventoryDetail> inventoryDetailCount = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == hiddenBillNo.Text);
+
+        PstMaterialInventoryDetail inventoryDetail = new PstMaterialInventoryDetail();
+        inventoryDetail.BillNo = hiddenBillNo.Text;
+        inventoryDetail.StorageID = hiddenStorageID.Text;
+        inventoryDetail.StoragePlaceID = hiddenStoragePlaceID.Text;
+        inventoryDetail.Barcode = txtBarcode3.Text;
+        inventoryDetail.OrderID = inventoryDetailCount.Count + 1;
+        inventoryDetail.MaterCode = hiddenMaterCode.Text;
+        inventoryDetail.StorageNum = Convert.ToInt32(txtStorageNum3.Text);
+        inventoryDetail.StorageWeight = Convert.ToDecimal(txtStorageWeight3.Text);
+        inventoryDetail.InventoryNum = Convert.ToInt32(txtInventoryNum3.Text);
+        inventoryDetail.InventoryWeight = Convert.ToDecimal(txtInventoryWeight3.Text);
+        if (inventoryDetail.InventoryWeight > inventoryDetail.StorageWeight)
+            inventoryDetail.ProfitLossFlag = "1";
+        else if (inventoryDetail.InventoryWeight < inventoryDetail.StorageWeight)
+            inventoryDetail.ProfitLossFlag = "2";
+        else
+            inventoryDetail.ProfitLossFlag = "0";
+        int diffNum = Convert.ToInt32(inventoryDetail.StorageNum - inventoryDetail.InventoryNum);
+        decimal diffWeight = Convert.ToDecimal(inventoryDetail.StorageWeight - inventoryDetail.InventoryWeight);
+        inventoryDetail.DiffNum = diffNum > 0 ? diffNum : (-1) * diffNum;
+        inventoryDetail.DiffWeight = diffWeight > 0 ? diffWeight : (-1) * diffWeight;
+        inventoryDetail.RecordDate = DateTime.Now;
+        inventoryDetail.Remark = txtRemark3.Text;
+
+        inventoryDetailManager.Insert(inventoryDetail);
+        pageToolBar.DoRefresh();
+
+        txtBarcode3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        hiddenMaterCode.Text = string.Empty;
+        txtStoragePlaceName3.Text = string.Empty;
+        hiddenStoragePlaceID.Text = string.Empty;
+        txtStorageNum3.Text = string.Empty;
+        txtStorageWeight3.Text = string.Empty;
+        txtInventoryNum3.Text = string.Empty;
+        txtInventoryWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumndetail_direct_edit(string barcode)
+    {
+        PstMaterialInventoryDetail inventoryDetail = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == hiddenBillNo.Text && PstMaterialInventoryDetail._.Barcode == barcode)[0];
+
+        hiddenBarcode.Text = inventoryDetail.Barcode;
+        txtBarcode2.Text = inventoryDetail.Barcode;
+        txtMaterialName2.Text = materManager.GetMaterName(inventoryDetail.MaterCode);
+        txtStoragePlaceName2.Text = storagePlaceManager.GetListByWhere(BasStoragePlace._.StoragePlaceID == inventoryDetail.StoragePlaceID)[0].StoragePlaceName;
+        hiddenStorageID.Text = storagePlaceManager.GetListByWhere(BasStoragePlace._.StoragePlaceID == inventoryDetail.StoragePlaceID)[0].StorageID;
+        hiddenStoragePlaceID.Text = inventoryDetail.StoragePlaceID;
+        txtStorageNum2.Text = inventoryDetail.StorageNum.ToString();
+        txtStorageWeight2.Text = inventoryDetail.StorageWeight.ToString();
+        txtInventoryNum2.Text = inventoryDetail.InventoryNum.ToString();
+        txtInventoryWeight2.Text = inventoryDetail.InventoryWeight.ToString();
+        txtRemark2.Text = inventoryDetail.Remark;
+
+        this.winModifyDetail.Show();
+    }
+
+    protected void btnModifyDetailSave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            PstMaterialInventoryDetail inventoryDetail = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == hiddenBillNo.Text && PstMaterialInventoryDetail._.StorageID == hiddenStorageID.Text && PstMaterialInventoryDetail._.StoragePlaceID == hiddenStoragePlaceID.Text && PstMaterialInventoryDetail._.Barcode == hiddenBarcode.Text)[0];
+
+            inventoryDetail.InventoryNum = Convert.ToInt32(txtInventoryNum2.Text);
+            inventoryDetail.InventoryWeight = Convert.ToDecimal(txtInventoryWeight2.Text);
+            if (inventoryDetail.InventoryWeight > inventoryDetail.StorageWeight)
+                inventoryDetail.ProfitLossFlag = "1";
+            else if (inventoryDetail.InventoryWeight < inventoryDetail.StorageWeight)
+                inventoryDetail.ProfitLossFlag = "2";
+            else
+                inventoryDetail.ProfitLossFlag = "0";
+            inventoryDetail.RecordDate = DateTime.Now;
+            inventoryDetail.Remark = txtRemark2.Text;
+
+            inventoryDetailManager.Update(inventoryDetail);
+
+            pageToolBar.DoRefresh();
+            this.winModifyDetail.Close();
+        }
+        catch (Exception ex)
+        {
+            X.MessageBox.Alert("操作", "更新失败：" + ex).Show();
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void DeleteChkDetail(string barcode, string storagePlaceID)
+    {
+        PstMaterialInventoryDetail inventoryDetail = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == hiddenBillNo.Text && PstMaterialInventoryDetail._.StorageID == hiddenStorageID.Text && PstMaterialInventoryDetail._.StoragePlaceID == storagePlaceID && PstMaterialInventoryDetail._.Barcode == barcode)[0];
+
+        inventoryDetailManager.Delete(inventoryDetail);
+    }
+
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(txtStorageName.Text))
+        {
+            X.MessageBox.Alert("提示", "请首先在主信息中选择库房").Show();
+            return;
+        }
+        txtBarcode3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        //BasStoragePlace place = storagePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+        //txtStoragePlaceName3.Text = place.StoragePlaceName;
+        //hiddenStoragePlaceID.Text = place.StoragePlaceID;
+        txtStoragePlaceName3.Text = string.Empty;
+        txtStorageNum3.Text = string.Empty;
+        txtStorageWeight3.Text = string.Empty;
+        txtInventoryNum3.Text = string.Empty;
+        txtInventoryWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+
+        this.winAddDetail.Show();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void btnAddSave_Click(string billNo, string barcodes, string orders)
+    {
+        string[] barcodeArr = barcodes.Split(new char[] { ',' });
+        string[] orderArr = orders.Split(new char[] { ',' });
+        for (int i = 0; i < barcodeArr.Length; i++)
+        //foreach (string bc in barcodeArr)
+        {
+            PstMaterialStoreinDetail storeInDetail = new PstMaterialStoreinDetail();
+            PstMaterialChkDetail chkStoreDetail = chkdetailManager.GetEntity(billNo, barcodeArr[i], orderArr[i]);
+
+            EntityArrayList<PstMaterialStoreinDetail> storeInDetails = storeinDetailManager.GetListByWhere(PstMaterialStoreinDetail._.BillNo == hiddenBillNo.Text && PstMaterialStoreinDetail._.DeleteFlag == "0");
+            //foreach (PstMaterialStoreinDetail p in storeInDetails)
+            //{
+            //    if (p.Barcode == chkStoreDetail.Barcode)
+            //    {
+            //        X.MessageBox.Alert("操作", "列表中已存在" + txtBarcode2.Text + "的条码,不能重复！").Show();
+            //        return;
+            //    }
+            //}
+
+            //判断其他单据是否有相同的条码和物料
+            EntityArrayList<PstMaterialStoreinDetail> details = storeinDetailManager.GetListByWhere(PstMaterialStoreinDetail._.Barcode == txtBarcode2.Text && PstMaterialStoreinDetail._.DeleteFlag == "0");
+            foreach (PstMaterialStoreinDetail storeinDetail1 in details)
+            {
+                if (storeinDetail1.MaterCode != chkStoreDetail.MaterCode)
+                {
+                    X.MessageBox.Alert("操作", "其他单据已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                    return;
+                }
+            }
+
+            PstMaterialChk chkStore = chkManager.GetListByWhere(PstMaterialChk._.BillNo == billNo)[0];
+            hiddenFactoryID.Text = chkStore.FactoryID.ToString();
+
+            storeInDetail.BillNo = hiddenBillNo.Text;
+            storeInDetail.Barcode = chkStoreDetail.Barcode;
+            storeInDetail.ProductNo = chkStoreDetail.ProductNo;
+            int orderID = 0;
+            for (int j = 0; j < storeInDetails.Count; j++)
+            {
+                if (storeInDetails[j].OrderID > orderID)
+                    orderID = storeInDetails[j].OrderID;
+            }
+            orderID++;
+            storeInDetail.OrderID = orderID;
+            storeInDetail.StoragePlaceID = hiddenStoragePlaceID.Text;
+            storeInDetail.MaterCode = chkStoreDetail.MaterCode;
+            storeInDetail.ProcDate = chkStoreDetail.ProcDate;
+            storeInDetail.InputNum = chkStoreDetail.PassNum - chkStoreDetail.StoreInNum;
+            storeInDetail.PieceWeight = chkStoreDetail.PieceWeight;
+            storeInDetail.InputWeight = chkStoreDetail.PassWeight - chkStoreDetail.StoreInWeight;
+            storeInDetail.RecordDate = DateTime.Now;
+            storeInDetail.SourceBillNo = billNo;
+            storeInDetail.SourceOrderID = Convert.ToInt32(orderArr[i]);
+            storeInDetail.NoticeNo = chkStoreDetail.NoticeNo;
+            //storeInDetail.SourcePlace = "1," + billNo + "," + barcodeArr[i] + "," + orderArr[i];
+            storeInDetail.DeleteFlag = "0";
+            storeInDetail.Remark = chkStoreDetail.Remark;
+
+            storeinDetailManager.Insert(storeInDetail);
+        }
+
+        pageToolBar.DoRefresh();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnSave_Click()
+    {
+        EntityArrayList<PstMaterialInventoryDetail> inventoryDetailCounts = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == hiddenBillNo.Text);
+        if (inventoryDetailCounts.Count == 0)
+        {
+            return "false";
+        }
+        //foreach (PstMaterialStoreinDetail p in storeinDetailCounts)
+        //{
+        //    if (string.IsNullOrEmpty(p.StoragePlaceID))
+        //        return "false1";
+        //}
+
+        try
+        {
+            //盘点修改主表信息，但是盘点日期和盘点库房不能修改。
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                PstMaterialInventory inventory = inventoryManager.GetById(Request.QueryString["BillNo"].ToString());
+                inventory.MakerPerson = this.UserID;
+                inventory.Remark = txtRemark.Text;
+
+                inventoryManager.Update(inventory);
+            }
+            else
+            {
+                //插入主信息
+                PstMaterialInventory inventory = new PstMaterialInventory();
+                inventory.BillNo = inventoryManager.GetBillNo();
+                inventory.StorageID = hiddenStorageID.Text;
+                inventory.InventoryType = "1";
+                if (Convert.ToDateTime(txtInventoryDate.Text).ToShortDateString() == DateTime.Now.ToShortDateString())
+                    inventory.InventoryDate = DateTime.Now;
+                else
+                    inventory.InventoryDate = Convert.ToDateTime(txtInventoryDate.Text);
+                inventory.MakerPerson = this.UserID;
+                inventory.ChkResultFlag = "0";
+                inventory.RecordDate = DateTime.Now;
+                inventory.Remark = txtRemark.Text;
+                inventory.DeleteFlag = "0";
+
+                inventoryManager.Insert(inventory);
+
+                inventoryDetailManager.Update(new PropertyItem[] { PstMaterialInventoryDetail._.BillNo }, new object[] { inventory.BillNo }, PstMaterialInventoryDetail._.BillNo == inventoryDetailCounts[0].BillNo);
+
+                //EntityArrayList<PstMaterialInventoryDetail> details = inventoryDetailManager.GetListByWhere(PstMaterialInventoryDetail._.BillNo == inventory.BillNo);
+                //BasStoragePlace place = storagePlaceManager.GetListByWhere(BasStoragePlace._.StorageID == hiddenStorageID.Text && BasStoragePlace._.DefaultFlag == "1")[0];
+                //for (int i = 0; i < details.Count; i++)
+                //{
+                //    if (string.IsNullOrEmpty(details[i].StoragePlaceID))
+                //    {
+                //        details[i].StoragePlaceID = place.StoragePlaceID;
+                //        storeinDetailManager.Update(details[i]);
+                //    }
+                //}
+            }
+
+            //将控件清空还原
+            BackControl();
+            return "添加成功！";
+        }
+        catch (Exception ex)
+        {
+            return "添加失败：" + ex.ToString();
+        }
+    }
+
+    public void BackControl()
+    {
+        txtBillNo.Text = "(自动生成)";
+        txtStorageName.Text = string.Empty;
+        hiddenStorageID.Text = string.Empty;
+        txtInventoryDate.Text = DateTime.Now.ToString();
+        hiddenStoragePlaceID.Text = string.Empty;
+        txtRemark.Text = string.Empty;
+
+        store.Data = null;
+        store.DataBind();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnInport_Click()
+    {
+        if (string.IsNullOrEmpty(hiddenStorageID.Text))
+            return "false";
+        if (txtInventoryDate.Text == DateTime.MinValue.ToString())
+            return "false1";
+
+        int count = inventoryDetailManager.GetByStorage(hiddenBillNo.Text, hiddenStorageID.Text, string.Format("{0:yyyy-MM}", txtInventoryDate.Value));
+        if (count > 0)
+        {
+            btnInport.Disable();
+            txtStorageName.ReadOnly = true;
+            txtInventoryDate.ReadOnly = true;
+            pageToolBar.DoRefresh();
+            return "true";
+        }
+        else
+        {
+            return "false3";
+        }
+    }
+
+    public void btnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAddDetail.Close();
+        this.winModifyDetail.Close();
+    }
+
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+}

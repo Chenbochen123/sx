@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="08/26/2013 15:58:07" ReportInfo.Modified="03/24/2014 15:50:07" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table2_ManualBuild(object sender, EventArgs e)
+    {
+      // get the parent data source by its name
+      DataSourceBase parentData = Report.GetDataSource(&quot;QmtCheckRubberQSReportType&quot;);
+      // get the data source by its name
+      DataSourceBase rowData = Report.GetDataSource(&quot;QmtCheckRubberQSReport&quot;);
+      // init the data source. Pass parentData to allow master-detail relation
+      rowData.Init(parentData);
+      
+      // print the first table row - it is a header
+      //Table2.PrintRow(0);
+      // each PrintRow call must be followed by either PrintColumn or PrintColumns call
+      // to print cells on the row
+      //Table2.PrintColumns();
+      
+      // now enumerate the data source and print the table body
+      while (rowData.HasMoreRows)
+      {
+        // print the table body  
+        Table2.PrintRow(0);
+        Table2.PrintColumns();
+        
+        // go next data source row
+        rowData.Next();
+      }
+      
+      // print the last table row - it is a footer
+      Table2.PrintRow(1);
+      Table2.PrintColumns();
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqJUrEa/KIcQqhhcfnlqC6PGg5imbaGg6zUaNTAYc5sc03TfePxSblja2w5ZBQ6XB2P7wf5rZMlTDdduDfkEmqWZj80O86qok4aYQyzq8poetQ6uQHdKiZqVP0KwvdEoLqIqIcOy++UiLIliQqYBYdltNhBiuF281ZQ7vSUNfQfvG7ThCAUTQOhgcJClw8I1SUyZb87zF/MqG8YRi/vPS7BA==">
+      <TableDataSource Name="Table" Alias="QmtCheckRubberQSReport" DataType="System.Int32" Enabled="true" SelectCommand="EXEC [ProcQmtCheckRubberQSReport] '2014-02-19', '2', '2', '2'">
+        <Column Name="炼胶批次" DataType="System.String"/>
+        <Column Name="胶料代号" DataType="System.String"/>
+        <Column Name="不合格数" DataType="System.Int32"/>
+        <Column Name="胶料车数" DataType="System.Int32"/>
+        <Column Name="合格车数" DataType="System.Int32"/>
+        <Column Name="不合格原因" DataType="System.String"/>
+        <Column Name="不合格项数" DataType="System.Int32"/>
+        <Column Name="分类" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="Table1" Alias="QmtCheckRubberQSReportType" DataType="System.Int32" Enabled="true" SelectCommand="SELECT '全钢' [分类], 42 [胶料车数], 22 [合格车数], 23 [不合格项数]&#13;&#10;UNION&#13;&#10;SELECT '未知分类', 0, 0, 0&#13;&#10;">
+        <Column Name="分类" DataType="System.String"/>
+        <Column Name="胶料车数" DataType="System.Int32"/>
+        <Column Name="合格车数" DataType="System.Int32"/>
+        <Column Name="不合格项数" DataType="System.Int32"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Relation Name="Table1_Table1" ParentDataSource="Table1" ChildDataSource="Table" ParentColumns="分类" ChildColumns="分类" Enabled="true"/>
+    <Parameter Name="CheckClassName" DataType="System.String"/>
+    <Parameter Name="CheckShiftName" DataType="System.String"/>
+    <Parameter Name="CheckPlanDate" DataType="System.String"/>
+    <Parameter Name="ReportTitle" DataType="System.String"/>
+    <Total Name="胶料车数合计" Expression="[QmtCheckRubberQSReportType.胶料车数]" Evaluator="Data1"/>
+    <Total Name="合格车数合计" Expression="[QmtCheckRubberQSReportType.合格车数]" Evaluator="Data1"/>
+    <Total Name="不合格项数合计" Expression="[QmtCheckRubberQSReportType.不合格项数]" Evaluator="Data1"/>
+    <Total Name="不合格数合计" Expression="[QmtCheckRubberQSReportType.胶料车数]-[QmtCheckRubberQSReportType.合格车数]" Evaluator="Data1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="597">
+    <ColumnHeaderBand Name="ColumnHeader1" Width="718.2" Height="66.15">
+      <TextObject Name="Text4" Top="47.25" Width="189" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="胶料代号" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text6" Left="189" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="胶料车数" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text8" Left="283.5" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="合格车数" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text10" Left="378" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="不合格车数" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text12" Left="472.5" Top="47.25" Width="207.9" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="不合格原因" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text14" Left="189" Top="28.35" Width="283.5" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="[CheckPlanDate]" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text13" Top="28.35" Width="189" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="[CheckClassName]：[CheckShiftName]" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text16" Left="472.5" Top="28.35" Width="207.9" Height="18.9" Border.Lines="All" Fill.Color="LightGray" Text="报表人：" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text2" Width="680.4" Height="28.35" Border.Lines="All" Fill.Color="LightGray" Text="[ReportTitle]" HorzAlign="Center" VertAlign="Center" Font="黑体, 12pt, style=Bold"/>
+    </ColumnHeaderBand>
+    <DataBand Name="Data1" Top="70.15" Width="718.2" Height="85.05" DataSource="Table1">
+      <TextObject Name="Text21" Width="680.4" Height="18.9" Border.Lines="All" Text="[QmtCheckRubberQSReportType.分类]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TableObject Name="Table2" Top="18.9" Width="680.4" Height="37.8" ManualBuildEvent="Table2_ManualBuild">
+        <TableColumn Name="Column6"/>
+        <TableColumn Name="Column1" Width="122.85"/>
+        <TableColumn Name="Column2" Width="94.5"/>
+        <TableColumn Name="Column3" Width="94.5"/>
+        <TableColumn Name="Column4" Width="94.5"/>
+        <TableColumn Name="Column5" Width="207.9"/>
+        <TableRow Name="Row1">
+          <TableCell Name="Cell11" Border.Lines="All" Text="[QmtCheckRubberQSReport.炼胶批次]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell1" Border.Lines="All" Text="[QmtCheckRubberQSReport.胶料代号]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="[QmtCheckRubberQSReport.胶料车数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="[QmtCheckRubberQSReport.合格车数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="[QmtCheckRubberQSReport.不合格数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="[QmtCheckRubberQSReport.不合格原因]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell12" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell6" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[Sum(Cell2)]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[Sum(Cell3)]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[Sum(Cell4)]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+    <ColumnFooterBand Name="ColumnFooter1" Top="159.2" Width="718.2" Height="18.9">
+      <TextObject Name="Text17" Width="189" Height="18.9" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text19" Left="189" Width="94.5" Height="18.9" Border.Lines="All" Text="[胶料车数合计]" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text15" Left="283.5" Width="94.5" Height="18.9" Border.Lines="All" Text="[合格车数合计]" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text18" Left="378" Width="94.5" Height="18.9" Border.Lines="All" Text="[不合格数合计]" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+      <TextObject Name="Text20" Left="472.5" Width="207.9" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="黑体, 9pt, style=Bold"/>
+    </ColumnFooterBand>
+  </ReportPage>
+</Report>

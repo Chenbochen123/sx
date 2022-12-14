@@ -1,0 +1,72 @@
+﻿RawMaterialQuality原材料质检管理说明
+	|
+	|
+	|-----Standard(执行标准维护)
+	|				|
+	|				|-----Standard.aspx(执行标准维护)
+	|
+	|
+	|-----FactoryMapping(厂商对应关系)
+	|				|
+	|				|-----FactoryMapping.aspx(厂商对应关系)
+	|
+	|
+	|-----Property(原材料属性维护)
+	|				|
+	|				|-----Property.aspx(原材料属性维护页面，维护单元为物料细类)
+	|
+	|
+	|-----LedgerItem(电子台账项目维护)
+	|				|
+	|				|-----LedgerItem.aspx(电子台账项目维护页面)
+	|
+	|
+	|-----Specification(原材料规格维护)
+	|				|
+	|				|-----Specification.aspx(原材料规格维护页面)
+	|
+	|
+	|-----SpecMapping(规格对应关系)
+	|				|
+	|				|-----SpecMapping.aspx(规格对应关系，维护单元为具体物料)
+	|
+	|
+	|-----CheckItem(检测项目维护)
+	|				|
+	|				|-----CheckItem.aspx(检测项目维护页面，维护单元为物料细类)
+	|
+	|
+	|-----CheckItemDetail(检测指标维护)
+	|				|
+	|				|-----CheckItem.aspx(检测指标维护页面，维护单元为具体物料)
+	|
+	|
+	|-----SampleLedger(样品台账维护)
+	|				|
+	|				|-----Ledger.aspx(样品台账维护)
+	|
+	|
+	|-----CheckData(检测数据维护)
+	|				|
+	|				|-----CheckData.aspx(检测数据维护)
+	|
+	|
+	|-----MaterialCheckReport(原材料质检报告)
+	|				|
+	|				|-----MaterialCheckReport.aspx(原材料质检报告)
+	|
+	|
+	|-----Ledger(电子台账维护)
+	|				|
+	|				|-----Ledger.aspx(电子台账维护)
+	|
+	|
+	|-----CheckDataAnalysis(合格率统计分析)
+	|				|
+	|               |-----CheckDataAnalysis.aspx(合格率统计分析)
+
+
+
+
+
+

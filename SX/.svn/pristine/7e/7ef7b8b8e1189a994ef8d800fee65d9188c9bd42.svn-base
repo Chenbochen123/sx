@@ -1,0 +1,679 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+using System.Threading;
+
+public partial class Manager_Equipment_Lubrication_LubricationPlan : Mesnac.Web.UI.Page
+{
+    BasEquipManager baseEquipManager = new BasEquipManager();
+    protected SysCodeManager sysCodeManager = new SysCodeManager();
+    protected Pmt_equipclassManager equipClassManager = new Pmt_equipclassManager();
+    protected Pmt_equipManager equipManager = new Pmt_equipManager();
+    protected Ppt_pmpartsManager equipTypeManager = new Ppt_pmpartsManager();
+    protected Eqm_MpParamManager typeMainManager = new Eqm_MpParamManager();
+    protected Eqm_lubePlanManager manager = new Eqm_lubePlanManager();
+    protected SYS_USERManager userManager = new SYS_USERManager();
+    protected JCZL_WorkShopManager workshopManager = new JCZL_WorkShopManager();
+    protected Eqm_lubeStandManager standManager = new Eqm_lubeStandManager();
+    protected Eqm_MainDailyManager dailyManager = new Eqm_MainDailyManager();
+    protected Eqm_lubeManager lubeTypeManager = new Eqm_lubeManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+
+            bindList();
+            //bindEquipType();
+            bindEquip();
+            bindMaintainers(); 
+            bindLube_name();
+            bindlubeType();
+
+            this.winSave.Hidden = true;
+            this.winComplete.Hidden = true;
+        }
+    }
+
+
+    #region 初始化控件
+    private void bindEquip()
+    {
+        cbxEquip.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(where, Pmt_equip._.Equip_code.Asc);
+        this.storeEquip.DataSource = list;
+        this.storeEquip.DataBind();
+        this.storeEquipQuery.DataSource = list;
+        this.storeEquipQuery.DataBind();
+    }
+
+    private void bindMaintainers()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<SYS_USER> list = userManager.GetListByWhere(where);
+        foreach (SYS_USER user in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(user.Real_name, user.USER_ID);
+            cbxMaintainersCom.Items.Add(item);
+        }
+    }
+
+    private void bindLube_name()
+    {
+        EntityArrayList<Eqm_lubeStand> list = standManager.GetAllList();
+        this.storeLube_nameQuery.DataSource = list;
+        this.storeLube_nameQuery.DataBind();
+        this.storeLube_name.DataSource = list;
+        this.storeLube_name.DataBind();
+
+    }
+    private void bindlubeType()
+    {
+        cbxlubeType.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Eqm_lube> list = lubeTypeManager.GetListByWhereAndOrder(where, Eqm_lube._.Oil_code.Asc);
+        foreach (Eqm_lube lubeType in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(lubeType.Oil_name, lubeType.Oil_code);
+            cbxlubeType.Items.Add(item);
+            cbxlubeTypeQuery.Items.Add(item);
+        }
+    }
+    [DirectMethod]
+    private void changeEquip()
+    {
+        string text = cbxLube_name.Text;
+        EntityArrayList<Eqm_lubeStand> list = standManager.GetListByWhere(Eqm_lubeStand._.Equip_code == cbxEquip.SelectedItem.Value);
+        this.storeLube_name.DataSource = list;
+        this.storeLube_name.DataBind();
+        cbxLube_name.Text = text;
+    }
+    [DirectMethod]
+    private void changeEquipQuery()
+    {
+        EntityArrayList<Eqm_lubeStand> list = standManager.GetListByWhere(Eqm_lubeStand._.Equip_code == cbxEquipQuery.SelectedItem.Value);
+        this.storeLube_nameQuery.DataSource = list;
+        this.storeLube_nameQuery.DataBind();
+    }
+
+
+    #endregion
+
+    #region 树
+    /// <summary>
+    /// 初始化机台列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        treeEquip.GetRootNode().RemoveAll();
+        treeEquip.GetRootNode().AppendChild(getTreeNodeByDelLevel());
+    }
+
+    /// <summary>
+    /// 获取机台树的算法
+    /// </summary>
+    /// <param name="dep_num"></param>
+    /// <returns></returns>
+    private Node getTreeNodeByDelLevel()
+    {
+        Node node = new Node();
+        node.NodeID = "0";
+        node.Text = "机台分组";
+        node.Expanded = true;
+        Dictionary<string, string> depChildFristList = new Dictionary<string, string>();
+        var query = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipType < "03" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipGroup.Asc).GroupBy(pet => pet.EquipGroup).Where(pet => !string.IsNullOrEmpty(pet.Key));
+        foreach (var info in query)
+        {
+            Node childNode = new Node();
+            childNode.NodeID = info.Key;
+            childNode.Text = info.Key;
+            childNode.Expanded = false;
+            var child = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipGroup == info.Key & BasEquip._.EquipType < "03" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipCode.Asc);
+            foreach (var item in child)
+            {
+                Node nodeLeaf = new Node();
+                nodeLeaf.Text = item.EquipName;
+                nodeLeaf.Qtip = item.EquipCode;
+                nodeLeaf.Leaf = true;
+                childNode.Children.Add(nodeLeaf);
+            }
+            node.Children.Add(childNode);
+        }
+        return node;
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 相应点击机台树事件
+    /// </summary>
+    /// <param name="group"></param>
+    [DirectMethod]
+    public void LoadGridData(string group)
+    {
+        //判断当前机台当前时间是否设置班组信息
+        //hidden_parent_num.Value = group;
+        hidden_equip_code.Text = group;
+        this.store.DataSource = getList(group);
+        this.store.DataBind();
+
+
+    }
+
+    private DataSet getList(string equip_Code)
+    {
+
+        return GetDataByParas(equip_Code);
+    }
+
+
+    public System.Data.DataSet GetDataByParas(string equip_Code)
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"SELECT T.Lube_planid,T5.Equip_classname,T.LubeName,T3.Oil_name,
+                        T4.Equip_name,CONVERT(varchar(10), T.Lube_plandate) Lube_plandate,CAST(T.Lube_planday AS INT) Lube_planday,CONVERT(varchar(10), T.Lube_realdate) Lube_realdate,CAST(T.Lube_realday AS INT) Lube_realday,
+						CASE T.Plan_state WHEN '1' THEN '下达' WHEN '2' THEN '完成' ELSE '取消' END Plan_state,
+						T.Lube_result,T7.USER_NAME,T6.workshop,T.Lube_planid,T6.lube_standId
+                        FROM Eqm_lubePlan T
+                        LEFT JOIN Eqm_lube T3 ON T.Oil_code = T3.Oil_code
+                        LEFT JOIN Pmt_equip T4 ON T.Equip_code = T4.Equip_code
+						LEFT JOIN Pmt_equipclass T5 ON T.Equip_class = T5.Equip_class
+						LEFT JOIN Eqm_lubeStand T6 ON T.Lube_standid = T6.lube_standId
+                        LEFT JOIN SYS_USER T7 ON T.handle_name = T7.Worker_barcode");
+        sb.AppendLine("WHERE 1=1");
+        if (!string.IsNullOrEmpty(equip_Code))
+            sb.AppendLine("AND T.Equip_code='" + equip_Code + "'");
+        if (dStartDate.SelectedDate != DateTime.MinValue)
+            sb.AppendLine("AND T.Lube_plandate>='" + dStartDate.SelectedDate + "'");
+        if (dEndDate.SelectedDate != DateTime.MinValue)
+            sb.AppendLine("AND T.Lube_plandate<='" + dEndDate.SelectedDate + "'");
+        if (!string.IsNullOrEmpty(cbxPlanState.Text))
+            sb.AppendLine("AND T.Plan_state='" + cbxPlanState.SelectedItem.Value + "'");
+        if (!string.IsNullOrEmpty(cbxEquipQuery.Text))
+            sb.AppendLine("AND T.Equip_code='" + cbxEquipQuery.SelectedItem.Value + "'");
+        if (!string.IsNullOrEmpty(cbxLube_nameQuery.RawText))
+            sb.AppendLine("AND T.LubeName='" + cbxLube_nameQuery.RawText + "'");
+        if (!string.IsNullOrEmpty(cbxlubeTypeQuery.RawText))
+            sb.AppendLine("AND T3.Oil_name='" + cbxlubeTypeQuery.RawText + "'");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList(hidden_equip_code.Text);
+        this.store.DataBind();
+    }
+
+    protected string GetMaxPlanID()
+    {
+        string planID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+        DataSet ds = dailyManager.GetBySql("select max(Lube_planid) Lube_planid from Eqm_lubePlan").ToDataSet();
+        if (ds.Tables.Count > 0)
+        {
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                planID = ds.Tables[0].Rows[0]["Lube_planid"].ToString();
+                if (planID.Substring(0, 8) == DateTime.Now.Date.ToString("yyyyMMdd"))
+                {
+                    planID = planID.Substring(0, 8) + (Convert.ToInt32(planID.Substring(8, 3)) + 1).ToString().PadLeft(3, '0');
+                }
+                else
+                {
+                    planID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+                }
+            }
+        }
+        return planID;
+    }
+    protected string GetMaxDailyID()
+    {
+        string dailyID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+        DataSet ds = dailyManager.GetBySql("select max(MainDaily_ID) MainDaily_ID from Eqm_MainDaily").ToDataSet();
+        if (ds.Tables.Count > 0)
+        {
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                dailyID = ds.Tables[0].Rows[0]["MainDaily_ID"].ToString();
+                if (dailyID.Substring(0, 8) == DateTime.Now.Date.ToString("yyyyMMdd"))
+                {
+                    dailyID = dailyID.Substring(0, 8) + (Convert.ToInt32(dailyID.Substring(8, 3)) + 1).ToString().PadLeft(3, '0');
+                }
+                else
+                {
+                    dailyID = DateTime.Now.Date.ToString("yyyyMMdd") + "001";
+                }
+            }
+        }
+        return dailyID;
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList(hidden_equip_code.Text);
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "设备维修计划导出");
+        }
+    }
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "Add";
+
+        cbxEquip.SetValue(null);
+        txtMp_plandate.SetValue(DateTime.Now.Date);
+        txtMp_planday.Text = "0";
+        cbxLube_name.SetValue(null);
+        cbxlubeType.SetValue(null);
+        cbxPlanStateAdd.Select(0);
+        this.winSave.Hidden = false;
+    }
+
+
+    protected void btnRecord_Click(object sender, EventArgs e)
+    {
+        if (rowSelectMuti.SelectedRows.Count == 0)
+        {
+            X.Msg.Alert("提示", "您没有选择任何行,请选择").Show();
+            return;
+        }
+        string objid = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            objid = row.RecordID; EntityArrayList<Eqm_lubePlan> listEdit = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == row.RecordID);
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此维修计划，生成失败！").Show();
+                return;
+            }
+            Eqm_lubePlan record = listEdit[0];
+            if (record.Plan_state != "2")
+            {
+                X.Msg.Alert("提示", "此维修计划还未完成！").Show();
+                return;
+            }
+            Eqm_MainDaily recordNew = new Eqm_MainDaily();
+            recordNew.MainDaily_ID = GetMaxDailyID();
+            recordNew.Equip_code = record.Equip_code;
+            recordNew.Mp_Date = record.Lube_realdate;
+            recordNew.Mp_StartTime = Convert.ToDateTime(record.Lube_realdate);
+            recordNew.MP_EndTime = Convert.ToDateTime(record.Lube_realdate);
+            recordNew.Mp_time = record.Lube_realday;
+            recordNew.Handle_name = record.Handle_name;
+            recordNew.MP_Type = record.LubeName;
+            recordNew.Mp_result = record.Lube_result;
+            recordNew.In_Date = record.Lube_plandate;
+            recordNew.Worker_barcode = this.UserID;
+            recordNew.Finish_flag = 1;
+
+            if (dailyManager.Insert(recordNew) >= 0)
+            {
+                this.AppendWebLog("设备润滑记录生成完成", "修改机台：" + record.Equip_code);
+                X.Msg.Alert("提示", "生成成功！").Show();
+                return;
+            }
+            else
+            {
+                X.Msg.Alert("提示", "生成失败！").Show();
+                return;
+            }
+        }
+    }
+
+    protected void btnCompletePlan_Click(object sender, EventArgs e)
+    {
+        if (rowSelectMuti.SelectedRows.Count == 0)
+        {
+            X.Msg.Alert("提示", "您没有选择任何行,请选择").Show();
+            return;
+        }
+        string objid = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            objid = row.RecordID;
+            EntityArrayList<Eqm_lubePlan> listEdit = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == row.RecordID);
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此润滑标准，修改失败！").Show();
+                return;
+            }
+            Eqm_lubePlan record = listEdit[0];
+            if (record.Plan_state == "2")
+            {
+                X.Msg.Alert("提示", "此计划已完成，无法重复完成！").Show();
+                return;
+            }
+            else if (record.Plan_state == "3")
+            {
+                X.Msg.Alert("提示", "此计划已取消，无法完成！").Show();
+                return;
+            }
+            else
+            {
+                cbxMaintainersCom.SetValue(record.Handle_name);
+                txtMp_realendCom.SelectedDate = Convert.ToDateTime(record.Lube_realdate);
+                txtMp_realdayCom.Text = record.Lube_realday.ToString();
+                txtMp_resultCom.Text = record.Lube_result;
+
+                hideObjIDComplete.Text = objid;
+
+                this.winComplete.Hidden = false;
+            }
+
+        }
+        //return "true";
+    }
+
+
+    protected void btnComplete_Click(object sender, EventArgs e)
+    {
+        EntityArrayList<Eqm_lubePlan> listEdit = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == hideObjIDComplete.Text);
+        if (listEdit.Count == 0)
+        {
+            X.Msg.Alert("提示", "无此润滑计划，修改失败！").Show();
+            return;
+        }
+        Eqm_lubePlan record = listEdit[0];
+        if (record != null)
+        {
+            record.Lube_realday = Convert.ToDecimal(txtMp_realdayCom.Text);
+            record.Lube_realdate = txtMp_realendCom.SelectedDate.ToString("yyyy-MM-dd");
+            record.Handle_name = cbxMaintainersCom.SelectedItem.Value.ToString();
+            record.Lube_result = txtMp_resultCom.Text;
+            record.Plan_state = "2";
+            if (listEdit[0].Lube_standid != null)
+            {
+                EntityArrayList<Eqm_lubeStand> list = standManager.GetListByWhere(Eqm_lubeStand._.Lube_standId == listEdit[0].Lube_standid);
+                if (list.Count > 0)
+                {
+                    if (list[0].In_date < txtMp_realendCom.SelectedDate)
+                    {
+                        list[0].In_date = txtMp_realendCom.SelectedDate;
+                        standManager.Update(list[0]);
+                    }
+                }
+            }
+
+            if (manager.Update(record) >= 0)
+            {
+                this.AppendWebLog("设备润滑计划完成", "修改机台：" + record.Equip_code);
+                this.winComplete.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "完成成功！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "完成失败！").Show();
+            }
+        }
+    }
+    [DirectMethod]
+    public string btnCancelPlan_Click()
+    {
+        if (rowSelectMuti.SelectedRows.Count == 0)
+        {
+            return "您没有选择任何行,请选择";
+        }
+        string objid = string.Empty;
+        foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+        {
+            objid = row.RecordID; EntityArrayList<Eqm_lubePlan> listEdit = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == row.RecordID);
+            if (listEdit.Count == 0)
+            {
+                return "无此润滑计划，修改失败！";
+            }
+            Eqm_lubePlan record = listEdit[0];
+            if (record.Plan_state == "2")
+            {
+                return "此计划已完成，无法取消！";
+            }
+            else
+            {
+                record.Plan_state = "3";
+
+                if (manager.Update(record) >= 0)
+                {
+                    this.AppendWebLog("设备润滑计划完成", "修改机台：" + record.Equip_code);
+                    bindList();
+                    return "取消成功！";
+                }
+                else
+                {
+                    return "取消失败！";
+                }
+            }
+        }
+        return "true";
+    }
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        if (this.hideMode.Text == "Add")//添加
+        {
+            Eqm_lubePlan record = new Eqm_lubePlan();
+            record.Lube_planid = GetMaxPlanID();
+            record.LubeName = cbxLube_name.SelectedItem.Value.ToString();
+            record.Oil_code = cbxlubeType.SelectedItem.Value.ToString();
+            record.Equip_code = cbxEquip.SelectedItem.Value.ToString();
+
+            EntityArrayList<Pmt_equip> listEquip = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == cbxEquip.SelectedItem.Value.ToString(), Pmt_equip._.Equip_code.Asc);
+            if (listEquip.Count > 0)
+            {
+                record.Equip_class = listEquip[0].Equip_class;
+            }
+            record.Handle_name = this.UserID;
+            record.Lube_planday = Convert.ToDecimal(txtMp_planday.Text);
+            record.Lube_plandate = txtMp_plandate.SelectedDate.ToString("yyyy-MM-dd");
+            EntityArrayList<Eqm_lubeStand> list = standManager.GetListByWhere(Eqm_lubeStand._.Equip_code == cbxEquip.SelectedItem.Value.ToString() && Eqm_lubeStand._.Lube_name == cbxLube_name.SelectedItem.Value.ToString() && Eqm_lubeStand._.Oil_code == cbxlubeType.Text);
+            if (list.Count > 0)
+            {
+                record.Lube_standid = list[0].Lube_standId;
+            }
+            else
+            {
+                X.Msg.Alert("提示", "无此润滑标准，添加失败！").Show();
+                return;
+            }
+            record.Plan_state = cbxPlanStateAdd.SelectedItem.Value.ToString();
+
+            if (manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("设备润滑计划添加", "添加机台：" + record.Equip_code);
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            EntityArrayList<Eqm_lubePlan> listEdit = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == hideObjID.Text);
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此维修标准，修改失败！").Show();
+                return;
+            }
+            Eqm_lubePlan record = listEdit[0];
+            if (record != null)
+            {
+                record.LubeName = cbxLube_name.SelectedItem.Value.ToString();
+                record.Oil_code = cbxlubeType.SelectedItem.Value.ToString();
+                record.Equip_code = cbxEquip.SelectedItem.Value.ToString();
+
+                EntityArrayList<Pmt_equip> listEquip = equipManager.GetListByWhereAndOrder(Pmt_equip._.Equip_code == cbxEquip.SelectedItem.Value.ToString(), Pmt_equip._.Equip_code.Asc);
+                if (listEquip.Count > 0)
+                {
+                    record.Equip_class = listEquip[0].Equip_class;
+                }
+                record.Handle_name = this.UserID;
+                record.Lube_planday = Convert.ToDecimal(txtMp_planday.Text);
+                record.Lube_plandate = txtMp_plandate.SelectedDate.ToString("yyyy-MM-dd");
+                EntityArrayList<Eqm_lubeStand> list = standManager.GetListByWhere(Eqm_lubeStand._.Equip_code == cbxEquip.SelectedItem.Value.ToString() && Eqm_lubeStand._.Lube_name == cbxLube_name.SelectedItem.Value.ToString() && Eqm_lubeStand._.Oil_code == cbxlubeType.Text);
+                if (list.Count > 0)
+                {
+                    record.Lube_standid = list[0].Lube_standId;
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "无此润滑标准，添加失败！").Show();
+                    return;
+                }
+                record.Plan_state = cbxPlanStateAdd.SelectedItem.Value.ToString();
+
+
+                if (manager.Update(record) >= 0)
+                {
+                    this.AppendWebLog("设备润滑计划修改", "修改机台：" + record.Equip_code);
+                    winSave.Hidden = true;
+                    bindList();
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+        }
+
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    protected void btnCancelComplete_Click(object sender, EventArgs e)
+    {
+        winComplete.Hidden = true;
+    }
+    #endregion
+
+    #region 下拉列表事件响应
+    protected void cbxEquip_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquip();
+    }
+    protected void cbxEquipQuery_SelectChanged(object sender, EventArgs e)
+    {
+        changeEquipQuery();
+    }
+    #endregion
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Edit(string ObjID)
+    {
+        //hidden_type.Text = "2";
+        EntityArrayList<Eqm_lubePlan> list = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == ObjID);
+        if (list.Count == 0)
+        {
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+            return;
+        }
+        Eqm_lubePlan record = list[0];
+
+
+        if (record != null)
+        {
+            if (record.Plan_state == "2")
+            {
+                X.Msg.Alert("提示", "此计划已完成，无法修改！").Show();
+                return;
+            }
+            else if (record.Plan_state == "3")
+            {
+                X.Msg.Alert("提示", "此计划已取消，无法修改！").Show();
+                return;
+            }
+            cbxEquip.SetValue(record.Equip_code);
+            txtMp_plandate.SelectedDate = Convert.ToDateTime(record.Lube_plandate);
+            txtMp_planday.Text = record.Lube_planday.ToString();
+            cbxPlanStateAdd.SetValue(record.Plan_state);
+            cbxLube_name.SetValue(record.LubeName);
+            cbxlubeType.SetValue(record.Oil_code);
+
+            hideObjID.Text = ObjID;
+            this.hideMode.Text = "Edit";
+            ////cbxEquipClass.DirectChange += this.cbxEquipClass_SelectChanged;
+            ////cbxEquipClass.DirectEvents.Change.HandlerIsNotEmpty = this.cbxEquipClass_SelectChanged;
+            //cbxEquipClass.DirectSelect += this.cbxEquipClass_SelectChanged;
+            ////cbxEquipClass.DirectChange += new System.EventHandler(this.cbxEquipClass_SelectChanged);
+            this.winSave.Hidden = false;
+        }
+        else
+        {
+            bindList();
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+        }
+
+    }
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        EntityArrayList<Eqm_lubePlan> list = manager.GetListByWhere(Eqm_lubePlan._.Lube_planid == ObjID);
+        if (list.Count == 0)
+        {
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+            return;
+        }
+        Eqm_lubePlan record = list[0];
+
+        if (record.Plan_state == "2")
+        {
+            X.Msg.Alert("提示", "此计划已完成，无法删除！").Show();
+            return;
+        }
+        manager.DeleteByWhere(Eqm_lubePlan._.Lube_planid == ObjID);
+        this.AppendWebLog("设备润滑计划删除", "修改机台：" + record.Equip_code);
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+
+    #endregion
+}

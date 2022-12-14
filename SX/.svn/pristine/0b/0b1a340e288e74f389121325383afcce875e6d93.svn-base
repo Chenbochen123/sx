@@ -1,0 +1,261 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_RubberQuality_Manage_CheckPassPercent : Mesnac.Web.UI.Page
+{
+    protected EQM_EnergyManageManager manager = new EQM_EnergyManageManager();
+    protected JCZL_SubFacManager facManager = new JCZL_SubFacManager();
+    protected Pmt_equipManager equipManager = new Pmt_equipManager();
+    protected Pmt_materialManager materialManager = new Pmt_materialManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            cbxQueryType.Select(0);
+            cbxRubberType.Select(0);
+            dStartDate.SetValue(DateTime.Now);
+            dEndDate.SetValue(DateTime.Now.AddDays(1));
+            bindFac();
+            bindEquip();
+            bindMaterial();
+
+        }
+    }
+
+
+    #region 初始化控件
+
+    private void bindFac()
+    {
+        cbxFac.Clear();
+        Ext.Net.ListItem itemAll = new Ext.Net.ListItem("全部", "全部");
+        cbxFac.Items.Add(itemAll);
+        WhereClip where = new WhereClip();
+        EntityArrayList<JCZL_SubFac> list = facManager.GetListByWhereAndOrder(where, JCZL_SubFac._.Fac_Id.Asc);
+        foreach (JCZL_SubFac type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Fac_Name, type.Dep_Code);
+            cbxFac.Items.Add(item);
+        }
+        cbxFac.Select(0);
+    }
+
+
+    private void bindEquip()
+    {
+        cbxEquipQuery.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(where, Pmt_equip._.Equip_code.Asc);
+        this.storeEquipQuery.DataSource = list;
+        this.storeEquipQuery.DataBind();
+    }
+    private void bindMaterial()
+    {
+        cbxMaterialQuery.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_material> list = materialManager.GetListByWhereAndOrder(Pmt_material._.Mkind_code == 3 || Pmt_material._.Mkind_code == 4 || Pmt_material._.Mkind_code == 5, Pmt_material._.Mater_name.Asc);
+        foreach (Pmt_material type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Mater_name, type.Mater_code);
+            cbxMaterialQuery.Items.Add(item);
+        }
+    }
+
+    private void changeQueryType()
+    {
+        if(cbxQueryType.SelectedItem.Value.ToString() == "4")
+        {
+            cbxEquipQuery.Hidden = false;
+            cbxMaterialQuery.Hidden = false;
+        }
+        else
+        {
+            cbxEquipQuery.Hidden = true;
+            cbxMaterialQuery.Hidden = true;
+        }
+    }
+
+    #endregion
+
+
+
+    private DataSet getList()
+    {
+
+        return GetDataByParas();
+    }
+
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        string fac = "";
+        if (cbxFac.SelectedItem.Value.ToString() != "全部")
+        {
+            fac = cbxFac.SelectedItem.Value.ToString();
+        }
+        string material = "";
+        if (cbxMaterialQuery.SelectedItem.Value != null)
+        {
+            material = cbxMaterialQuery.SelectedItem.Value.ToString();
+        }
+        string equip = "";
+        if (cbxEquipQuery.SelectedItem.Value != null)
+        {
+            equip = cbxEquipQuery.RawText;
+        }
+
+        if (cbxQueryType.SelectedItem.Value.ToString() == "0")//综合合格率统计
+        {
+            if(cbxRubberType.SelectedItem.Value.ToString() == "0")//终炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_MES " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+            else//母炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_MES_Semi " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+        }
+        else if (cbxQueryType.SelectedItem.Value.ToString() == "1")//合格率统计(按胶料分类)
+        {
+            if (cbxRubberType.SelectedItem.Value.ToString() == "0")//终炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLV_ByMater " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+            else//母炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLV_ByMater_Semi " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+        }
+        else if (cbxQueryType.SelectedItem.Value.ToString() == "2")//合格率统计(按日期分类)
+        {
+            if (cbxRubberType.SelectedItem.Value.ToString() == "0")//终炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLV " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+            else//母炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLV_Semi " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+        }
+        else if (cbxQueryType.SelectedItem.Value.ToString() == "3")//合格率统计(按班次分类)
+        {
+            if (cbxRubberType.SelectedItem.Value.ToString() == "0")//终炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_MES_ByShift " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+            else//母炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_MES_Semi_ByShift " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + fac + "'");
+            }
+        }
+        else if (cbxQueryType.SelectedItem.Value.ToString() == "4")//胶料机台合格率统计
+        {
+            if (cbxRubberType.SelectedItem.Value.ToString() == "0")//终炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_Semi_Equip " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + equip + "'," + "'" + material + "'," + "'5'," + "'" + fac + "'");
+            }
+            else//母炼胶
+            {
+                sb.AppendLine(@"exec P_getPmtHGLVfz_Semi_Equip " + "'" + dStartDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + dEndDate.SelectedDate.ToString("yyyy-MM-dd") + "'," + "'" + equip + "'," + "'" + material + "'," + "'4'," + "'" + fac + "'");
+            }
+        }
+        #endregion
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        DataSet ds = getList();
+        ModelCenter.Fields.Clear();
+
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            ModelCenter.Fields.Add(new ModelField { Name = dc.ColumnName });
+        }
+
+        GridPanelCenter.ColumnModel.Columns.Clear();
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            GridPanelCenter.ColumnModel.Columns.Add(new Column { DataIndex = dc.ColumnName, Text = dc.ColumnName });
+        }
+
+
+        StoreCenter.DataSource = ds;
+        StoreCenter.DataBind();
+        GridPanelCenter.Render();
+
+    }
+
+    #region 下拉列表事件响应
+    [DirectMethod]
+    protected void cbxQueryType_SelectChanged(object sender, EventArgs e)
+    {
+        changeQueryType();
+    }
+    #endregion
+
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, DirectEventArgs e)
+    {
+        string fields = e.ExtraParams["fields"];
+        string records = e.ExtraParams["records"];
+        Newtonsoft.Json.JavaScriptArray jsArrayFields = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(fields) as Newtonsoft.Json.JavaScriptArray;
+        Newtonsoft.Json.JavaScriptArray jsArrayRecords = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(records) as Newtonsoft.Json.JavaScriptArray;
+
+        DataTable dt = new DataTable();
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectField in jsArrayFields)
+        {
+            if (jsObjectField["name"].ToString().ToLower() != "id")
+            {
+                dt.Columns.Add(new DataColumn(jsObjectField["name"].ToString(), typeof(string)));
+            }
+        }
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectRecord in jsArrayRecords)
+        {
+            DataRow dr = dt.NewRow();
+            foreach (DataColumn dc in dt.Columns)
+            {
+                dr[dc.ColumnName] = jsObjectRecord[dc.ColumnName];
+            }
+            dt.Rows.Add(dr);
+        }
+
+        if (dt.Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "没有找到符合条件的记录").Show();
+            return;
+        }
+
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(dt, "合格率统计导出");
+    }
+
+
+    #endregion
+
+
+    #region 信息列表事件响应
+    #endregion
+}

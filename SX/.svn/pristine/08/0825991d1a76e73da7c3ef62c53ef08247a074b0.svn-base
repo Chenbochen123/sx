@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="10/15/2015 11:45:25" ReportInfo.Modified="07/31/2019 13:38:15" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqxfki+t8jnSxof6qn6ng9vddBbeBVVXv4oD/y1lgJzH7gklZhta9coyriFlAoVX7mMPCiiMK7m/s5POXNVobNMXfedkPF3FqE2zSOcY7jX6YxFiD5Df7WZC7dIs/VtgKikBM0hdeIcQ8D5EYQrZE9nLB7KlaS8FxEr6oph0jucoBBF9D50YZvX6b+pVhhDs1Z">
+      <TableDataSource Name="Table" Alias="MotorPlan" DataType="System.Int32" PropName="Table1" Enabled="true" SelectCommand="SELECT * FROM eqm_MotorPlan">
+        <Column Name="serialid" DataType="System.Int32"/>
+        <Column Name="INo" DataType="System.Int32"/>
+        <Column Name="plandate" DataType="System.DateTime"/>
+        <Column Name="realdate" DataType="System.DateTime"/>
+        <Column Name="LiCi" DataType="System.Decimal"/>
+        <Column Name="Dianshu" DataType="System.Decimal"/>
+        <Column Name="CheckUser" DataType="System.String"/>
+        <Column Name="outDate" DataType="System.DateTime"/>
+        <Column Name="inDate" DataType="System.DateTime"/>
+        <Column Name="CheckInfo" DataType="System.String"/>
+        <Column Name="CheckFac" DataType="System.String"/>
+        <Column Name="Memo" DataType="System.String"/>
+        <Column Name="motorType" DataType="System.String"/>
+        <Column Name="motorNo" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Parameter Name="motorNo" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" RawPaperSize="9" FirstPageSource="15" OtherPagesSource="15" Guides="850.5,850.5">
+    <DataBand Name="Data1" Width="718.2" Height="481.95">
+      <TableObject Name="Table1" Left="9.45" Top="85.05" Width="689.85" Height="104.95" Border.Lines="All">
+        <TableColumn Name="Column1"/>
+        <TableColumn Name="Column2" Width="85.05"/>
+        <TableColumn Name="Column3" Width="75.6"/>
+        <TableColumn Name="Column4"/>
+        <TableColumn Name="Column5" Width="75.6"/>
+        <TableColumn Name="Column6" Width="75.6"/>
+        <TableColumn Name="Column7" Width="75.6"/>
+        <TableColumn Name="Column8" Width="75.6"/>
+        <TableColumn Name="Column9" Width="94.5"/>
+        <TableRow Name="Row1" Height="22.68">
+          <TableCell Name="Cell1" Border.Lines="All" Text="电机编号&#13;&#10;" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="测量日期" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="电枢绝缘" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="励磁绝缘" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell5" Text="检测负责人" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell26" Border.Lines="All" Text="外委出厂日期" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="外委入厂日期" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="大修处理内容" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell41" Border.Lines="All" Text="修理厂家" Font="宋体, 9pt" RowSpan="2"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="14.23">
+          <TableCell Name="Cell6" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell27" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell37" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell42" Border.Lines="All" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="22.68">
+          <TableCell Name="Cell11" Border.Lines="All" Text="[MotorPlan.motorNo]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="[MotorPlan.realdate]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="[MotorPlan.Dianshu]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell14" Border.Lines="All" Text="[MotorPlan.LiCi]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell15" Border.Lines="All" Text="[MotorPlan.CheckUser]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell28" Border.Lines="All" Text="[MotorPlan.outDate]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell33" Border.Lines="All" Text="[MotorPlan.inDate]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell38" Border.Lines="All" Text="[MotorPlan.CheckInfo]" Font="宋体, 9pt" RowSpan="3"/>
+          <TableCell Name="Cell43" Border.Lines="All" Text="[MotorPlan.CheckFac]" Font="宋体, 9pt" RowSpan="3"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="22.68">
+          <TableCell Name="Cell16" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell17" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell19" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell20" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell29" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell34" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell39" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell44" Border.Lines="All" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="22.68">
+          <TableCell Name="Cell21" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell22" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell23" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell24" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell25" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell35" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell40" Border.Lines="All" Font="宋体, 9pt"/>
+          <TableCell Name="Cell45" Border.Lines="All" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

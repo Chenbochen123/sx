@@ -1,0 +1,140 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Web.UI.HtmlControls;
+using Ext.Net;
+using Mesnac.Business.Interface;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using System.Text;
+
+
+public partial class Manager_Equipment_StopManage_StopReasonDetail : System.Web.UI.Page
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "ButtonNorthQuery" };
+            导出 = new SysPageAction() { ActionID = 2, ActionName = "ButtonNorthExport" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 导出 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    /// <summary>
+    /// 页面加载
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitControls();
+            cbxfenxi.SelectedItem.Value = "1";
+            DateFieldNorthBeginDate.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+            DateFieldNorthEndDate.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+        }
+    }
+
+    private void InitControls()
+    {
+        IBasWorkShopManager bBasWorkShopManager = new BasWorkShopManager();
+
+        string sql = "select param_Name,param_id from Eqm_MpParam where Param_Type=4 ";
+        DataSet ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            cbxtype.Items.Add(new Ext.Net.ListItem { Text = dr[0].ToString(), Value = dr[1].ToString() });
+        }
+    }
+
+    [DirectMethod]
+    public string chartMainBindData()
+    {
+            string sql = "";
+        //没选停机大类，则x轴为停机大类
+        if (string.IsNullOrEmpty(cbxtype.SelectedItem.Value))
+        {
+            //按停机时间当Y轴
+            if (cbxfenxi.SelectedItem.Value == "1")
+            {
+                 sql = @"select b.param_Name X,sum(DATEDIFF(mi,mp_startdate,mp_enddate)) Y from Ppt_pmdownrecord  a
+left join Eqm_MpParam b on b.param_id = a.Mp_mkindcode and Param_Type=4
+where Mp_startdate<='" + DateFieldNorthEndDate.SelectedDate.ToString("yyyy-MM-dd") + "' and Mp_startdate>='" + DateFieldNorthBeginDate.SelectedDate.ToString("yyyy-MM-dd") + "' group by param_Name ";
+               
+            }
+            //按停机频率当Y轴
+            else
+            {
+                 sql = @"select b.param_Name X,count(1) Y from Ppt_pmdownrecord a
+left join Eqm_MpParam b on b.param_id = a.Mp_mkindcode and Param_Type=4
+where Mp_startdate<='" + DateFieldNorthEndDate.SelectedDate.ToString("yyyy-MM-dd") + "' and Mp_startdate>='" + DateFieldNorthBeginDate.SelectedDate.ToString("yyyy-MM-dd") + "' group by param_Name";
+              
+            }
+        }
+       //x轴为停机小类
+        else
+        {
+            //按停机时间当Y轴
+            if (cbxfenxi.SelectedItem.Value == "1")
+            {
+                sql = @"select b.Mp_ikindname X,sum(DATEDIFF(mi,mp_startdate,mp_enddate)) Y  from Ppt_pmdownrecord a
+left join Eqm_downikind b on b.Mp_ikindcode = a.Mp_ikindcode
+where Mp_startdate<='" + DateFieldNorthEndDate.SelectedDate.ToString("yyyy-MM-dd") + "' and Mp_startdate>='" + DateFieldNorthBeginDate.SelectedDate.ToString("yyyy-MM-dd") + "' group by Mp_ikindname";
+            }
+            //按停机频率当Y轴
+            else
+            {
+                sql = @"select b.Mp_ikindname X,count(1) Y  from Ppt_pmdownrecord a
+left join Eqm_downikind b on b.Mp_ikindcode = a.Mp_ikindcode
+where Mp_startdate<='" + DateFieldNorthEndDate.SelectedDate.ToString("yyyy-MM-dd") + "' and Mp_startdate>='" + DateFieldNorthBeginDate.SelectedDate.ToString("yyyy-MM-dd") + "' group by Mp_ikindname";
+            }
+        }
+        Ppt_pmdownrecordManager bBasWorkShopManager = new Ppt_pmdownrecordManager();
+        DataSet ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+
+
+        string strCheckDataX = DataTableJsonX(ds.Tables[0]);
+        string strCheckDataY = DataTableJsonY(ds.Tables[0]);
+
+        return strCheckDataX + "@" + strCheckDataY;
+    }
+    private string DataTableJsonX(DataTable dt)
+    {
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.Append("[");
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            jsonBuilder.Append("'");
+            jsonBuilder.Append(dt.Rows[i]["X"].ToString());
+            jsonBuilder.Append("'");
+            jsonBuilder.Append(",");
+        }
+        jsonBuilder.Remove(jsonBuilder.Length - 1, 1);
+        jsonBuilder.Append("]");
+        return jsonBuilder.ToString();
+    }
+    private string DataTableJsonY(DataTable dt)
+    {
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.Append("[");
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            jsonBuilder.Append("'");
+            jsonBuilder.Append(dt.Rows[i]["Y"].ToString());
+            jsonBuilder.Append("'");
+            jsonBuilder.Append(",");
+        }
+        jsonBuilder.Remove(jsonBuilder.Length - 1, 1);
+        jsonBuilder.Append("]");
+        return jsonBuilder.ToString();
+    }
+ 
+}

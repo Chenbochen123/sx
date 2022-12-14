@@ -1,0 +1,109 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Ext.Net;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Data;
+using System.Text;
+
+public partial class Manager_ProducingPlan_BarcodeScan_BarCodeLousao : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    private IPptShiftManager pptShiftManaer = new PptShiftManager();
+    private IPptLotDataManager pptLotDataManager = new PptLotDataManager();
+    private IPptClassManager pptClassManager = new PptClassManager();
+    private IPmtConfigManager pmtconfig = new PmtConfigManager();
+    private Ext.Net.MessageBox msg = new Ext.Net.MessageBox();//弹出框
+    #endregion
+
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btnSearch" };
+            修改 = new SysPageAction() { ActionID = 2, ActionName = "Edit" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 修改 { get; private set; } //必须为 public
+    }
+    #endregion
+
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            txtbegindate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtenddate.Text = DateTime.Now.AddDays(+1).ToString("yyyy-MM-dd");
+        }
+    }
+
+    #region 分页相关方法
+    private PageResult<PptLotData> GetPageResultData(PageResult<PptLotData> pageParams)
+    {
+        PptLotDataManager.QueryParams queryParams = new PptLotDataManager.QueryParams();
+        queryParams.PageParams = pageParams;
+        queryParams.BeginTime = Convert.ToDateTime(txtbegindate.Text).ToString("yyyy-MM-dd");
+        queryParams.EndTime = Convert.ToDateTime(txtenddate.Text).ToString("yyyy-MM-dd");
+        string sqlwhere = "";
+        return GetBarCodeScannPageDataBySql(queryParams, sqlwhere);
+    }
+
+
+    public PageResult<PptLotData> GetBarCodeScannPageDataBySql(PptLotDataManager.QueryParams queryParams, string sqlwhere)
+    {
+        PageResult<PptLotData> pageParams = queryParams.PageParams;
+        StringBuilder sqlstr = new StringBuilder();
+        sqlstr.AppendLine(@"select a.*,b.EquipName,c.shift_ClassName,d.ShiftName,(totalnum-ScanNum) lousaonum,
+convert(varchar(10),convert(decimal(18,2),round(cast((totalnum-ScanNum)as decimal(10,2))/totalnum,2)*100)) lousaolv
+from ppt_barcodeScanrate a
+left join BasEquip  b on a.Equip_Code=b.EquipCode
+left join Ppt_ShiftClass c on c.shift_ClassId=a.shift_Class
+left join PptShift d on d.ObjID = a.shift_id
+
+            WHERE 1=1  ");
+            sqlstr.AppendLine(@"AND a.plan_date>='" + queryParams.BeginTime + "'");
+        
+            sqlstr.AppendLine(@"AND a.plan_date<'" + queryParams.EndTime + "'");
+        
+        if (pageParams.PageSize < 0)
+        {
+            NBear.Data.CustomSqlSection css = pptLotDataManager.GetBySql(sqlstr.ToString());
+            pageParams.DataSet = css.ToDataSet();
+            return pageParams;
+        }
+        else
+        {
+            sqlstr.AppendLine(@"order by plan_date,equip_code");
+            pageParams.QueryStr = sqlstr.ToString();
+          
+            return pptLotDataManager.GetPageDataByReader(pageParams);
+        }
+    }
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PptLotData> pageParams = new PageResult<PptLotData>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+       // pageParams.Orderfld = "PlanDate ASC";
+        PageResult<PptLotData> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+
+}

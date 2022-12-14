@@ -1,0 +1,74 @@
+﻿BasicInfo基础资料管理
+	|
+	|-----CommonPage(共用页面目录)
+	|				|
+	|				|-----QueryBasUser.aspx(查询用户页面)
+	|				|-----QueryDepartment.aspx(查询部门页面)
+	|				|-----QueryDepartmentErp.aspx(查询Erp部门接口数据页面)
+	|				|-----QueryEquipment.aspx(查询设备页面)
+	|				|-----QueryEquipmentPart.aspx(查询设备部件页面)
+	|				|-----QueryFactory.aspx(查询厂商页面)
+	|				|-----QueryFactoryType.aspx(查询厂商类型页面)
+	|				|-----QueryMaterial.aspx(查询物料页面)
+	|				|-----QueryMaterialMajorType.aspx(查询物料大类页面)
+	|				|-----QueryMaterialMinorType.aspx(查询物料小类页面)
+	|				|-----QueryMaterialRubSect.aspx(查询胶料段数页面)
+	|				|-----QueryMaterialStaticClass.aspx(查询统计分类页面)
+	|				|-----QueryPageMenu.aspx()
+	|				|-----QueryPageMethod.aspx()
+	|				|-----QueryRubberFactory.aspx(查询胶料厂家页面)
+	|				|-----QueryRubberInfo.aspx(查询胶料信息页面)
+	|				|-----QueryRubberType.aspx(查询胶料类别页面)
+	|				|-----QueryRubberTyrePart.aspx(查询胶料轮胎部件页面)
+	|				|-----QueryShiftClass.aspx(查询班组页面)
+	|				|-----QueryUnit.aspx(查询单位页面)
+	|				|-----QueryWorkPosition.aspx(查询岗位页面)
+	|				|-----QueryWorkShop.aspx(查询车间页面)
+	|
+	|-----DepartmentInfo(部门基础信息目录)
+	|				|
+	|				|-----Department.aspx(部门基础信息页面)
+	|
+	|-----MaterialInfo(物料基础信息目录)
+	|				|
+	|				|-----Material.aspx(物料基础信息页面)
+	|				|-----MaterialMajorType.aspx(物料大类页面)
+	|				|-----MaterialMinorType.aspx(物料细类页面)
+	|				|-----MaterialStaticClass.aspx(物料统计分类页面)
+	|
+	|-----RubberInfo(胶料基础信息目录)
+	|				|
+	|				|-----RubberInfo.aspx(胶料基础信息页面)
+	|				|-----RubberTypeInfo.aspx(胶料类别信息页面)
+	|				|-----RubberTyrePart.aspx(胶料轮胎部件页面)
+	|
+	|-----SupplierCustomerInfo(厂家供应商基础信息目录)
+	|				|
+	|				|-----FactoryInfo.aspx(厂商基础信息页面)
+	|				|-----FactoryType.aspx(厂商类别信息页面)
+	|
+	|-----UnitInfo(单位基础信息目录)
+	|				|
+	|				|-----UnitInfo.aspx(单位基础信息页面)
+	|
+	|-----UserInfo(用户基础信息目录)
+	|				|
+	|				|-----UserInfo.aspx(用户基础信息页面)
+	|
+	|-----WorkPositionInfo(岗位基础信息目录)
+	|				|
+	|				|-----WorkPositionInfo.aspx(岗位基础信息页面)
+	|				|
+	|				|-----WorkPositionSetByDep.aspx(根据部门设置用户岗位页面)
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|
+	|

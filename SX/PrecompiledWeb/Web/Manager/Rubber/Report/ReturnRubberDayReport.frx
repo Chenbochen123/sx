@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="10/15/2013 21:42:43" ReportInfo.Modified="05/08/2014 16:01:35" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3EXX7UeVaEnOk3MaaB/xyTtA==">
+      <TableDataSource Name="Table" Alias="ReturnRubberDayReport" DataType="System.Int32" Enabled="true" SelectCommand="select '' WorkShopName, '(2013-10-15)' PlanDate, case A.MadeLine when '一线' then '1' when '二线' then '2' &#13;&#10;	when '三线' then '3' when '四线' then '4' when '五线' then '5' &#13;&#10;	when '内二' then '6' when '内三' then '7' end MadeLineID,&#13;&#10;	A.MadeLine, B.MaterialName, A.ShiftClassID, C.ClassName + '班' ClassName, A.ReturnWeight &#13;&#10;from PpmReturnRubber A&#13;&#10;	left join BasMaterial B on A.MaterCode = B.MaterialCode&#13;&#10;	left join PptClass C on A.ShiftClassID = C.ObjID&#13;&#10;where A.MadeLine is not null and PlanDate = '2013-10-15'">
+        <Column Name="MadeLine" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="ClassName" DataType="System.String"/>
+        <Column Name="ReturnWeight" DataType="System.Decimal"/>
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="ShiftClassID" DataType="System.String"/>
+        <Column Name="MadeLineID" DataType="System.String"/>
+        <Column Name="WorkShopName" DataType="System.String"/>
+        <CommandParameter Name="Parameter" DataType="22"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="2000" PaperHeight="2000">
+    <DataBand Name="Data1" Width="7484.4" Height="368.55" PrintOn="FirstPage, LastPage">
+      <MatrixObject Name="Matrix2" Left="18.9" Top="66.15" Width="555.66" Height="156.49" FixedRows="2" FixedColumns="3" AutoSize="false" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[ReturnRubberDayReport.ShiftClassID]"/>
+          <Header Expression="[ReturnRubberDayReport.ClassName]" Totals="false"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[ReturnRubberDayReport.MadeLineID]" Totals="false"/>
+          <Header Expression="[ReturnRubberDayReport.MadeLine]"/>
+          <Header Expression="[ReturnRubberDayReport.MaterialName]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[ReturnRubberDayReport.ReturnWeight]"/>
+        </MatrixCells>
+        <TableColumn Name="Column5" Visible="false" Width="120.96"/>
+        <TableColumn Name="Column6" Width="92.61"/>
+        <TableColumn Name="Column7" Width="120.96"/>
+        <TableColumn Name="Column8" Width="120.96"/>
+        <TableColumn Name="Column9" Width="100.17"/>
+        <TableRow Name="Row5" Height="1">
+          <TableCell Name="Cell17" Visible="false" Border.Lines="All" Text="MadeLineID" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="2"/>
+          <TableCell Name="Cell18" Visible="false" Border.Lines="All" Text="生产线" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="2"/>
+          <TableCell Name="Cell23" Visible="false" Border.Lines="All" Text="胶料规格" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="2"/>
+          <TableCell Name="Cell29" Visible="false" Border.Lines="Top, Bottom" Text="[ShiftClassID]" HorzAlign="Center" VertAlign="Center"/>
+          <TableCell Name="Cell37" Visible="false" Border.Lines="All" Text="合计返回" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="2"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="31.67">
+          <TableCell Name="Cell19"/>
+          <TableCell Name="Cell20"/>
+          <TableCell Name="Cell24"/>
+          <TableCell Name="Cell30" Visible="false" Border.Lines="All" Text="[ClassName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell38"/>
+        </TableRow>
+        <TableRow Name="Row7" Height="31.67">
+          <TableCell Name="Cell21" Visible="false" Border.Lines="All" Text="[MadeLineID]" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="3"/>
+          <TableCell Name="Cell22" Visible="false" Border.Lines="All" Text="[MadeLine]" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" RowSpan="2"/>
+          <TableCell Name="Cell25" Visible="false" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell31" Visible="false" Border.Lines="All" Text="[ReturnWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell39" Visible="false" Border.Lines="All" Fill.Color="LightGreen" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+        </TableRow>
+        <TableRow Name="Row8" Height="44.9">
+          <TableCell Name="Cell40"/>
+          <TableCell Name="Cell41"/>
+          <TableCell Name="Cell42" Visible="false" Border.Lines="All" Fill.Color="PeachPuff" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell43" Visible="false" Border.Lines="All" Fill.Color="PeachPuff" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell44" Visible="false" Border.Lines="All" Fill.Color="LightGreen" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+        </TableRow>
+        <TableRow Name="Row9" Height="47.25">
+          <TableCell Name="Cell45"/>
+          <TableCell Name="Cell46" Border.Lines="All" Fill.Color="LightSteelBlue" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt" ColSpan="2"/>
+          <TableCell Name="Cell47" Fill.Color="LightSteelBlue"/>
+          <TableCell Name="Cell48" Border.Lines="All" Fill.Color="LightSteelBlue" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+          <TableCell Name="Cell49" Border.Lines="All" Fill.Color="LightGreen" HorzAlign="Center" VertAlign="Center" Font="宋体, 11pt"/>
+        </TableRow>
+      </MatrixObject>
+      <TextObject Name="Text1" Left="18.9" Top="24.57" Width="292.95" Height="28.35" Text="[ReturnRubberDayReport.WorkShopName]" NullValue="无数据显示！" Font="宋体, 15.75pt, style=Bold"/>
+      <TextObject Name="Text3" Left="330.75" Top="24.57" Width="207.9" Height="28.35" Text="[ReturnRubberDayReport.PlanDate]" VertAlign="Center" Font="宋体, 9pt, style=Bold"/>
+    </DataBand>
+  </ReportPage>
+</Report>

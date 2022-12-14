@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/09/2014 07:36:04" ReportInfo.Modified="04/09/2014 13:10:06" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3E9VN0eZ7yglGEvnej/OZGuQ==">
+      <TableDataSource Name="Table" Alias="PpmScanCalcWorkShop" DataType="System.Int32" Enabled="true" SelectCommand="exec ProcPpmScanCalcWorkShop '2014-04-03', '2014-04-05', '2', ''">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="WorkShopCode" DataType="System.Int32"/>
+        <Column Name="WorkShopName" DataType="System.String"/>
+        <Column Name="SerialCount" DataType="System.Int32"/>
+        <Column Name="ScanRate" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="250">
+    <DataBand Name="Data1" Width="718.2" Height="89.69">
+      <MatrixObject Name="Matrix1" Left="9.45" Top="9.45" Width="260.96" Height="34.69" Border.Lines="All" FixedRows="1" FixedColumns="1" AutoSize="false" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[PpmScanCalcWorkShop.WorkShopName]" Totals="false"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[PpmScanCalcWorkShop.PlanDate]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[PpmScanCalcWorkShop.ScanRate]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="118.11"/>
+        <TableColumn Name="Column2" Width="142.85"/>
+        <TableRow Name="Row1" Height="18.19">
+          <TableCell Name="Cell1" Border.Lines="All" Text="计划日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="[WorkShopName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="16.5">
+          <TableCell Name="Cell3" Border.Lines="All" Text="[PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="[ScanRate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

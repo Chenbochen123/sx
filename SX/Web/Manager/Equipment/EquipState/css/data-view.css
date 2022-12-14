@@ -1,0 +1,80 @@
+﻿.images-view .thumb {
+    background: white;
+    padding: 5px;
+    padding-bottom: 0;
+    width:150px;
+    text-align:center;
+}
+
+.x-quirks .images-view .thumb {
+    padding-bottom: 3px;
+}
+
+.images-view .thumb img {
+    height: 132px;
+    width: 130px;
+}
+
+.images-view .div_warp {
+    float: left;
+    margin: 4px;
+    margin-right: 0;
+    padding: 5px;
+    width:150px;
+    height:150px;
+    cursor:pointer;
+    margin-bottom:20px;
+    *margin-bottom:10px;
+}
+
+.images-view .thumb-wrap span {  
+    display: block;
+    overflow: hidden;
+    text-align: center;
+    width: 86px;
+}
+
+.images-view .x-item-over{
+    border: 1px solid #white;
+    background: #efefef url(../../Shared/images/row-over.gif) repeat-x left top;
+    padding: 4px;
+}
+
+.images-view .x-item-selected{
+    background: #eff5fb url(../../Shared/images/selected.gif) no-repeat right bottom;
+    border: 1px solid #99bbe8;
+    padding: 4px;
+}
+
+.images-view .x-item-selected .thumb{
+    background: transparent;
+}
+
+.x-view-selector {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    border: 1px dotted;
+    opacity: .5;
+    -moz-opacity: .5;
+    filter: alpha(opacity=50);
+    zoom: 1;
+    background-color: #c3daf9;
+    border-color: #3399bb;
+}
+
+
+
+.images-view .thumb span {  
+	border:1px solid #ccc;
+	border-top:0;
+	padding:0px 10px 5px 10px;
+	*padding: 0 0 5px 0;
+	margin:0 2px 0 8px;
+	*margin:-2px 0 0 0;
+	display:block;
+	width:124px;
+	*width:121px;
+	
+}

@@ -1,0 +1,190 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+
+public partial class Manager_Equipment_StopManage_StopType : Mesnac.Web.UI.Page
+{
+    protected SysCodeManager sysCodeManager = new SysCodeManager();
+    protected EqmStopFaultManager faultManager = new EqmStopFaultManager();
+    protected Eqm_downikindManager manager = new Eqm_downikindManager();
+    protected Eqm_MpParamManager mpParamManager = new Eqm_MpParamManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if ( !X.IsAjaxRequest )
+        {
+            bindMainType();
+            bindList();
+            this.winSave.Hidden = true;
+        }
+    }
+
+    #region 自定义方法
+    private void bindMainType()
+    {
+        EntityArrayList<Eqm_MpParam> list = mpParamManager.GetListByWhere(Eqm_MpParam._.Param_Type == "4");
+        this.sMainType.DataSource = list;
+        this.sMainType.DataBind();
+        this.storeMainType.DataSource = list;
+        this.storeMainType.DataBind();
+    }
+    private DataSet getList()
+    {
+        Eqm_downikind _params = new Eqm_downikind();
+        _params.Mp_mkindcode = this.cbStopMainType.SelectedItem.Value;
+        _params.Mp_ikindname = this.tfStopTypeName.Text.Trim();
+
+        return manager.GetDataByParas( _params );
+    }
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+    #endregion
+
+    #region 按钮事件响应
+    protected void btnSearch_Click( object sender , EventArgs e )
+    {
+        bindList();
+    }
+    protected void btnAdd_Click( object sender , EventArgs e )
+    {
+        this.hideMode.Text = "Add";
+        this.tfTypeCode.Text = string.Empty;
+        this.cbMainType.Value = string.Empty;
+        this.cbMainType.Disabled = false;
+        this.tfTypeName.Text = string.Empty;
+
+        this.winSave.Hidden = false;
+    }
+    protected void btnSave_Click( object sender , EventArgs e )
+    {
+        int iRecord = -1;
+        Eqm_downikind type;
+        WhereClip wc = Eqm_downikind._.Mp_ikindcode == this.tfTypeCode.Text.Trim();
+        WhereClip wcName = Eqm_downikind._.Mp_ikindname == this.tfTypeName.Text.Trim();
+
+        if ( this.hideMode.Text.Equals( "Add" ) )
+        {
+            if ( manager.GetRowCountByWhere( wc ) > 0 )
+            {
+                X.Msg.Alert("提示", "停机类型编码与其它编码重复！").Show();
+                return;
+            }
+            if (manager.GetRowCountByWhere(wcName) > 0)
+            {
+                X.Msg.Alert("提示", "停机类型名称与其它记录重复！").Show();
+                return;
+            }
+
+            type = new Eqm_downikind();
+            type.Mp_mkindcode = this.cbMainType.SelectedItem.Value;
+            type.Mp_ikindcode = GetNextTypeCodeByParas(type);
+            type.Mp_ikindname = this.tfTypeName.Text.Trim();
+
+            iRecord = manager.Insert( type );
+        }
+        else if ( this.hideMode.Text.Equals( "Edit" ) )
+        {
+            if (manager.GetRowCountByWhere(wc & Eqm_downikind._.Mp_ikindcode != this.tfTypeCode.Text) > 0)
+            {
+                X.Msg.Alert("提示", "停机类型编码与其它编码重复！").Show();
+                return;
+            }
+            if (manager.GetRowCountByWhere(wcName & Eqm_downikind._.Mp_ikindname != this.hiddenName.Text) > 0)
+            {
+                X.Msg.Alert("提示", "停机类型名称与其它记录重复！").Show();
+                return;
+            }
+            type = manager.GetById(this.tfTypeCode.Text);
+            type.Mp_ikindname = this.tfTypeName.Text.Trim();
+
+            iRecord = manager.Update( type );
+        }
+
+        if ( iRecord >= 0 )
+        {
+            X.Msg.Alert( "提示" , "保存成功！" ).Show();
+            this.winSave.Hidden = true;
+            bindList();
+        }
+        else
+        {
+            X.Msg.Alert( "提示" , "保存失败！" ).Show();
+        }
+    }
+
+    public string GetNextTypeCodeByParas(Eqm_downikind eqmDownikind)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(@"SELECT '" + eqmDownikind.Mp_mkindcode + "'+RIGHT('0'+CAST(CAST(ISNULL(RIGHT(MAX(" + Eqm_downikind._.Mp_ikindcode.ColumnName + "),2),'0') AS INT)+1 AS VARCHAR(3)),2)");
+        sb.AppendLine("FROM Eqm_downikind");
+        sb.Append("WHERE " + Eqm_downikind._.Mp_mkindcode.ColumnName + "='" + eqmDownikind.Mp_mkindcode + "'");
+        return manager.GetBySql(sb.ToString()).ToScalar().ToString();
+    }
+
+    /// <summary>
+    /// 点击删除触发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    /// <returns></returns>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string Mp_ikindcode)
+    {
+        try
+        {
+            Eqm_downikind dep = manager.GetById(Mp_ikindcode);
+
+            manager.Delete(dep);
+            this.AppendWebLog("停机小类删除", "小类编码：" + dep.Mp_ikindcode);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+    protected void btnCancel_Click( object sender , EventArgs e )
+    {
+        this.winSave.Hidden = true;
+    }
+    #endregion
+
+    #region GridPanel事件响应
+    [DirectMethod]
+    public void pnlList_Edit(string commandName, string Mp_ikindcode)
+    {
+        Eqm_downikind type = manager.GetById(Convert.ToInt32(Mp_ikindcode));
+        if ( type != null )
+        {
+            this.hideMode.Text = "Edit";
+            this.tfTypeCode.Text = type.Mp_ikindcode;
+            this.tfTypeName.Text = type.Mp_ikindname;
+            this.cbMainType.Value = type.Mp_mkindcode;
+            this.cbMainType.Disabled = true;
+            this.hiddenName.Text = type.Mp_ikindname;
+            //this.cbDelete.SelectedItem.Value = type.DeleteFlag;
+
+            this.winSave.Hidden = false;
+        }
+        else
+        {
+            X.Msg.Alert( "提示" , "此记录没有找到，请重新操作" ).Show();
+            bindList();
+        }
+    }
+    protected void refreshList( object sender , StoreReadDataEventArgs e )
+    {
+        bindList();
+    }
+    #endregion
+}

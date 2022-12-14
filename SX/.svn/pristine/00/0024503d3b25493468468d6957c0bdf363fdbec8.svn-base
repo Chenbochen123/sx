@@ -1,0 +1,136 @@
+﻿using System;
+using System.Data;
+using System.Xml;
+using System.Xml.Xsl;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using NBear.Common;
+using System.Collections.Generic;
+using System.Text;
+using Mesnac.Entity;
+
+
+public partial class Manager_ProducingPlan_ClassUser : Mesnac.Web.UI.Page
+{
+    protected Ppt_ClassUserManager Manager = new Ppt_ClassUserManager();
+    protected BasWorkManager WorkManager = new BasWorkManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !Page.IsPostBack)
+        {
+            PageInit();
+        }
+    }
+
+    #region 初始化下拉列表
+    private void PageInit()
+    {
+        Job();
+        this.winSave.Hidden = true;
+        bindList();
+    }
+    private void Job()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<BasWork> list = WorkManager.GetListByWhere(where);
+        foreach (BasWork main in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(main.WorkName, main.WorkName);
+            cbxJob1.Items.Add(item);
+        }
+    }
+
+
+
+    private DataSet getList()
+    {
+        return GetDataByParas();
+    }
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select * from ppt_classuser");
+        sb.AppendLine("WHERE 1=1");
+        if (!string.IsNullOrEmpty(txtclassno.Text))
+        {
+            sb.AppendLine("AND ClassId='" + txtclassno.Text + "'");
+        }
+        #endregion
+
+        NBear.Data.CustomSqlSection css = Manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+    #endregion
+
+
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        txtClassNo1.Text = "";
+        cbxJob1.Text = "";
+        txtName.Text = "";
+        this.winSave.Hidden = false;
+    }
+    //添加计划确定
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+            Ppt_ClassUser record = new Ppt_ClassUser();
+            record.ClassId = Convert.ToInt32(txtClassNo1.Text);
+            record.Job = cbxJob1.Text;
+            record.Name = txtName.Text;
+
+            if (Manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("添加", "添加班组：" + record.ClassId);
+                winSave.Hidden = false;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    #endregion
+
+   
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Ppt_ClassUser record = Manager.GetById(ObjID);
+        if (record != null)
+        {
+            Manager.Delete(ObjID);
+            this.AppendWebLog("油品删除", "修改班组：" + record.ClassId);
+            bindList();
+            X.Msg.Alert("提示", "删除成功！").Show();
+        }
+        else
+        {
+            X.Msg.Alert("提示", "该记录已经不存在！").Show();
+            return;
+        }
+    }
+
+}

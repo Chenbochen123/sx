@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" TextQuality="Regular" ReportInfo.Description="Demonstrates simple list report. To create it:&#13;&#10;&#13;&#10;- go to &quot;Data&quot; menu and select &quot;Choose Report Data...&quot; item to select datasource;&#13;&#10;&#13;&#10;- go to &quot;Report|Configure Bands...&quot; menu to create the band structure;&#13;&#10;&#13;&#10;- return to the report page, doubleclick the data band to show its editor;&#13;&#10;&#13;&#10;- choose the datasource;&#13;&#10;&#13;&#10;- drag data from the Data Dictionary window to the band." ReportInfo.Created="01/17/2008 03:05:57" ReportInfo.Modified="06/22/2013 13:27:44" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+    private void Barcode1_BeforePrint(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;RubbeBarcodePrint&quot;);
+      
+      Barcode1.Text = rowData.Report.GetColumnValue(&quot;RubbeBarcodePrint.Barcode&quot;).ToString();
+      Barcode3.Text = rowData.Report.GetColumnValue(&quot;RubbeBarcodePrint.Barcode&quot;).ToString();
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqAFHGp6KQj27H4qUwAIR20hSnyrpNtgmeY+I5zyTmYE0HuZfX1hs9fAqnt4DRtzHmabOsETFu8uBcY3tAnpVWBTTAdBw7JTBCtzSX8xSQMNVNNe0oRSMlmPwJJUBb3zDgZKPcDdrCWsDxM9qWsy6hliWiTerGcgzrd2bOfloaDI3RfQrGq8WDmJAMvQwIvu4j">
+      <TableDataSource Name="BasDept" Alias="RubbeBarcodePrint" DataType="System.Int32" Enabled="true" TableName="BasDept">
+        <Column Name="ObjID" DataType="System.Int32"/>
+        <Column Name="DepCode" DataType="System.String"/>
+        <Column Name="DepName" DataType="System.String"/>
+        <Column Name="DepLevel" DataType="System.Int32"/>
+        <Column Name="ParentNum" DataType="System.String"/>
+        <Column Name="Remark" DataType="System.String"/>
+        <Column Name="ERPCode" DataType="System.String"/>
+        <Column Name="HRCode" DataType="System.String"/>
+        <Column Name="DisplayId" DataType="System.Int32"/>
+        <Column Name="DeleteFlag" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="120" PaperHeight="200" FirstPageSource="1" OtherPagesSource="1">
+    <DataBand Name="Data1" Width="378" Height="574.56" Fill.Color="31, 84, 42" CanGrow="true" CanShrink="true" DataSource="BasDept">
+      <TextObject Name="Text1" Left="94.5" Top="9.45" Width="207.9" Height="28.35" Text="混炼胶卡片" Font="宋体, 21.75pt, style=Bold"/>
+      <TextObject Name="Text2" Left="179.55" Top="43.47" Width="179.55" Height="18.9" Text="编号：密炼Q15-01" Font="宋体, 15pt"/>
+      <TextObject Name="Text29" Left="245.7" Top="18.9" Width="94.5" Height="18.9" Text="(环保)" Font="宋体, 14pt, style=Bold"/>
+      <TableObject Name="Table1" Left="9.45" Top="75.6" Width="330.38" Height="425.25" Fill.Color="White">
+        <TableColumn Name="Column1" Width="165.19"/>
+        <TableColumn Name="Column2" Width="165.19"/>
+        <TableRow Name="Row1" Height="47.25">
+          <TableCell Name="Cell1" Border.Lines="All" Fill.Color="31, 84, 42" Text="操作人" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="All" Fill.Color="31, 84, 42" Text="[RubbeBarcodePrint.UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="47.25">
+          <TableCell Name="Cell6" Border.Lines="All" Fill.Color="31, 84, 42" Text="料  名" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell7" Border.Lines="All" Fill.Color="31, 84, 42" Text="[RubbeBarcodePrint.MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="47.25">
+          <TableCell Name="Cell10" Border.Lines="All" Fill.Color="31, 84, 42" Text="天然胶型号" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell11" Border.Lines="All" Fill.Color="31, 84, 42" Text="[RubbeBarcodePrint.MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="47.25">
+          <TableCell Name="Cell8" Border.Lines="All" Fill.Color="31, 84, 42" Text="序  号" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell9" Border.Lines="All" Fill.Color="31, 84, 42" Text="[RubbeBarcodePrint.ShelfBarcode]" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="47.25">
+          <TableCell Name="Cell12" Border.Lines="All" Fill.Color="31, 84, 42" Text="班  次" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell13" Border.Lines="All" Fill.Color="31, 84, 42" Text="[RubbeBarcodePrint.ClassName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="47.25">
+          <TableCell Name="Cell14" Border.Lines="All" Fill.Color="31, 84, 42" Text="混炼日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell15" Border.Lines="All" Fill.Color="31, 84, 42" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold">
+            <TextObject Name="Text3" Left="71.82" Top="13.23" Width="28.35" Height="18.9" Text="月" Font="宋体, 15pt"/>
+            <TextObject Name="Text4" Left="132.3" Top="13.23" Width="28.35" Height="18.9" Text="日" Font="宋体, 15pt"/>
+            <TextObject Name="Text17" Left="28.35" Top="13.23" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date1]" Font="宋体, 15pt"/>
+            <TextObject Name="Text18" Left="103.95" Top="13.23" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date2]" Font="宋体, 15pt"/>
+          </TableCell>
+        </TableRow>
+        <TableRow Name="Row7" Height="47.25">
+          <TableCell Name="Cell16" Border.Lines="All" Fill.Color="31, 84, 42" Text="生产时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold"/>
+          <TableCell Name="Cell17" Border.Lines="All" Fill.Color="31, 84, 42" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold">
+            <TextObject Name="Text5" Left="71.82" Top="13.23" Width="28.35" Height="18.9" Text="时" Font="宋体, 15pt"/>
+            <TextObject Name="Text6" Left="132.3" Top="13.23" Width="28.35" Height="18.9" Text="分" Font="宋体, 15pt"/>
+            <TextObject Name="Text19" Left="28.35" Top="13.23" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date3]" Font="宋体, 15pt"/>
+            <TextObject Name="Text20" Left="103.95" Top="13.23" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date4]" Font="宋体, 15pt"/>
+          </TableCell>
+        </TableRow>
+        <TableRow Name="Row8" Height="47.25">
+          <TableCell Name="Cell18" Border.Lines="All" Fill.Color="31, 84, 42" Text="有效日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold" RowSpan="2"/>
+          <TableCell Name="Cell19" Border.Lines="All" Fill.Color="31, 84, 42" HorzAlign="Center" VertAlign="Center" Font="宋体, 15pt, style=Bold">
+            <TextObject Name="Text7" Left="69.93" Top="3.78" Width="28.35" Height="18.9" Text="月" Font="宋体, 15pt"/>
+            <TextObject Name="Text8" Left="132.3" Top="3.78" Width="28.35" Height="18.9" Text="日" Font="宋体, 15pt"/>
+            <TextObject Name="Text9" Left="69.93" Top="22.68" Width="28.35" Height="18.9" Text="时" Font="宋体, 15pt"/>
+            <TextObject Name="Text30" Left="132.3" Top="22.68" Width="28.35" Height="18.9" Text="分" Font="宋体, 15pt"/>
+            <TextObject Name="Text21" Left="37.8" Top="3.78" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date1]" Font="宋体, 15pt"/>
+            <TextObject Name="Text22" Left="103.95" Top="3.78" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date2]" Font="宋体, 15pt"/>
+            <TextObject Name="Text23" Left="37.8" Top="22.68" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date3]" Font="宋体, 15pt"/>
+            <TextObject Name="Text24" Left="103.95" Top="22.68" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date4]" Font="宋体, 15pt"/>
+            <TextObject Name="Text11" Left="9.45" Top="15.12" Width="28.35" Height="18.9" Text="从" Font="宋体, 15pt"/>
+          </TableCell>
+        </TableRow>
+        <TableRow Name="Row9" Height="47.25">
+          <TableCell Name="Cell20" Border.Lines="All" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell21" Border.Lines="All" Fill.Color="31, 84, 42" VertAlign="Center" Font="宋体, 15pt, style=Bold">
+            <TextObject Name="Text12" Left="69.93" Top="3.78" Width="28.35" Height="18.9" Text="月" Font="宋体, 15pt"/>
+            <TextObject Name="Text13" Left="132.3" Top="3.78" Width="28.35" Height="18.9" Text="日" Font="宋体, 15pt"/>
+            <TextObject Name="Text14" Left="69.93" Top="22.68" Width="28.35" Height="18.9" Text="时" Font="宋体, 15pt"/>
+            <TextObject Name="Text15" Left="132.3" Top="22.68" Width="28.35" Height="18.9" Text="分" Font="宋体, 15pt"/>
+            <TextObject Name="Text16" Left="9.45" Top="15.12" Width="28.35" Height="18.9" Text="至" Font="宋体, 15pt"/>
+            <TextObject Name="Text25" Left="37.8" Top="3.78" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date5]" Font="宋体, 15pt"/>
+            <TextObject Name="Text26" Left="103.95" Top="3.78" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date6]" Font="宋体, 15pt"/>
+            <TextObject Name="Text27" Left="37.8" Top="22.68" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date7]" Font="宋体, 15pt"/>
+            <TextObject Name="Text28" Left="103.95" Top="22.68" Width="37.8" Height="18.9" Text="[RubbeBarcodePrint.date8]" Font="宋体, 15pt"/>
+          </TableCell>
+        </TableRow>
+      </TableObject>
+      <BarcodeObject Name="Barcode3" Left="340.2" Top="85.05" Width="35.91" Height="226.8" Border.Lines="All" Border.Color="Transparent" BeforePrintEvent="Barcode1_BeforePrint" Angle="90" AutoSize="false" Text="" ShowText="false" Barcode="Code128" Barcode.AutoEncode="true"/>
+      <BarcodeObject Name="Barcode1" Left="28.35" Top="504.63" Width="283.5" Height="54.81" Border.Lines="All" Border.Color="Transparent" BeforePrintEvent="Barcode1_BeforePrint" AutoSize="false" Text="" Barcode="Code128" Barcode.AutoEncode="true"/>
+    </DataBand>
+  </ReportPage>
+</Report>

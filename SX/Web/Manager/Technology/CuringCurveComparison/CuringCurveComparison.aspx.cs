@@ -1,0 +1,363 @@
+﻿using System;
+using System.Collections.Generic;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using Mesnac.Data.Components;
+using System.Data;
+using Newtonsoft.Json;
+
+public partial class Manager_Technology_CuringCurveComparison_CuringCurveComparison : Mesnac.Web.UI.Page
+{
+
+    #region 属性注入
+    private IPptLotDataManager pptLotDataManager = new PptLotDataManager();
+    private IPptcurvedataManager curveManager = new PptcurvedataManager("Curve");
+    #endregion
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btn_search" };
+            对比 = new SysPageAction() { ActionID = 2, ActionName = "btn_compare_curing" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 对比 { get; private set; } //必须为 public
+    }
+    #endregion
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        txt_Curve_Type.Select(0);
+        txtBeginDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd"); 
+        txtBeginTime.Text = "00:00:00";
+        txtEndDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        txtEndTime.Text = "00:00:00";
+    }
+    #region 绑定数据
+    /// <summary>
+    /// Grids the panel bind data.
+    /// 孙本强 @ 2013-04-03 13:05:56
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="extraParams">The extra params.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        DateTime beginTime = DateTime.Now;
+        try
+        {
+            beginTime = Convert.ToDateTime(((DateTime)txtBeginDate.Value).ToString("yyyy-MM-dd") + " " + txtBeginTime.Text);
+        }
+        catch
+        {
+            X.Msg.Show(new MessageBoxConfig { Title = "错误提示", Message = "请填写正确的开始时间！", Buttons = MessageBox.Button.OK, Icon = MessageBox.Icon.ERROR });
+        }
+        DateTime endTime = DateTime.Now;
+        try
+        {
+            endTime = Convert.ToDateTime(((DateTime)txtEndDate.Value).ToString("yyyy-MM-dd") + " " + txtEndTime.Text);
+        }
+        catch
+        {
+            X.Msg.Show(new MessageBoxConfig { Title = "错误提示", Message = "请填写正确的结束时间！", Buttons = MessageBox.Button.OK, Icon = MessageBox.Icon.ERROR });
+        }
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PptLotDataManager.QueryParams queryParams = new PptLotDataManager.QueryParams();
+
+        queryParams.PageParams.PageIndex = prms.Page;
+        queryParams.PageParams.PageSize = prms.Limit;
+
+        queryParams.BeginTime = beginTime.ToString("yyMMdd");
+        queryParams.EndTime = endTime.ToString("yyMMdd");
+        queryParams.MaterCode = txt_material_code.Text;
+        queryParams.EquipCode = txt_equip_code.Text;
+
+        PageResult<PptLotData> lst = pptLotDataManager.GetTablePageDataBySql(queryParams);
+        DataTable data = new DataTable();
+        int total = 0;
+        data = lst.DataSet.Tables[0];
+        total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+    #region 对比硫化曲线
+    [Ext.Net.DirectMethod()]
+        protected void btn_compare_curing_click(object sender, DirectEventArgs e)
+        {
+            int count = 0;
+            if (txt_Curve_Type.Value.Equals(""))
+            {
+                X.Msg.Alert("提示", "请选择要比较的曲线类型！").Show();
+                return;
+            }
+            string[] comparisonString = hidden_comparison_barcode.Value.ToString().Split(',');
+            if (comparisonString.Length > 10)
+            {
+                X.Msg.Alert("提示", "选择对比的曲线数量不能大于10个！").Show();
+                return;
+            }
+            if (comparisonString.Length < 2)
+            {
+                X.Msg.Alert("提示", "请选择2条以上记录来进行曲线对比！").Show();
+                return;
+            }
+            Pptcurvedata curve = new Pptcurvedata();
+            Pptcurvedata curve2 = new Pptcurvedata(); 
+            List<PptCurve> data = new List<PptCurve>();
+            List<string> lineSeriesBarcode = new List<string>();
+            foreach (string barcode in comparisonString)
+            {
+                EntityArrayList<Pptcurvedata> lst = curveManager.GetTopNListWhereOrder(1, Pptcurvedata._.Barcode == barcode, Pptcurvedata._.Barcode.Asc);
+                lineSeriesBarcode.Add(barcode);
+                if (lst.Count > 0)
+                {
+                    Pptcurvedata m = lst[0];
+                    switch (count)
+                    {
+                        case 0: curve.MixingTemp = GetCurveByCurveType(m , txt_Curve_Type.Value.ToString());
+                            break;
+                        case 1: curve.MixingPower = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 2: curve.MixingPress = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 3: curve.MixingEnergy = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 4: curve.MixingSpeed = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 5: curve.Plandate = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 6: curve2.MixingTemp = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 7: curve2.MixingPower = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 8: curve2.MixingPress = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+                        case 9: curve2.MixingEnergy = GetCurveByCurveType(m, txt_Curve_Type.Value.ToString());
+                            break;
+
+                        default:
+                            break;
+                    }
+                    curve.MixingTime = m.MixingTime;
+                    curve2.MixingTime = m.MixingTime;
+                    count++;
+                }
+            }
+            //X.Js.Alert(curve.MixingSpeed + "asd" + curve.PlanDate); return;
+            string status = "&nbsp;&nbsp;" + txt_Curve_Type.Text + "：&nbsp;&nbsp;";
+            for (int i = 0; i < lineSeriesBarcode.Count; i++)
+            {
+                string materialname = "";
+                try
+                {
+                    materialname = pptLotDataManager.GetListByWhere(PptLotData._.Barcode == lineSeriesBarcode[i])[0].MaterName ;
+                }
+                catch
+                {
+                }
+                if (i == 3)
+                {
+                    status += "曲线" + (i + 1) + "-" + lineSeriesBarcode[i] + "[" + materialname + "]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                }
+                else
+                {
+                    status += "曲线" + (i + 1) + "-" + lineSeriesBarcode[i] + "[" + materialname + "]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+                }
+            }
+            winStatus.SetStatus(status);
+            //给图表绑定数据
+            data = IniPptCurveList(curve,curve2);
+            Store store = this.Chart1.GetStore();
+            store.DataSource = data;
+            store.DataBind();
+
+            winCompareCuring.Show();
+        }
+
+        private string GetCurveByCurveType(Pptcurvedata curveData, string curveType)
+        {
+            string result = "";
+            switch (curveType)
+            {
+                case "温度": result = curveData.MixingTemp;
+                    break;
+                case "功率": result = curveData.MixingPower;
+                    break;
+                case "压力": result = curveData.MixingPress;
+                    break;
+                case "能量": result = curveData.MixingEnergy;
+                    break;
+                case "转速": result = curveData.MixingSpeed;
+                    break;
+                default:
+                    break;
+            }
+            return result;
+        }
+        private List<PptCurve> IniPptCurveList(Pptcurvedata data, Pptcurvedata data2)
+        {
+            List<PptCurve> Result = new List<PptCurve>();
+            string ss = data.MixingTime;
+            int h = data.MixingTime.Split(':').Length;
+            for (int i = 0; i < h; i++)
+            {
+                try
+                {
+                    PptCurve p = new PptCurve();
+                    p.SecondSpan = Convert.ToInt32(data.MixingTime.Split(':')[i]);
+                    p.MixingTemp = data.MixingTemp != null ? Convert.ToDecimal(data.MixingTemp.Split(':')[i]) : 0;
+                    p.MixingPower = data.MixingPower != null ? Convert.ToDecimal(data.MixingPower.Split(':')[i]) : 0;
+                    p.MixingEnergy = data.MixingEnergy != null ? Convert.ToDecimal(data.MixingEnergy.Split(':')[i]) : 0;
+                    p.MixingPress = data.MixingPress != null ? Convert.ToDecimal(data.MixingPress.Split(':')[i]) : 0;
+                    p.MixingSpeed = data.MixingSpeed != null ? Convert.ToDecimal(data.MixingSpeed.Split(':')[i]) : 0;
+                    p.MixingPosition = data.Plandate != null ? Convert.ToDecimal(data.Plandate.Split(':')[i]) : 0;
+                    p.PlanDate = (data.Plandate != null ? Convert.ToDecimal(data.Plandate.Split(':')[i]) : 0).ToString();
+                    p.L1 = data2.MixingTemp != null ? Convert.ToDecimal(data2.MixingTemp.Split(':')[i]) : 0;
+                    p.L2 = data2.MixingPower != null ? Convert.ToDecimal(data2.MixingPower.Split(':')[i]) : 0;
+                    p.L3 = data2.MixingPress != null ? Convert.ToDecimal(data2.MixingPress.Split(':')[i]) : 0;
+                    p.L4 = data2.MixingEnergy != null ? Convert.ToDecimal(data2.MixingEnergy.Split(':')[i]) : 0;
+                    Result.Add(p);
+                }
+                catch { }
+            }
+            return Result;
+        }
+        private List<PptCurve> IniPptCurveList(Pptcurvedata data)
+        {
+            List<PptCurve> Result = new List<PptCurve>();
+            string ss = data.MixingTime;
+            int h = data.MixingTime.Split(':').Length;
+            for (int i = 0; i < h; i++)
+            {
+                try
+                {
+                    PptCurve p = new PptCurve();
+                    p.SecondSpan = Convert.ToInt32(data.MixingTime.Split(':')[i]);
+                    p.MixingTemp = data.MixingTemp != null ? Convert.ToDecimal(data.MixingTemp.Split(':')[i]) : 0;
+                    p.MixingPower =data.MixingPower != null ? Convert.ToDecimal(data.MixingPower.Split(':')[i]): 0;
+                    p.MixingEnergy =data.MixingEnergy != null ? Convert.ToDecimal(data.MixingEnergy.Split(':')[i]): 0;
+                    p.MixingPress = data.MixingPress != null ? Convert.ToDecimal(data.MixingPress.Split(':')[i]) : 0;
+                    p.MixingSpeed = data.MixingSpeed != null ? Convert.ToDecimal(data.MixingSpeed.Split(':')[i]) : 0;
+                    p.MixingPosition = data.Plandate != null ? Convert.ToDecimal(data.Plandate.Split(':')[i]) : 0;
+                    p.PlanDate = (data.Plandate != null ? Convert.ToDecimal(data.Plandate.Split(':')[i]) : 0).ToString();
+                    //p.L1 = data.L1 != null ? Convert.ToDecimal(data.L1.Split(':')[i]) : 0;
+                    //p.L2 = data.L2 != null ? Convert.ToDecimal(data.L2.Split(':')[i]) : 0;
+                    //p.L3 = data.L3 != null ? Convert.ToDecimal(data.L3.Split(':')[i]) : 0;
+                    //p.L4 = data.L4 != null ? Convert.ToDecimal(data.L4.Split(':')[i]) : 0;
+                    Result.Add(p);
+                }
+                catch { }
+            }
+            return Result;
+        }
+     #endregion
+
+    #region 选择绑定对比曲线
+        /// <summary>
+        /// 点击添加对比数据触发的事件
+        /// yuany   2014年4月22日11:48:14
+        /// </summary>
+        /// <param name="unit_num"></param>
+        /// <returns></returns>
+        [Ext.Net.DirectMethod()]
+        public string commandcolumnDirectAdd(string barcode)
+        {
+            try
+            {
+                string[] comparisonString = hidden_comparison_barcode.Value.ToString().Split(',');
+                if (comparisonString.Length > 9)
+                {
+                    return "最多对比十条数据[ERROR]";
+                }
+                if (hidden_comparison_barcode.Value.ToString().IndexOf(barcode) > -1)
+                {
+                    return "已存在此条码记录[ERROR]";
+                }
+                if (hidden_comparison_barcode.Value.ToString().Equals(string.Empty))
+                {
+                    hidden_comparison_barcode.Value = barcode;
+                }
+                else
+                {
+                    hidden_comparison_barcode.Value += "," + barcode;
+                }
+                EntityArrayList<PptLotData> list = new EntityArrayList<PptLotData>();
+                comparisonString = hidden_comparison_barcode.Value.ToString().Split(',');
+                foreach (string item in comparisonString)
+                {
+                    EntityArrayList<PptLotData> temp = pptLotDataManager.GetListByWhere(PptLotData._.Barcode == item);
+                    if (temp.Count == 1)
+                    {
+                        list.Add(temp[0]);
+                    }
+                }
+                comparisonStore.Data = list;
+                comparisonStore.DataBind();
+            }
+            catch
+            {
+                return "选取失败[ERROR]";
+            }
+            return "选取成功[SUCCESS]";
+        }
+
+        /// <summary>
+        /// 点击删除对比数据触发的事件
+        /// yuany   2014年4月22日11:48:14
+        /// </summary>
+        /// <param name="unit_num"></param>
+        /// <returns></returns>
+        [Ext.Net.DirectMethod()]
+        public string commandcolumnDirectDelete(string barcode)
+        {
+            try
+            {
+                string[] comparisonString = hidden_comparison_barcode.Value.ToString().Split(',');
+                hidden_comparison_barcode.Value = "";
+                foreach (string item in comparisonString)
+                {
+                    if (item != barcode)
+                    {
+                        if (hidden_comparison_barcode.Value.ToString().Equals(string.Empty))
+                        {
+                            hidden_comparison_barcode.Value = item;
+                        }
+                        else
+                        {
+                            hidden_comparison_barcode.Value += "," + item;
+                        }
+                    }
+                }
+                
+                EntityArrayList<PptLotData> list = new EntityArrayList<PptLotData>();
+                comparisonString = hidden_comparison_barcode.Value.ToString().Split(',');
+                foreach (string item in comparisonString)
+                {
+                    EntityArrayList<PptLotData> temp = pptLotDataManager.GetListByWhere(PptLotData._.Barcode == item);
+                    if (temp.Count == 1)
+                    {
+                        list.Add(temp[0]);
+                    }
+                }
+                comparisonStore.Data = list;
+                comparisonStore.DataBind();
+            }
+            catch
+            {
+                return "删除失败[ERROR]";
+            }
+            return "删除成功[SUCCESS]";
+        }
+    #endregion
+}

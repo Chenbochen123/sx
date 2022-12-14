@@ -1,0 +1,1723 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+using System.Data;
+using System.IO;
+using System.Web.UI.HtmlControls;
+
+using Ext.Net;
+
+using NBear.Common;
+
+using Mesnac.Business.Interface;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Web.UI;
+
+using NPOI.SS.UserModel;
+using NPOI.HSSF.UserModel;
+
+public partial class Manager_RubberQuality_BasicInfo_CheckDataImport : BasePage
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            浏览 = new SysPageAction() { ActionID = 0, ActionName = "" };
+            导入 = new SysPageAction() { ActionID = 1, ActionName = "ButtonNorthSave" };
+        }
+        public SysPageAction 浏览 { get; private set; } //必须为 public
+        public SysPageAction 导入 { get; private set; } //必须为 public
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 页面加载
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            #region 加载CSS样式
+            System.Web.UI.HtmlControls.HtmlGenericControl cssLink = new System.Web.UI.HtmlControls.HtmlGenericControl("link");
+            cssLink.Attributes.Add("type", "text/css");
+            cssLink.Attributes.Add("rel", "stylesheet");
+            cssLink.Attributes.Add("href", this.ResolveUrl("~/resources/css/main.css"));
+            this.Page.Header.Controls.Add(cssLink);
+
+            cssLink = new System.Web.UI.HtmlControls.HtmlGenericControl("link");
+            cssLink.Attributes.Add("type", "text/css");
+            cssLink.Attributes.Add("rel", "stylesheet");
+            cssLink.Attributes.Add("href", this.ResolveUrl("~/resources/css/ext-chinese-font.css"));
+            this.Page.Header.Controls.Add(cssLink);
+            #endregion 加载CSS样式
+
+            #region 加载JS文件
+            System.Web.UI.HtmlControls.HtmlGenericControl scriptLink = new System.Web.UI.HtmlControls.HtmlGenericControl("script");
+            scriptLink.Attributes.Add("type", "text/javascript");
+            scriptLink.Attributes.Add("src", "CheckDataImport.js?" + DateTime.Now.Ticks.ToString());
+            this.Page.Header.Controls.Add(scriptLink);
+            #endregion 加载JS文件
+
+            InitControls();
+        }
+    }
+
+    /// <summary>
+    /// 初始化控件
+    /// 修改标识：qusf 20131106
+    /// 修改说明：1.标准类型改为只显示用途为检验标准和专检标准的标准类型
+    /// </summary>
+    private void InitControls()
+    {
+        IPptClassManager bPptClassManager = new PptClassManager();
+        EntityArrayList<PptClass> mPptClassList = bPptClassManager.GetListByWhereAndOrder(PptClass._.UseFlag == "1", PptClass._.ObjID.Asc);
+        foreach (PptClass mPptClass in mPptClassList)
+        {
+            ComboBoxNorthCheckPlanClass.AddItem(mPptClass.ClassName, mPptClass.ObjID.ToString());
+            //ComboBoxNorthCheckPlanClass.Items.Add(new Ext.Net.ListItem(mPptClass.ClassName, mPptClass.ObjID.ToString()));
+        }
+
+        IQmtCheckStandTypeManager bQmtCheckStandTypeManager = new QmtCheckStandTypeManager();
+        EntityArrayList<QmtCheckStandType> mQmtCheckStandTypeList = bQmtCheckStandTypeManager.GetListByWhereAndOrder(
+            QmtCheckStandType._.DeleteFlag == "0"
+            & (QmtCheckStandType._.CheckTypeCode.In(2, 3) | QmtCheckStandType._.CheckTypeCode == null)
+            , QmtCheckStandType._.ObjID.Asc);
+        foreach (QmtCheckStandType mQmtCheckStandType in mQmtCheckStandTypeList)
+        {
+            ComboBoxNorthStandCode.AddItem(mQmtCheckStandType.StandTypeName, mQmtCheckStandType.ObjID.ToString());
+            //ComboBoxNorthStandCode.Items.Add(new Ext.Net.ListItem(mQmtCheckStandType.StandTypeName, mQmtCheckStandType.ObjID.ToString()));
+        }
+
+        IPptShiftManager bPptShiftManager = new PptShiftManager();
+        EntityArrayList<PptShift> mPptShiftList = bPptShiftManager.GetListByWhereAndOrder(
+            PptShift._.UseFlag == "1"
+            , PptShift._.ObjID.Asc
+            );
+        foreach (PptShift mPptShift in mPptShiftList)
+        {
+            ComboBoxNorthShiftCheckId.AddItem(mPptShift.ShiftName, mPptShift.ObjID.ToString());
+            //ComboBoxNorthShiftCheckId.Items.Add(new Ext.Net.ListItem(mPptShift.ShiftName, mPptShift.ObjID.ToString()));
+
+            ComboBoxNorthShiftId.AddItem(mPptShift.ShiftName, mPptShift.ObjID.ToString());
+        }
+
+    }
+
+    /// <summary>
+    /// 选择Excel文件
+    /// </summary>
+    /// <returns></returns>
+    [DirectMethod]
+    public bool SelectExcel()
+    {
+        ComboBoxNorthExcelSheets.GetStore().RemoveAll();
+        ComboBoxNorthExcelSheets.Clear();
+
+        if (FileUploadFieldNorthExcel.HasFile == false
+            || FileUploadFieldNorthExcel.PostedFile == null
+            || FileUploadFieldNorthExcel.PostedFile.ContentLength == 0)
+        {
+            return false;
+        }
+
+        using (MemoryStream ms = new MemoryStream(this.FileUploadFieldNorthExcel.FileBytes))
+        {
+            IWorkbook workbook = null;
+            try
+            {
+                workbook = new HSSFWorkbook(ms);
+            }
+            catch
+            {
+                X.Msg.Alert("提示", "上传的文件不是有效的Excel文件").Show();
+                return false;
+            }
+
+            int numberOfSheets = workbook.NumberOfSheets;
+            for (int sheetIndex = 0; sheetIndex < numberOfSheets; sheetIndex++)
+            {
+                ComboBoxNorthExcelSheets.AddItem(Convert.ToString(sheetIndex + 1) + ":" + workbook.GetSheetName(sheetIndex), sheetIndex.ToString());
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 根据质检日期和质检班组查找质检班次
+    /// </summary>
+    /// <param name="checkPlanDate"></param>
+    /// <param name="checkPlanClass"></param>
+    /// <returns></returns>
+    [DirectMethod]
+    public string GetShiftCheckId(string checkPlanDate, string checkPlanClass)
+    {
+        IPptShiftTimeManager bPptShiftTimeManager = new PptShiftTimeManager();
+        EntityArrayList<PptShiftTime> mPptShiftTimeList = bPptShiftTimeManager.GetListByWhereAndOrder(
+            PptShiftTime._.ProcedureID == "3" // 胶料质检
+            & PptShiftTime._.ShiftDT == checkPlanDate
+            & PptShiftTime._.ShiftClassID == checkPlanClass
+            , PptShiftTime._.ObjID.Asc
+            );
+        string shiftCheckId = "";
+        if (mPptShiftTimeList.Count > 0)
+        {
+            shiftCheckId = mPptShiftTimeList[0].ShiftID.ToString();
+        }
+
+        return shiftCheckId;
+    }
+
+    /// <summary>
+    /// 上传Excel文件
+    /// 修改标识：qusf 20131106
+    /// 修改说明：1.生产班次由PptShiftTime中获取改为由用户选择
+    ///           2.所有上传Excel表的格式都统一，不再区分
+    /// </summary>
+    /// <returns></returns>
+    [DirectMethod]
+    public bool UploadExcel()
+    {
+        if (FileUploadFieldNorthExcel.HasFile == false
+            || FileUploadFieldNorthExcel.PostedFile == null
+            || FileUploadFieldNorthExcel.PostedFile.ContentLength == 0)
+        {
+            X.Msg.Alert("提示", "没有选择上传文件或文件不存在".ToString()).Show();
+            return false;
+        }
+        if (ComboBoxNorthExcelSheets.Value.ToString() == "")
+        {
+            X.Msg.Alert("提示", "请选择Sheet页").Show();
+            return false;
+        }
+        if (ComboBoxNorthShiftId.Value.ToString() == "")
+        {
+            X.Msg.Alert("提示", "请选择生产班次").Show();
+            return false;
+        }
+        if (DateFieldNorthCheckPlanDate.RawText == null || DateFieldNorthCheckPlanDate.RawText == "")
+        {
+            X.Msg.Alert("提示", "请选择质检日期").Show();
+            return false;
+        }
+        if (ComboBoxNorthCheckPlanClass.Value.ToString() == "")
+        {
+            X.Msg.Alert("提示", "请选择检验班组").Show();
+            return false;
+        }
+        if (ComboBoxNorthShiftCheckId.Value.ToString() == "")
+        {
+            X.Msg.Alert("提示", "请选择检验班次").Show();
+            return false;
+        }
+        if (DateFieldNorthCheckDate.RawText == null || DateFieldNorthCheckDate.RawText == "")
+        {
+            X.Msg.Alert("提示", "请选择检测日期").Show();
+            return false;
+        }
+        if (TimeFieldNorthCheckTime.RawText == null || TimeFieldNorthCheckTime.RawText == "")
+        {
+            X.Msg.Alert("提示", "请选择检测时间").Show();
+            return false;
+        }
+        if (ComboBoxNorthStandCode.Value.ToString() == "")
+        {
+            X.Msg.Alert("提示", "请选择标准类型").Show();
+            return false;
+        }
+
+        // Excel文件读取
+        using (MemoryStream ms = new MemoryStream(this.FileUploadFieldNorthExcel.FileBytes))
+        {
+            IWorkbook workbook = null;
+            try
+            {
+                workbook = new HSSFWorkbook(ms);
+            }
+            catch
+            {
+                X.Msg.Alert("提示", "上传的文件不是有效的Excel文件").Show();
+                return false;
+            }
+
+            int sheetIndex = Convert.ToInt32(ComboBoxNorthExcelSheets.Value);
+
+            string standCode = ComboBoxNorthStandCode.Value.ToString();
+
+            IBasMaterialManager bBasMaterialManager = new BasMaterialManager();
+            EntityArrayList<BasMaterial> mBasMaterialList = bBasMaterialManager.GetAllList();
+
+            string operInfo = "";
+            string timeInfo = "";
+
+            //if (standCode == "1") //通用
+            //{
+            operInfo = workbook.GetSheetAt(sheetIndex).GetRow(1).GetCell(0).ToString();
+            timeInfo = workbook.GetSheetAt(sheetIndex).GetRow(1).GetCell(3, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+            //}
+            //else if (standCode == "2")
+            //{
+            //    operInfo = workbook.GetSheetAt(sheetIndex).GetRow(0).GetCell(0).ToString();
+            //    timeInfo = workbook.GetSheetAt(sheetIndex).GetRow(1).GetCell(0, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+            //}
+            if (operInfo.StartsWith("操作员：") == false)
+            {
+                X.Msg.Alert("提示", "上传文件的Sheet页与标准类型不符").Show();
+
+                StoreCenterOrigin.RemoveAll();
+                StoreCenterError.RemoveAll();
+                StoreCenterSave.RemoveAll();
+
+                return false;
+            }
+            bool isReCheck = operInfo.Contains("复检");
+            if (isReCheck != CheckBoxNorthReCheck.Checked)
+            {
+                if (isReCheck == true)
+                {
+                    X.Msg.Alert("提示", "上传文件的Sheet页是复检文件，请选中【是复检文件】").Show();
+
+                    StoreCenterOrigin.RemoveAll();
+                    StoreCenterError.RemoveAll();
+                    StoreCenterSave.RemoveAll();
+
+                    return false;
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "上传文件的Sheet页不是复检文件，请不要选中【是复检文件】").Show();
+
+                    StoreCenterOrigin.RemoveAll();
+                    StoreCenterError.RemoveAll();
+                    StoreCenterSave.RemoveAll();
+
+                    return false;
+                }
+            }
+
+            string className = "";
+            try
+            {
+                if (isReCheck == true)
+                {
+                    className = operInfo.Substring(4).Trim().Substring(2).Substring(0, 1);
+                }
+                else
+                {
+                    className = operInfo.Substring(4).Trim().Substring(0, 1);
+                }
+            }
+            catch
+            {
+                X.Msg.Alert("提示", "上传文件中生产班组信息不正确").Show();
+                return false;
+            }
+            string shiftClass = "";
+
+            IPptClassManager bPptClassManager = new PptClassManager();
+            EntityArrayList<PptClass> mPptClassList = bPptClassManager.GetListByWhereAndOrder(PptClass._.ClassName == className
+                , PptClass._.UseFlag.Desc & PptClass._.ObjID.Asc);
+            if (mPptClassList.Count == 0)
+            {
+                X.Msg.Alert("提示", "上传文件中生产班组信息不正确").Show();
+                return false;
+            }
+            shiftClass = mPptClassList[0].ObjID.ToString();
+
+            // 生产日期
+            string planDate = "";
+            try
+            {
+                if (isReCheck == true)
+                {
+                    planDate = operInfo.Substring(4).Trim().Substring(4, 4);
+                }
+                else
+                {
+                    planDate = operInfo.Substring(4).Trim().Substring(2, 4);
+                }
+                planDate = new DateTime(DateTime.Today.Year, Convert.ToInt32(planDate.Substring(0, 2)), Convert.ToInt32(planDate.Substring(2, 2))).ToString("yyyy-MM-dd");
+            }
+            catch (Exception ex)
+            {
+                X.Msg.Alert("提示", "上传文件中生产日期信息不正确<br />" + ex.Message).Show();
+                return false;
+            }
+            DateTime today = DateTime.Today;
+            if (today.AddMonths(8) < Convert.ToDateTime(planDate))
+            {
+                planDate = Convert.ToDateTime(planDate).AddYears(-1).ToString("yyyy-MM-dd");
+            }
+
+            //DateTime planSTime = Convert.ToDateTime(planDate).AddHours(-8);
+            //DateTime planETime = Convert.ToDateTime(planDate).AddHours(16);
+
+            string shiftId = "";
+            string shiftName = "";
+
+            shiftId = ComboBoxNorthShiftId.Value.ToString();
+            shiftName = ComboBoxNorthShiftId.RawText;
+
+            #region 班次改为用户选择，此代码注释掉
+            /*
+            IPptShiftTimeManager bPptShiftTimeManager = new PptShiftTimeManager();
+            EntityArrayList<PptShiftTime> mPptShiftTimeList = bPptShiftTimeManager.GetListByWhereAndOrder(
+                PptShiftTime._.ProcedureID == 1
+                //& PptShiftTime._.FacID == 1
+                & PptShiftTime._.ShiftClassID == shiftClass
+                & PptShiftTime._.ShiftDT == planDate
+                //& PptShiftTime._.ShiftStart >= planSTime
+                //& PptShiftTime._.ShiftEnd < planETime
+                , PptShiftTime._.ObjID.Desc);
+
+            IPptShiftManager bPptShiftManager = new PptShiftManager();
+            if (mPptShiftTimeList.Count > 0)
+            {
+                // 取计划中的班次信息
+                planDate = mPptShiftTimeList[0].ShiftDT.ToString("yyyy-MM-dd");
+                shiftId = mPptShiftTimeList[0].ShiftID.ToString();
+                PptShift mPptShift = bPptShiftManager.GetById(new object[] { shiftId });
+                if (mPptShift == null)
+                {
+                    X.Msg.Alert("提示", "上传文件中生产班次信息不正确").Show();
+                    return false;
+                }
+                shiftName = mPptShift.ShiftName;
+            }
+            else
+            {
+                // 取文件中的班次信息
+                try
+                {
+                    shiftName = operInfo.Substring(4).Trim().Substring(6, 1);
+                }
+                catch
+                {
+                    X.Msg.Alert("提示", "上传文件中生产班次信息不正确").Show();
+                    return false;
+                }
+                EntityArrayList<PptShift> mPptShiftList = bPptShiftManager.GetListByWhereAndOrder(PptShift._.ShiftName == shiftName
+                    , PptShift._.UseFlag.Desc & PptShift._.ObjID.Asc);
+                if (mPptShiftList.Count == 0)
+                {
+                    X.Msg.Alert("提示", "上传文件中生产班次信息不正确").Show();
+                    return false;
+                }
+                shiftId = mPptShiftList[0].ObjID.ToString();
+
+                IPptSetTimeManager bPptSetTimeManager = new PptSetTimeManager();
+                EntityArrayList<PptSetTime> mPptSetTimeList = bPptSetTimeManager.GetListByWhereAndOrder(PptSetTime._.ProcedureID == "1"
+                    & PptSetTime._.ShiftID == shiftId
+                    , PptSetTime._.UseFlag.Desc & PptSetTime._.ObjID.Asc);
+                if (mPptSetTimeList.Count == 0)
+                {
+                    X.Msg.Alert("提示", "没有找到生产班次的时间设置").Show();
+                    return false;
+                }
+                if (mPptSetTimeList[0].DayFlag == -1)
+                {
+                    planDate = Convert.ToDateTime(planDate).AddDays(1).ToString("yyyy-MM-dd");
+                }
+            }
+             * */
+
+            #endregion 班次改为用户选择，此代码注释掉
+
+            string typeName = ComboBoxNorthStandCode.RawText;
+
+            IQmtQrigImportLogMasterManager bQmtQrigImportLogMasterManager = new QmtQrigImportLogMasterManager();
+            // 是否重复上传
+            if (isReCheck == false)
+            {
+                EntityArrayList<QmtQrigImportLogMaster> mQmtQrigImportLogMasterList = bQmtQrigImportLogMasterManager.GetListByWhere(
+                    QmtQrigImportLogMaster._.Flag == "1"
+                    & QmtQrigImportLogMaster._.PlanDate == planDate
+                    & QmtQrigImportLogMaster._.ShiftClass == shiftClass
+                    & QmtQrigImportLogMaster._.StandType == standCode);
+                if (mQmtQrigImportLogMasterList.Count > 0)
+                {
+                    X.Msg.Alert("提示", operInfo + "在" + typeName + "的数据已导入并保存，请查询并核实").Show();
+                    return false;
+                }
+            }
+
+            LabelCenterOper.Text = operInfo;
+            HiddenOper.SetValue(operInfo);
+            LabelCenterTime.Text = timeInfo;
+
+            string guid = Guid.NewGuid().ToString();
+            HiddenGUID.SetValue(guid);
+
+            IBasUserManager basUserManager = new BasUserManager();
+            BasUser mBasUser = basUserManager.GetById(new object[] { this.UserID });
+            string userName = "";
+            if (mBasUser != null)
+            {
+                userName = mBasUser.UserName;
+            }
+
+            QmtQrigImportLogMaster mQmtQrigImportLogMaster = new QmtQrigImportLogMaster();
+            mQmtQrigImportLogMaster.ClassName = className;
+            mQmtQrigImportLogMaster.FileContent = FileUploadFieldNorthExcel.FileBytes;
+            mQmtQrigImportLogMaster.FileName = FileUploadFieldNorthExcel.FileName;
+            mQmtQrigImportLogMaster.Flag = "0";
+            mQmtQrigImportLogMaster.GUID = guid;
+            mQmtQrigImportLogMaster.OperInfo = operInfo;
+            mQmtQrigImportLogMaster.PlanDate = planDate;
+            mQmtQrigImportLogMaster.RecorderId = UserID;
+            mQmtQrigImportLogMaster.RecorderName = userName;
+            mQmtQrigImportLogMaster.RecordTime = DateTime.Now;
+            mQmtQrigImportLogMaster.SheetName = workbook.GetSheetName(sheetIndex);
+            mQmtQrigImportLogMaster.ShiftClass = Convert.ToInt32(shiftClass);
+            mQmtQrigImportLogMaster.ShiftId = Convert.ToInt32(shiftId);
+            mQmtQrigImportLogMaster.ShiftName = shiftName;
+            mQmtQrigImportLogMaster.StandType = Convert.ToInt32(standCode);
+            mQmtQrigImportLogMaster.TypeName = typeName;
+
+            bQmtQrigImportLogMasterManager.Insert(mQmtQrigImportLogMaster);
+
+
+            //将原Excel文件导入到DataTable中
+            DataTable dtWorkbook = CreateWorkbookTable();
+
+            //if (standCode == "1")
+            //{
+            SetWorkbookTable_1(dtWorkbook, workbook.GetSheetAt(sheetIndex));
+            //}
+            //else if (standCode == "2")
+            //{
+            //    SetWorkbookTable_2(dtWorkbook, workbook.GetSheetAt(sheetIndex));
+            //}
+
+            DataTable dtTemp = CreateTempTable();
+
+            //if (standCode == "1")
+            //{
+            SetTempTable_1(dtWorkbook, dtTemp, mBasMaterialList, planDate, shiftId, shiftName, shiftClass, className);
+            //}
+            //else if (standCode == "2")
+            //{
+            //    SetTempTable_2(dtWorkbook, dtTemp, mBasMaterialList, planDate, shiftId, shiftName, shiftClass, className);
+            //}
+
+            dtWorkbook.DefaultView.Sort = "seq";
+            StoreCenterOrigin.DataSource = dtWorkbook;
+            StoreCenterOrigin.DataBind();
+
+            StoreCenterSave.DataSource = dtTemp;
+            StoreCenterSave.DataBind();
+
+            DataTable dtError = dtWorkbook.Copy();
+            dtError.DefaultView.RowFilter = "flag='1'";
+            StoreCenterError.DataSource = dtError;
+            StoreCenterError.DataBind();
+
+            if (isReCheck == true)
+            {
+                HiddenIsReCheck.SetValue("1");
+            }
+            else
+            {
+                HiddenIsReCheck.SetValue("0");
+            }
+
+            string tpl = "文件上传完毕: {0}<br/>文件大小: {1} 字节<br/>Excel文件数据：{2} 条";
+            X.Msg.Alert("成功", string.Format(tpl, this.FileUploadFieldNorthExcel.PostedFile.FileName
+                , this.FileUploadFieldNorthExcel.PostedFile.ContentLength
+                , dtWorkbook.Rows.Count.ToString())
+            ).Show();
+        }
+
+
+        return true;
+    }
+
+    /// <summary>
+    /// 创建Excel表格
+    /// </summary>
+    /// <returns></returns>
+    private DataTable CreateWorkbookTable()
+    {
+        DataTable dtWorkbook = new DataTable();
+        dtWorkbook.Columns.Add(new DataColumn("ProductNo"));
+        dtWorkbook.Columns.Add(new DataColumn("RubberName"));
+        dtWorkbook.Columns.Add(new DataColumn("205")); //T30
+        dtWorkbook.Columns.Add(new DataColumn("206")); //T60
+        dtWorkbook.Columns.Add(new DataColumn("203")); //Ts1
+        dtWorkbook.Columns.Add(new DataColumn("204")); //T25
+        dtWorkbook.Columns.Add(new DataColumn("201")); //ML
+        dtWorkbook.Columns.Add(new DataColumn("202")); //MH
+        dtWorkbook.Columns.Add(new DataColumn("101")); //ML(1+4)
+        dtWorkbook.Columns.Add(new DataColumn("102")); //T5
+        dtWorkbook.Columns.Add(new DataColumn("301")); //硬度
+        dtWorkbook.Columns.Add(new DataColumn("401")); //比重
+        dtWorkbook.Columns.Add(new DataColumn("501")); //H抽出
+
+        dtWorkbook.Columns.Add(new DataColumn("seq", typeof(int)));
+        dtWorkbook.Columns.Add(new DataColumn("flag"));
+        dtWorkbook.Columns.Add(new DataColumn("errmsg"));
+
+        return dtWorkbook;
+    }
+
+    /// <summary>
+    /// 填充Excel表格(标准)
+    /// </summary>
+    /// <param name="dtWorkbook"></param>
+    /// <param name="sheet"></param>
+    private void SetWorkbookTable_1(DataTable dtWorkbook, ISheet sheet)
+    {
+        int seq = 0;
+        //ISheet sheet = workbook.GetSheetAt(0);
+
+        int firstRowNum = 4; //从第5行开始
+        int lastRowNum = sheet.LastRowNum;
+
+        for (int rowNum = firstRowNum; rowNum <= lastRowNum; rowNum++)
+        {
+            IRow row = sheet.GetRow(rowNum);
+
+            if (row != null && row.GetCell(0, MissingCellPolicy.RETURN_BLANK_AS_NULL) != null)
+            {
+                string s = row.GetCell(0).ToString();
+
+                if (s != "")
+                {
+                    seq++;
+                    DataRow drWorkbook = dtWorkbook.NewRow();
+                    drWorkbook["ProductNo"] = row.GetCell(0, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString(); ;
+                    drWorkbook["RubberName"] = row.GetCell(1, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString(); ;
+                    drWorkbook["201"] = row.GetCell(2, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["202"] = row.GetCell(3, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["205"] = row.GetCell(4, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["206"] = row.GetCell(5, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["101"] = row.GetCell(6, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["102"] = row.GetCell(7, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["401"] = row.GetCell(8, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["301"] = row.GetCell(9, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["501"] = row.GetCell(10, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+
+                    drWorkbook["seq"] = seq.ToString();
+
+                    dtWorkbook.Rows.Add(drWorkbook);
+
+                }
+            }
+
+        }
+
+
+    }
+
+    /// <summary>
+    /// 填充Excel表格(诺甲)
+    /// </summary>
+    /// <param name="dtWorkbook"></param>
+    /// <param name="sheet"></param>
+    private void SetWorkbookTable_2(DataTable dtWorkbook, ISheet sheet)
+    {
+        int seq = 0;
+        //ISheet sheet = workbook.GetSheetAt(0);
+
+        int firstRowNum = 3; //从第5行开始
+        int lastRowNum = sheet.LastRowNum;
+
+        for (int rowNum = firstRowNum; rowNum <= lastRowNum; rowNum++)
+        {
+            IRow row = sheet.GetRow(rowNum);
+
+            if (row != null && row.GetCell(0, MissingCellPolicy.RETURN_BLANK_AS_NULL) != null)
+            {
+                string s = row.GetCell(0).ToString();
+
+                if (s != "")
+                {
+                    seq++;
+                    DataRow drWorkbook = dtWorkbook.NewRow();
+                    drWorkbook["ProductNo"] = row.GetCell(1, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["RubberName"] = row.GetCell(0, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString()
+                        + "-" + row.GetCell(2, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["201"] = row.GetCell(4, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["202"] = row.GetCell(5, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["203"] = row.GetCell(6, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["205"] = row.GetCell(7, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["206"] = row.GetCell(8, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["204"] = row.GetCell(9, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["101"] = row.GetCell(10, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["102"] = row.GetCell(11, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["401"] = row.GetCell(12, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["301"] = row.GetCell(13, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+                    drWorkbook["501"] = row.GetCell(14, MissingCellPolicy.CREATE_NULL_AS_BLANK).ToString();
+
+                    drWorkbook["seq"] = seq.ToString();
+
+                    dtWorkbook.Rows.Add(drWorkbook);
+
+                }
+            }
+
+        }
+
+
+    }
+
+    /// <summary>
+    /// 创建保存表格
+    /// 修改标识：qusf 20131022
+    /// 修改内容：1.增加主机手ZJSID、检验班组CheckPlanClass、质检日期CheckPlanDate
+    ///          
+    /// </summary>
+    /// <returns></returns>
+    private DataTable CreateTempTable()
+    {
+        DataTable dtTemp = new DataTable();
+        dtTemp.Columns.Add(new DataColumn("PlanDate"));
+        dtTemp.Columns.Add(new DataColumn("EquipCode"));
+        dtTemp.Columns.Add(new DataColumn("EquipName"));
+        dtTemp.Columns.Add(new DataColumn("ShiftId"));
+        dtTemp.Columns.Add(new DataColumn("ShiftName"));
+        dtTemp.Columns.Add(new DataColumn("ShiftClass"));
+        dtTemp.Columns.Add(new DataColumn("ClassName"));
+        dtTemp.Columns.Add(new DataColumn("MaterCode"));
+        dtTemp.Columns.Add(new DataColumn("MaterName"));
+        dtTemp.Columns.Add(new DataColumn("SerialId"));
+        dtTemp.Columns.Add(new DataColumn("CheckNum")); //检验次数
+        dtTemp.Columns.Add(new DataColumn("CheckDate"));
+        dtTemp.Columns.Add(new DataColumn("CheckTime"));
+        dtTemp.Columns.Add(new DataColumn("ShiftCheckId"));
+        dtTemp.Columns.Add(new DataColumn("CheckEquipCode")); //检验设备 选择
+        dtTemp.Columns.Add(new DataColumn("WorkshopID"));
+        dtTemp.Columns.Add(new DataColumn("WorkshopName"));
+        dtTemp.Columns.Add(new DataColumn("NeedJudgeGrade")); // 是否需要检验
+        dtTemp.Columns.Add(new DataColumn("NeedAssess")); // 是否需要考核
+        dtTemp.Columns.Add(new DataColumn("StandCode")); // 标准
+
+        dtTemp.Columns.Add(new DataColumn("205")); //T30
+        dtTemp.Columns.Add(new DataColumn("206")); //T60
+        dtTemp.Columns.Add(new DataColumn("201")); //ML
+        dtTemp.Columns.Add(new DataColumn("202")); //MH
+        dtTemp.Columns.Add(new DataColumn("203")); //Ts1
+        dtTemp.Columns.Add(new DataColumn("204")); //T25
+        dtTemp.Columns.Add(new DataColumn("101")); //ML(1+4)
+        dtTemp.Columns.Add(new DataColumn("102")); //T5
+        dtTemp.Columns.Add(new DataColumn("301")); //硬度
+        dtTemp.Columns.Add(new DataColumn("401")); //比重
+        dtTemp.Columns.Add(new DataColumn("501")); //H抽出
+
+        dtTemp.Columns.Add(new DataColumn("seq", typeof(int)));
+        dtTemp.Columns.Add(new DataColumn("BatchNo"));
+
+        dtTemp.Columns.Add(new DataColumn("ZJSID")); //主机手ID
+        dtTemp.Columns.Add(new DataColumn("CheckPlanClass")); //检验班组
+        dtTemp.Columns.Add(new DataColumn("CheckPlanClassName"));//
+        dtTemp.Columns.Add(new DataColumn("CheckPlanDate")); //质检日期
+        dtTemp.Columns.Add(new DataColumn("CheckDateTime"));
+
+        return dtTemp;
+
+    }
+
+    /// <summary>
+    /// 填充保存表格(标准)
+    /// </summary>
+    /// <param name="dtWorkbook"></param>
+    /// <param name="dtTemp"></param>
+    /// <param name="mBasMaterialList"></param>
+    /// <param name="planDate"></param>
+    /// <param name="shiftId"></param>
+    /// <param name="shiftName"></param>
+    /// <param name="shiftClass"></param>
+    /// <param name="className"></param>
+    private void SetTempTable_1(DataTable dtWorkbook, DataTable dtTemp, EntityArrayList<BasMaterial> mBasMaterialList
+        , string planDate, string shiftId, string shiftName, string shiftClass, string className)
+    {
+        int rowCount = dtWorkbook.Rows.Count;
+        int seq = 0;
+        string productNo = "";
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        {
+            #region 数据校验及取值
+            bool flag = true;
+            DataRow drWorkbook = dtWorkbook.Rows[rowIndex];
+            string tempProductNo = drWorkbook["productNo"].ToString().Trim();
+            if (tempProductNo == "--" && productNo == "")
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次不能为空";
+                continue;
+            }
+            if (tempProductNo == "--")
+            {
+                tempProductNo = productNo;
+            }
+            productNo = tempProductNo;
+            if (tempProductNo.Length < 4)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次长度小于4";
+                continue;
+            }
+
+            int workshopId = 0;
+            string workshopName = "";
+            if (int.TryParse(tempProductNo.Substring(0, 1), out workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第一位不符合规范";
+                continue;
+            }
+            workshopName = "M" + workshopId.ToString();
+            if (new int[] { 2, 3, 4, 5 }.Contains(workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第一位只能是2, 3, 4, 5";
+                continue;
+            }
+            int equipCd = 0;
+            if (int.TryParse(tempProductNo.Substring(3, 1), out equipCd) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第四位不符合规范";
+                continue;
+            }
+            if (new int[] { 1, 2, 3, 4, 5, 6 }.Contains(workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第四位只能是1, 2, 3, 4, 5, 6";
+                continue;
+            }
+            string equipCode = "";
+            string equipName = "";
+            if (workshopId == 2)
+            {
+                switch (equipCd)
+                {
+                    case 1:
+                        equipCode = "01008";
+                        equipName = "M2-F270-1#";
+                        break;
+                    case 2:
+                        equipCode = "01009";
+                        equipName = "M2-F270-2#";
+                        break;
+                    case 3:
+                        equipCode = "01010";
+                        equipName = "M2-F255-3#";
+                        break;
+                    case 4:
+                        equipCode = "01011";
+                        equipName = "M2-F270-4#";
+                        break;
+                    case 5:
+                        equipCode = "01012";
+                        equipName = "M2-F270-5#";
+                        break;
+                    case 6:
+                        equipCode = "01013";
+                        equipName = "M2-F270-6#";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (workshopId == 3)
+            {
+                switch (equipCd)
+                {
+                    case 1:
+                        equipCode = "01020";
+                        equipName = "M3-F270-1#";
+                        break;
+                    case 2:
+                        equipCode = "01021";
+                        equipName = "M3-F270-2#";
+                        break;
+                    case 3:
+                        equipCode = "01022";
+                        equipName = "M3-F270-3#";
+                        break;
+                    case 4:
+                        equipCode = "01023";
+                        equipName = "M3-F270-4#";
+                        break;
+                    case 5:
+                        equipCode = "01024";
+                        equipName = "M3-F270-5#";
+                        break;
+                    case 6:
+                        equipCode = "01025";
+                        equipName = "M3-F270-6#";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (workshopId == 4)
+            {
+                switch (equipCd)
+                {
+                    case 1:
+                        equipCode = "01032";
+                        equipName = "M4-F270-1#";
+                        break;
+                    case 2:
+                        equipCode = "01033";
+                        equipName = "M4-F270-2#";
+                        break;
+                    case 3:
+                        equipCode = "01034";
+                        equipName = "M4-F270-3#";
+                        break;
+                    case 4:
+                        equipCode = "01035";
+                        equipName = "M4-F270-4#";
+                        break;
+                    case 5:
+                        equipCode = "01036";
+                        equipName = "M4-F270-5#";
+                        break;
+                    case 6:
+                        equipCode = "01037";
+                        equipName = "M4-F270-6#";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            string rubberName = drWorkbook["RubberName"].ToString();
+            if (rubberName.Trim() == "")
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料名称不能为空";
+                continue;
+            }
+            if (rubberName.Contains("-") == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料名称不符合规范";
+                continue;
+            }
+            int splitIndex = rubberName.IndexOf("-");
+            string materName = rubberName.Substring(0, splitIndex);
+            //是否复检
+            int checkNum = 1;
+            while (materName.ToUpper().EndsWith("F"))
+            {
+                checkNum = checkNum + 1;
+                materName = materName.Substring(0, materName.Length - 1);
+            }
+            string needJudgeGrade = "";
+            string needAssess = "";
+            if (tempProductNo.Length > 4)
+            {
+                string extType = tempProductNo.Substring(4).ToUpper();
+                if (extType.Contains("K")) // 如果有K则不判断C S P
+                {
+                    // 实验胶参与考核
+                    materName = "S" + materName;
+                    needAssess = "1";
+                }
+                else if (extType.Contains("S")) // 如果有S则不判断C
+                {
+                    // 实验胶
+                    materName = "S" + materName;
+                    if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                    {
+                        needJudgeGrade = "1";
+                    }
+                }
+                else if (extType.Contains("C"))
+                {
+                    // 掺用胶
+                    materName = "C" + materName;
+                    if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                    {
+                        needJudgeGrade = "1";
+                    }
+                }
+                else if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                {
+                    needJudgeGrade = "1";
+                }
+            }
+
+            BasMaterial[] mBasMaterials = mBasMaterialList.Filter(BasMaterial._.MaterialName == materName, BasMaterial._.DeleteFlag.Asc & BasMaterial._.ObjID.Desc);
+
+            if (mBasMaterials.Length == 0)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料代号不存在：" + materName;
+                continue;
+            }
+            int serialId = 0;
+            if (int.TryParse(rubberName.Substring(splitIndex + 1), out serialId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料名称中的车次不正确";
+                continue;
+            }
+
+            string data201 = GetStandValue(drWorkbook["201"].ToString());
+            string data202 = GetStandValue(drWorkbook["202"].ToString());
+            string data205 = GetStandValue(drWorkbook["205"].ToString());
+            string data206 = GetStandValue(drWorkbook["206"].ToString());
+            string data101 = GetStandValue(drWorkbook["101"].ToString());
+            string data102 = GetStandValue_1(drWorkbook["102"].ToString());
+            string data301 = GetStandValue(drWorkbook["301"].ToString());
+            string data401 = GetStandValue(drWorkbook["401"].ToString());
+            string data501 = GetStandValue(drWorkbook["501"].ToString());
+
+            if (flag == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "上传的标准数据不符合要求";
+                continue;
+            }
+
+            #endregion
+
+            seq++;
+            DataRow drTemp = dtTemp.NewRow();
+            drTemp["PlanDate"] = planDate;
+            drTemp["EquipCode"] = equipCode;
+            drTemp["ShiftId"] = shiftId;
+            drTemp["ShiftClass"] = shiftClass;
+            drTemp["MaterCode"] = mBasMaterials[0].MaterialCode;
+            drTemp["SerialId"] = serialId.ToString();
+            drTemp["CheckDate"] = DateFieldNorthCheckDate.RawText;
+            drTemp["CheckTime"] = TimeFieldNorthCheckTime.RawText;
+            drTemp["ShiftCheckId"] = ComboBoxNorthShiftCheckId.Value.ToString();
+            drTemp["WorkshopID"] = workshopId;
+            drTemp["WorkshopName"] = workshopName;
+
+            drTemp["seq"] = seq;
+            drTemp["EquipName"] = equipName;
+            drTemp["ShiftName"] = shiftName;
+            drTemp["ClassName"] = className;
+            drTemp["MaterName"] = materName;
+
+            drTemp["StandCode"] = ComboBoxNorthStandCode.Value.ToString();
+            drTemp["NeedJudgeGrade"] = needJudgeGrade;
+            drTemp["NeedAssess"] = needAssess;
+            drTemp["CheckNum"] = checkNum.ToString();
+
+            drTemp["101"] = data101;
+            drTemp["102"] = data102;
+            drTemp["201"] = data201;
+            drTemp["202"] = data202;
+            drTemp["205"] = data205;
+            drTemp["206"] = data206;
+            drTemp["301"] = data301;
+            drTemp["401"] = data401;
+            drTemp["501"] = data501;
+
+            drTemp["BatchNo"] = tempProductNo;
+            drTemp["ZJSID"] = tempProductNo.Substring(0, 3);
+            drTemp["CheckPlanClass"] = ComboBoxNorthCheckPlanClass.Value.ToString();
+            drTemp["CheckPlanClassName"] = ComboBoxNorthCheckPlanClass.RawText;
+            drTemp["CheckPlanDate"] = DateFieldNorthCheckPlanDate.RawText;
+            drTemp["CheckDateTime"] = DateFieldNorthCheckDate.RawText + " " + TimeFieldNorthCheckTime.RawText;
+
+            dtTemp.Rows.Add(drTemp);
+
+        }
+
+    }
+
+    /// <summary>
+    /// 填充保存表格(诺甲)
+    /// </summary>
+    /// <param name="dtWorkbook"></param>
+    /// <param name="dtTemp"></param>
+    /// <param name="mBasMaterialList"></param>
+    /// <param name="planDate"></param>
+    /// <param name="shiftId"></param>
+    /// <param name="shiftName"></param>
+    /// <param name="shiftClass"></param>
+    /// <param name="className"></param>
+    private void SetTempTable_2(DataTable dtWorkbook, DataTable dtTemp, EntityArrayList<BasMaterial> mBasMaterialList
+    , string planDate, string shiftId, string shiftName, string shiftClass, string className)
+    {
+
+        int rowCount = dtWorkbook.Rows.Count;
+        int seq = 0;
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        {
+            #region 数据校验及取值
+            bool flag = true;
+            DataRow drWorkbook = dtWorkbook.Rows[rowIndex];
+            string tempProductNo = drWorkbook["productNo"].ToString().Trim();
+            if (tempProductNo == "")
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次不能为空";
+                continue;
+            }
+            if (tempProductNo.Length < 4)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次长度小于4";
+                continue;
+            }
+
+            int workshopId = 0;
+            string workshopName = "";
+            if (int.TryParse(tempProductNo.Substring(0, 1), out workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第一位不符合规范";
+                continue;
+            }
+            workshopName = "M" + workshopId.ToString();
+            if (new int[] { 2, 3, 4, 5 }.Contains(workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第一位只能是2, 3, 4, 5";
+                continue;
+            }
+            int equipCd = 0;
+            if (int.TryParse(tempProductNo.Substring(3, 1), out equipCd) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第四位不符合规范";
+                continue;
+            }
+            if (new int[] { 1, 2, 3, 4, 5, 6 }.Contains(workshopId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "炼胶批次第四位只能是1, 2, 3, 4, 5, 6";
+                continue;
+            }
+            string equipCode = "";
+            string equipName = "";
+            switch (equipCd)
+            {
+                case 1:
+                    equipCode = "01020";
+                    equipName = "M3-F270-1#";
+                    break;
+                case 2:
+                    equipCode = "01021";
+                    equipName = "M3-F270-2#";
+                    break;
+                case 3:
+                    equipCode = "01022";
+                    equipName = "M3-F270-3#";
+                    break;
+                case 4:
+                    equipCode = "01023";
+                    equipName = "M3-F270-4#";
+                    break;
+                case 5:
+                    equipCode = "01024";
+                    equipName = "M3-F270-5#";
+                    break;
+                case 6:
+                    equipCode = "01025";
+                    equipName = "M3-F270-6#";
+                    break;
+                default:
+                    break;
+            }
+            string rubberName = drWorkbook["RubberName"].ToString();
+            if (rubberName.Trim() == "")
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料名称不能为空";
+                continue;
+            }
+            if (rubberName.Contains("-") == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料名称不符合规范";
+                continue;
+            }
+            int splitIndex = rubberName.IndexOf("-");
+            string materName = rubberName.Substring(0, splitIndex);
+            int checkNum = 1;
+            while (materName.ToUpper().EndsWith("F"))
+            {
+                checkNum = checkNum + 1;
+                materName = materName.Substring(0, materName.Length - 1);
+            }
+            string needJudgeGrade = "";
+            string needAssess = "";
+            if (tempProductNo.Length > 4)
+            {
+                string extType = tempProductNo.Substring(4).ToUpper();
+                if (extType.Contains("K")) // 如果有K则不判断C S P
+                {
+                    // 实验胶参与考核
+                    materName = "S" + materName;
+                    needAssess = "1";
+                }
+                else if (extType.Contains("S")) // 如果有S则不判断C
+                {
+                    // 实验胶
+                    materName = "S" + materName;
+                    if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                    {
+                        needJudgeGrade = "1";
+                    }
+                }
+                else if (extType.Contains("C"))
+                {
+                    // 掺用胶
+                    materName = "C" + materName;
+                    if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                    {
+                        needJudgeGrade = "1";
+                    }
+                }
+                else if (extType.Contains("P")) // 如果有P 不判定 默认合格
+                {
+                    needJudgeGrade = "1";
+                }
+
+            }
+
+            BasMaterial[] mBasMaterials = mBasMaterialList.Filter(BasMaterial._.MaterialName == materName, BasMaterial._.DeleteFlag.Asc & BasMaterial._.ObjID.Desc);
+
+            if (mBasMaterials.Length == 0)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "胶料代号不存在：" + materName;
+                continue;
+            }
+            int serialId = 0;
+            if (int.TryParse(rubberName.Substring(splitIndex + 1), out serialId) == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "车次不正确";
+                continue;
+            }
+
+            string data201 = GetStandValue(drWorkbook["201"].ToString());
+            string data202 = GetStandValue(drWorkbook["202"].ToString());
+            string data203 = GetStandValue(drWorkbook["203"].ToString());
+            string data204 = GetStandValue(drWorkbook["204"].ToString());
+            string data205 = GetStandValue(drWorkbook["205"].ToString());
+            string data206 = GetStandValue(drWorkbook["206"].ToString());
+            string data101 = GetStandValue(drWorkbook["101"].ToString());
+            string data102 = GetStandValue_1(drWorkbook["102"].ToString());
+            string data301 = GetStandValue(drWorkbook["301"].ToString());
+            string data401 = GetStandValue(drWorkbook["401"].ToString());
+            string data501 = GetStandValue(drWorkbook["501"].ToString());
+
+            if (flag == false)
+            {
+                drWorkbook["flag"] = "1";
+                drWorkbook["errmsg"] = "上传的标准数据不符合要求";
+                continue;
+            }
+
+            #endregion
+
+            seq++;
+            DataRow drTemp = dtTemp.NewRow();
+            drTemp["PlanDate"] = planDate;
+            drTemp["EquipCode"] = equipCode;
+            drTemp["ShiftId"] = shiftId;
+            drTemp["ShiftClass"] = shiftClass;
+            drTemp["MaterCode"] = mBasMaterials[0].MaterialCode;
+            drTemp["SerialId"] = serialId.ToString();
+            drTemp["CheckDate"] = DateFieldNorthCheckDate.RawText;
+            drTemp["CheckTime"] = TimeFieldNorthCheckTime.RawText;
+            drTemp["ShiftCheckId"] = ComboBoxNorthShiftCheckId.Value.ToString();
+            drTemp["WorkshopID"] = workshopId;
+            drTemp["WorkshopName"] = workshopName;
+
+            drTemp["seq"] = seq;
+            drTemp["EquipName"] = equipName;
+            drTemp["ShiftName"] = shiftName;
+            drTemp["ClassName"] = className;
+            drTemp["MaterName"] = materName;
+
+            drTemp["StandCode"] = ComboBoxNorthStandCode.Value.ToString();
+            drTemp["NeedJudgeGrade"] = needJudgeGrade;
+            drTemp["NeedAssess"] = needAssess;
+            drTemp["CheckNum"] = checkNum;
+
+            drTemp["101"] = data101;
+            drTemp["102"] = data102;
+            drTemp["201"] = data201;
+            drTemp["202"] = data202;
+            drTemp["203"] = data203;
+            drTemp["204"] = data204;
+            drTemp["205"] = data205;
+            drTemp["206"] = data206;
+            drTemp["301"] = data301;
+            drTemp["401"] = data401;
+            drTemp["501"] = data501;
+
+            drTemp["BatchNo"] = tempProductNo;
+            drTemp["ZJSID"] = tempProductNo.Substring(0, 3);
+            drTemp["CheckPlanClass"] = ComboBoxNorthCheckPlanClass.Value.ToString();
+            drTemp["CheckPlanClassName"] = ComboBoxNorthCheckPlanClass.Text.ToString();
+            drTemp["CheckPlanDate"] = DateFieldNorthCheckPlanDate.RawText;
+            drTemp["CheckDateTime"] = DateFieldNorthCheckDate.RawText + " " + TimeFieldNorthCheckTime.RawText;
+
+            dtTemp.Rows.Add(drTemp);
+
+        }
+
+    }
+
+    /// <summary>
+    /// 获取检验值(除焦烧)
+    /// </summary>
+    /// <param name="originValue"></param>
+    /// <returns></returns>
+    private string GetStandValue(string originValue)
+    {
+        if (originValue == "--" || originValue == "#DIV/0!")
+        {
+            return "";
+        }
+        originValue = originValue.Replace("*", "").Replace("↑", "").Replace("↓", "");
+        double returnValue = 0;
+        if (double.TryParse(originValue, out returnValue) == false)
+        {
+            return "";
+        }
+        return returnValue.ToString();
+    }
+
+    /// <summary>
+    /// 获取检验值(焦烧)
+    /// </summary>
+    /// <param name="originValue"></param>
+    /// <returns></returns>
+    private string GetStandValue_1(string originValue)
+    {
+        if (originValue == "--" || originValue == "#DIV/0!")
+        {
+            return "";
+        }
+        if (originValue.Contains(":") == false)
+        {
+            return "";
+        }
+        originValue = originValue.Replace("*", "").Replace("↑", "").Replace("↓", "");
+        int splitIndex = originValue.IndexOf(":");
+
+        double returnValue = 0;
+        double minValue = 0;
+        double secValue = 0;
+        if (double.TryParse(originValue.Substring(0, splitIndex), out minValue) == false)
+        {
+            return "";
+        }
+        if (double.TryParse(originValue.Substring(splitIndex + 1), out secValue) == false)
+        {
+            return "";
+        }
+        secValue = Math.Round(secValue / 60, 3);
+        returnValue = minValue + secValue;
+        return returnValue.ToString();
+    }
+
+    /// <summary>
+    /// 保存
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void StoreCenterSave_SubmitData(object sender, StoreSubmitDataEventArgs e)
+    {
+        List<JsonObject> joList = e.Object<JsonObject>();
+
+        if (joList.Count == 0)
+        {
+            X.Msg.Alert("提示", "没有需要提交保存的标准信息").Show();
+            return;
+        }
+
+        string guid = HiddenGUID.Value.ToString();
+
+        IQmtQrigImportLogMasterManager bQmtQrigImportLogMasterManager = new QmtQrigImportLogMasterManager();
+        EntityArrayList<QmtQrigImportLogMaster> mQmtQrigImportLogMasterList = bQmtQrigImportLogMasterManager.GetListByWhere(
+            QmtQrigImportLogMaster._.GUID == guid
+            & QmtQrigImportLogMaster._.Flag == "1");
+
+        if (mQmtQrigImportLogMasterList.Count > 0)
+        {
+            X.Msg.Alert("提示", HiddenOper.Value.ToString() + "在" + ComboBoxNorthStandCode.RawText + "的数据已导入并保存，请核实").Show();
+            return;
+        }
+
+        EntityArrayList<QmtQrigMaster> mQmtQrigMasterList = new EntityArrayList<QmtQrigMaster>();
+        EntityArrayList<QmtQrigDetail> mQmtQrigDetailList = new EntityArrayList<QmtQrigDetail>();
+
+        int masterCount = 0;
+        int detailCount = 0;
+        foreach (JsonObject jo in joList)
+        {
+            QmtQrigMaster mQmtQrigMaster = GetQmtQrigMaster("101", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+            mQmtQrigMaster = GetQmtQrigMaster("102", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+
+            mQmtQrigMaster = GetQmtQrigMaster("2", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+
+            mQmtQrigMaster = GetQmtQrigMaster("301", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+
+            mQmtQrigMaster = GetQmtQrigMaster("401", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+
+            mQmtQrigMaster = GetQmtQrigMaster("501", guid, jo);
+            if (mQmtQrigMaster != null)
+            {
+                mQmtQrigMasterList.Add(mQmtQrigMaster);
+                masterCount++;
+            }
+
+            string itemCd = "205";
+            QmtQrigDetail mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "206";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "201";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "202";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "203";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "204";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "101";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "102";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "301";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "401";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+            itemCd = "501";
+            mQmtQrigDetail = GetQmtQrigDetail(guid, jo, itemCd);
+            if (mQmtQrigDetail != null)
+            {
+                mQmtQrigDetailList.Add(mQmtQrigDetail);
+                detailCount++;
+            }
+
+        }
+
+        IQmtQrigMasterManager bQmtQrigMasterManager = new QmtQrigMasterManager();
+        string isReCheck = HiddenIsReCheck.Value.ToString();
+        if (isReCheck == "0")
+        {
+            bQmtQrigMasterManager.SaveImport(mQmtQrigMasterList, mQmtQrigDetailList);
+        }
+        else
+        {
+            bQmtQrigMasterManager.SaveImport_ReCheck(mQmtQrigMasterList, mQmtQrigDetailList);
+        }
+
+        StoreCenterOrigin.RemoveAll();
+        StoreCenterError.RemoveAll();
+        StoreCenterSave.RemoveAll();
+
+
+        X.Msg.Alert("成功", "保存成功" + "<br />标准主数据: " + masterCount.ToString() + "<br />标准明细数据: " + detailCount.ToString()).Show();
+
+    }
+
+    /// <summary>
+    /// 获取QmtQrigMaster对象
+    /// 修改标识：qusf 20131022
+    /// 修改内容：1.增加主机手ZJSID、检验班组CheckPlanClass、质检日期CheckPlanDate、玲珑车次LLSerialId
+    ///           2.车次SerialId默认为0 
+    /// </summary>
+    /// <param name="itemType"></param>
+    /// <param name="guid"></param>
+    /// <param name="jo"></param>
+    /// <returns></returns>
+    private QmtQrigMaster GetQmtQrigMaster(string itemType, string guid, JsonObject jo)
+    {
+        switch (itemType)
+        {
+            case "101":
+                if (jo["101"] == null || jo["101"].ToString() == "")
+                {
+                    return null;
+                }
+                break;
+            case "102":
+                if (jo["102"] == null || jo["102"].ToString() == "")
+                {
+                    return null;
+                }
+                break;
+            case "2":
+                if ((jo["201"] == null || jo["201"].ToString() == "")
+                    && (jo["202"] == null || jo["202"].ToString() == "")
+                    && (jo["205"] == null || jo["205"].ToString() == "")
+                    && (jo["206"] == null || jo["206"].ToString() == "")
+                    && (jo["203"] == null || jo["203"].ToString() == "")
+                    && (jo["204"] == null || jo["204"].ToString() == ""))
+                {
+                    return null;
+                }
+                break;
+            case "301":
+                if (jo["301"] == null || jo["301"].ToString() == "")
+                {
+                    return null;
+                }
+                break;
+            case "401":
+                if (jo["401"] == null || jo["401"].ToString() == "")
+                {
+                    return null;
+                }
+                break;
+            case "501":
+                if (jo["501"] == null || jo["501"].ToString() == "")
+                {
+                    return null;
+                }
+                break;
+            default:
+                return null;
+        }
+
+        QmtQrigMaster mQmtQrigMaster = new QmtQrigMaster();
+        mQmtQrigMaster.PlanDate = jo["PlanDate"].ToString();
+        mQmtQrigMaster.EquipCode = jo["EquipCode"].ToString();
+        mQmtQrigMaster.ShiftId = Convert.ToInt32(jo["ShiftId"]);
+        mQmtQrigMaster.ShiftClass = Convert.ToInt32(jo["ShiftClass"]);
+        mQmtQrigMaster.MaterCode = jo["MaterCode"].ToString();
+        mQmtQrigMaster.SerialId = 0;
+        mQmtQrigMaster.CheckNum = Convert.ToInt32(jo["CheckNum"]);
+        mQmtQrigMaster.CheckDate = jo["CheckDate"].ToString();
+        mQmtQrigMaster.CheckTime = jo["CheckTime"].ToString();
+        mQmtQrigMaster.ShiftCheckId = Convert.ToInt32(jo["ShiftCheckId"]);
+        mQmtQrigMaster.Flag = 0;
+        mQmtQrigMaster.IfLast = 1;
+        mQmtQrigMaster.WorkshopID = Convert.ToInt32(jo["WorkshopID"]);
+        mQmtQrigMaster.LastChangeTime = DateTime.Now;
+        mQmtQrigMaster.RegDateTime = DateTime.Now;
+        mQmtQrigMaster.StandIDNeedUpdate = "1"; // 不需要更新
+        mQmtQrigMaster.NeedReJudgeGrade = "1"; // 需要重新判级
+        mQmtQrigMaster.StandCode = Convert.ToInt32(jo["StandCode"]); // 标准类型
+        mQmtQrigMaster.DeleteFlag = "0";
+        mQmtQrigMaster.GUID = guid;
+        mQmtQrigMaster.NeedJudgeGrade = jo["NeedJudgeGrade"] == null ? "" : jo["NeedJudgeGrade"].ToString();
+        mQmtQrigMaster.NeedAssess = jo["NeedAssess"] == null ? "" : jo["NeedAssess"].ToString();
+        mQmtQrigMaster.BatchNo = jo["BatchNo"] == null ? "" : jo["BatchNo"].ToString();
+
+        mQmtQrigMaster.LLSerialID = Convert.ToInt32(jo["SerialId"]);
+        mQmtQrigMaster.ZJSID = jo["ZJSID"] == null ? "" : jo["ZJSID"].ToString();
+        mQmtQrigMaster.CheckPlan_Class = jo["CheckPlanClass"] == null || jo["CheckPlanClass"].ToString() == "" ? 0 : Convert.ToInt32(jo["CheckPlanClass"]);
+        mQmtQrigMaster.CheckPlan_Date = jo["CheckPlanDate"] == null ? "" : jo["CheckPlanDate"].ToString();
+
+        switch (itemType)
+        {
+            case "101": // 门尼粘度
+                mQmtQrigMaster.TestType = "门尼粘度";
+                mQmtQrigMaster.CheckEquipCode = "07001"; // M2-友深门尼01
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_101";
+                break;
+            case "102": // 门尼焦烧
+                mQmtQrigMaster.TestType = "门尼焦烧";
+                mQmtQrigMaster.CheckEquipCode = "07001"; // M2-友深门尼01
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_102";
+                break;
+            case "2": // 硫变类
+                mQmtQrigMaster.TestType = "硫变类";
+                if (mQmtQrigMaster.StandCode == 1)
+                {
+                    mQmtQrigMaster.CheckEquipCode = "08001"; // M2-友深流变01
+                }
+                else
+                {
+                    mQmtQrigMaster.CheckEquipCode = "08011"; // M3-诺甲流变01
+                }
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_2";
+                break;
+            case "301": // 硬度类
+                mQmtQrigMaster.TestType = "硬度类";
+                mQmtQrigMaster.CheckEquipCode = "10001"; // 硬度计1
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_301";
+                break;
+            case "401": // 比重类
+                mQmtQrigMaster.TestType = "比重类";
+                mQmtQrigMaster.CheckEquipCode = "09001"; // 比重计1
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_401";
+                break;
+            case "501": // 物性
+                mQmtQrigMaster.TestType = "物性";
+                mQmtQrigMaster.CheckEquipCode = ""; // 
+                mQmtQrigMaster.ImportRelativeId = jo["seq"].ToString() + "_501";
+                break;
+            default:
+                break;
+        }
+
+        return mQmtQrigMaster;
+    }
+
+    /// <summary>
+    /// 获取QmtQrigDetail对象
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <param name="jo"></param>
+    /// <param name="itemCd"></param>
+    /// <returns></returns>
+    private QmtQrigDetail GetQmtQrigDetail(string guid, JsonObject jo, string itemCd)
+    {
+        if (jo[itemCd] != null && jo[itemCd].ToString() != "")
+        {
+            QmtQrigDetail mQmtQrigDetail = new QmtQrigDetail();
+            //mQmtQrigDetail.SeqNo = Convert.ToInt32(jo["seq"]);
+            mQmtQrigDetail.ItemCd = itemCd;
+            mQmtQrigDetail.ItemCheck = Convert.ToDecimal(jo[itemCd]);
+            mQmtQrigDetail.StandCode = Convert.ToInt32(jo["StandCode"]);
+            mQmtQrigDetail.CheckEquipCode = jo["CheckEquipCode"] == null ? "" : jo["CheckEquipCode"].ToString();
+            mQmtQrigDetail.PlanDate = jo["PlanDate"].ToString();
+            mQmtQrigDetail.DeleteFlag = "0";
+            mQmtQrigDetail.GUID = guid;
+
+            string needJudgeGrade = jo["NeedJudgeGrade"] == null ? "" : jo["NeedJudgeGrade"].ToString();
+
+            if (needJudgeGrade == "1")
+            {
+                mQmtQrigDetail.JudgeValue = 1;
+            }
+
+            if (itemCd.Substring(0, 1) == "2")
+            {
+                mQmtQrigDetail.ImportRelativeId = jo["seq"].ToString() + "_2";
+            }
+            else
+            {
+                mQmtQrigDetail.ImportRelativeId = jo["seq"].ToString() + "_" + itemCd;
+            }
+
+            switch (itemCd.Substring(0, 1))
+            {
+                case "1": // 门尼类
+                    mQmtQrigDetail.CheckEquipCode = "07001"; // M2-友深门尼01
+                    break;
+                case "2": // 硫变类
+                    if (mQmtQrigDetail.StandCode == 1)
+                    {
+                        mQmtQrigDetail.CheckEquipCode = "08001"; // M2-友深流变01
+                    }
+                    else
+                    {
+                        mQmtQrigDetail.CheckEquipCode = "08011"; // M3-诺甲流变01
+                    }
+                    break;
+                case "3": // 硬度类
+                    mQmtQrigDetail.CheckEquipCode = "10001"; // 硬度计1
+                    break;
+                case "4": // 比重类
+                    mQmtQrigDetail.CheckEquipCode = "09001"; // 比重计1
+                    break;
+                case "5": // 物性
+                    mQmtQrigDetail.CheckEquipCode = ""; // 
+                    break;
+                default:
+                    break;
+
+            }
+
+            return mQmtQrigDetail;
+        }
+
+        return null;
+    }
+
+}

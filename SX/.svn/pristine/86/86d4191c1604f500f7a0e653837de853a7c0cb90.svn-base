@@ -1,0 +1,238 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Ext.Net;
+using System.Data;
+using NBear.Common;
+
+/// <summary>
+/// Manager_Technology_Manage_RecipeCopyToEquip 实现类
+/// 孙本强 @ 2013-04-03 13:07:03
+/// </summary>
+/// <remarks></remarks>
+public partial class Manager_Technology_Manage_RecipeCopyToEquip : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    private ISysCodeManager sysCodeManager = new SysCodeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    private IPmtRecipeManager pmtRecipeManager = new PmtRecipeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    protected IBasEquipManager equipManager = new BasEquipManager();
+    #endregion
+
+    /// <summary>
+    /// Gets the request.
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string GetRequest(string key)
+    {
+        if (this.Request[key] != null)
+        {
+            return this.Request[key].ToString();
+        }
+        return string.Empty;
+    }
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:04
+    /// </summary>
+    private const string constSelectAllText = "---请选择---";
+    /// <summary>
+    /// Inis the combo box.
+    /// 孙本强 @ 2013-04-03 13:07:05
+    /// </summary>
+    /// <param name="cb">The cb.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniComboBox(ComboBox cb, EntityArrayList<SysCode> lst)
+    {
+        Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+        cb.Items.Clear();
+        cb.Items.Add(allitem);
+        foreach (SysCode m in lst)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(m.ItemName, m.ItemCode.ToString());
+            cb.Items.Add(item);
+        }
+        if (cb.Items.Count > 0)
+        {
+            cb.Text = (cb.Items[0].Value);
+        }
+    }
+    /// <summary>
+    /// Inis the combo box.
+    /// 于小鹏 @ 2014-01-03 22:07:05
+    /// </summary>
+    /// <param name="cb">The cb.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniComboBoxN(ComboBox cb, EntityArrayList<BasMaterial> lst)
+    {
+        Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+        cb.Items.Clear();
+        cb.Items.Add(allitem);
+        foreach (BasMaterial m in lst)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(m.MaterialName, m.MaterialCode.ToString());
+            cb.Items.Add(item);
+        }
+        if (cb.Items.Count > 0)
+        {
+            cb.Text = (cb.Items[0].Value);
+        }
+    }
+    /// <summary>
+    /// Handles the Load event of the Page control.
+    /// 孙本强 @ 2013-04-03 13:07:05
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if ((IsPostBack) || (X.IsAjaxRequest))
+        {
+            return;
+        }
+        WhereClip where = new WhereClip();
+        OrderByClip order = new OrderByClip();
+        #region 配方状态
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtType.ToString());
+     string   sql = @"  select * from SysCode 
+  where TYPEID='PmtType'
+            order by remark COLLATE  Chinese_PRC_CS_AS ";
+
+        DataSet ds = sysCodeManager.GetBySql(sql).ToDataSet();
+
+        Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+        txtRecipeType.Items.Clear();
+        txtRecipeType.Items.Add(allitem);
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(dr["ItemName"].ToString(), dr["ItemCode"].ToString());
+            txtRecipeType.Items.Add(item);
+        }
+        if (txtRecipeType.Items.Count > 0)
+        {
+            txtRecipeType.Text = (txtRecipeType.Items[0].Value);
+        }
+
+        //EntityArrayList<SysCode> lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        //IniComboBox(txtRecipeType, lst);
+        
+        #endregion
+        PmtRecipe recipe = pmtRecipeManager.GetById(GetRequest("recipe"));
+         BasMaterial material = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == recipe.RecipeMaterialCode)[0];
+         hiddenMajorId.Text = material.MajorTypeID.ToString();
+       // txtRecipeName.Text = recipe.RecipeName;
+    }
+    /// <summary>
+    /// Grids the panel bind data.
+    /// 孙本强 @ 2013-04-03 13:07:05
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="extraParams">The extra params.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        PmtRecipe recipe = pmtRecipeManager.GetById(GetRequest("recipe"));
+        BasMaterial material = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == recipe.RecipeMaterialCode)[0];
+        WhereClip where = new WhereClip();
+        OrderByClip order = new OrderByClip();
+        if (material.MajorTypeID == 2)
+        {
+            where.And(BasEquip._.EquipType == "02");
+        }
+        else
+        {
+            where.And(BasEquip._.EquipType == "01");
+        }
+        order = BasEquip._.EquipName.Asc;
+        EntityArrayList<BasEquip> lst = equipManager.GetListByWhereAndOrder(where, order);
+        int total = lst.Count;
+        return new { data = lst, total };
+    }
+
+    /// <summary>
+    /// PMTs the recipe copy to equip.
+    /// 孙本强 @ 2013-04-03 13:07:05
+    /// </summary>
+    /// <param name="recipe">The recipe.</param>
+    /// <param name="equips">The equips.</param>
+    /// <param name="state">The state.</param>
+    /// <param name="type">The type.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string PmtRecipeCopyToEquip(string recipe, string equips, string state,string type,string matercode)
+    {
+        string msg = string.Empty;
+        if (string.IsNullOrWhiteSpace(recipe))
+        {
+            return "请选择配方进行拷贝！";
+        }
+
+        else
+        {
+            msg = pmtRecipeManager.CopyToEquip(this.UserID, recipe, equips.Split('|'), state, type,matercode);
+        }
+        return msg;
+    }
+
+    /// <summary>
+    /// PMTs the recipe copy to equip.
+    /// 孙本强 @ 2013-04-03 13:07:06
+    /// </summary>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public string PmtRecipeCopyToEquip()
+    {
+        string matercode = hiddenRubberCode.Text;
+        matercode = matercode.Replace(constSelectAllText, "");
+        string type = txtRecipeType.Text;
+        type = type.Replace(constSelectAllText, "");
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            return "请选择配方类型！";
+        }
+        StringBuilder equips = new StringBuilder();
+        RowSelectionModel sm = this.gridPanelCenter.GetSelectionModel() as RowSelectionModel;
+        foreach (SelectedRow row in sm.SelectedRows)
+        {
+            equips.Append(row.RecordID + "|");
+        }
+        if (string.IsNullOrWhiteSpace(equips.ToString()))
+        {
+            return "请选择需要另存的机台！";
+        }
+        return PmtRecipeCopyToEquip(GetRequest("recipe"), equips.ToString(), "0", type,matercode);
+    }
+
+}

@@ -1,0 +1,351 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{C06E061F-F9D2-4B34-B18A-513685CB874C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Mesnac.Entity</RootNamespace>
+    <AssemblyName>Mesnac.Entity</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="NBear.Common">
+      <HintPath>..\Web\Bin\NBear.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BasDept.cs" />
+    <Compile Include="BasDeptErpInfo.cs" />
+    <Compile Include="BasEquip.cs" />
+    <Compile Include="BasEquipFac.cs" />
+    <Compile Include="BasEquipPartInfo.cs" />
+    <Compile Include="BasEquipPartRelation.cs" />
+    <Compile Include="BasEquipType.cs" />
+    <Compile Include="BasFactoryInfo.cs" />
+    <Compile Include="BasFactoryType.cs" />
+    <Compile Include="BasMainHander.cs" />
+    <Compile Include="BasMaterial.cs" />
+    <Compile Include="BasMaterialMajorType.cs" />
+    <Compile Include="BasMaterialMinorType.cs" />
+    <Compile Include="BasMaterialStaticClass.cs" />
+    <Compile Include="BasMaterialStaticGroup.cs" />
+    <Compile Include="BasProductPlace.cs" />
+    <Compile Include="BasRubInfo.cs" />
+    <Compile Include="BasRubType.cs" />
+    <Compile Include="BasRubTyrePart.cs" />
+    <Compile Include="BasStorage.cs" />
+    <Compile Include="BasStorageFlow.cs" />
+    <Compile Include="BasStoragePlace.cs" />
+    <Compile Include="BasStoragePlaceProp.cs" />
+    <Compile Include="BasStoragePlaceSub.cs" />
+    <Compile Include="BasUnit.cs" />
+    <Compile Include="BasUser.cs" />
+    <Compile Include="BasWork.cs" />
+    <Compile Include="BasWorkCoefficient.cs" />
+    <Compile Include="BasWorkShop.cs" />
+    <Compile Include="BasWorkUserInfo.cs" />
+    <Compile Include="CltQmtCheckCtrl.cs" />
+    <Compile Include="CltQmtCheckItem.cs" />
+    <Compile Include="Custom\CdbDatabase.cs" />
+    <Compile Include="Custom\CdbVersion.cs" />
+    <Compile Include="Custom\PstMaterialChkDetail.cs" />
+    <Compile Include="EqmFaultReason.cs" />
+    <Compile Include="EqmMaintainRecord.cs" />
+    <Compile Include="EqmMixerFault.cs" />
+    <Compile Include="EqmProjectRepairRecord.cs" />
+    <Compile Include="EqmRepairProtectPlan.cs" />
+    <Compile Include="EqmSapSparePart.cs" />
+    <Compile Include="EqmSparePart.cs" />
+    <Compile Include="EqmSparePartDetailType.cs" />
+    <Compile Include="EqmSparePartMainType.cs" />
+    <Compile Include="EqmSparePartRepairOut.cs" />
+    <Compile Include="EqmSparePartStore.cs" />
+    <Compile Include="EqmStopFault.cs" />
+    <Compile Include="EqmStopRecord.cs" />
+    <Compile Include="EqmStopType.cs" />
+    <Compile Include="Eqm_bjsparecd.cs" />
+    <Compile Include="Eqm_bjStock.cs" />
+    <Compile Include="Eqm_bjtpcd.cs" />
+    <Compile Include="Eqm_downcode.cs" />
+    <Compile Include="Eqm_downikind.cs" />
+    <Compile Include="EQM_EnergyManage.cs" />
+    <Compile Include="Eqm_EquipArchives.cs" />
+    <Compile Include="Eqm_EquipArchivesPlan.cs" />
+    <Compile Include="Eqm_EquipProblemList.cs" />
+    <Compile Include="Eqm_lube.cs" />
+    <Compile Include="Eqm_lubePlan.cs" />
+    <Compile Include="Eqm_lubeStand.cs" />
+    <Compile Include="Eqm_LuDaiInfo.cs" />
+    <Compile Include="Eqm_lvdaiPlan.cs" />
+    <Compile Include="Eqm_MainDaily.cs" />
+    <Compile Include="Eqm_MainStand.cs" />
+    <Compile Include="Eqm_MaintainPlan.cs" />
+    <Compile Include="Eqm_MeasPlan.cs" />
+    <Compile Include="Eqm_Measure.cs" />
+    <Compile Include="Eqm_MotorInfo.cs" />
+    <Compile Include="Eqm_MotorPlan.cs" />
+    <Compile Include="Eqm_MpParam.cs" />
+    <Compile Include="Eqm_pmspare.cs" />
+    <Compile Include="FixDeptLevel.cs" />
+    <Compile Include="FixEquipModelMix.cs" />
+    <Compile Include="FixSex.cs" />
+    <Compile Include="FixYesNo.cs" />
+    <Compile Include="IncSapOrderReload.cs" />
+    <Compile Include="JCZL_parts.cs" />
+    <Compile Include="JCZL_SubFac.cs" />
+    <Compile Include="JCZL_work.cs" />
+    <Compile Include="JCZL_WorkShop.cs" />
+    <Compile Include="PmtAction.cs" />
+    <Compile Include="PmtConfig.cs" />
+    <Compile Include="PmtCoolMILLMain.cs" />
+    <Compile Include="PmtEquipAbility.cs" />
+    <Compile Include="PmtEquipJarCount.cs" />
+    <Compile Include="PmtEquipJarStore.cs" />
+    <Compile Include="PmtEquipJarStoreLog.cs" />
+    <Compile Include="PmtMixingModel.cs" />
+    <Compile Include="PmtMixType.cs" />
+    <Compile Include="PmtNonAuditMaterial.cs" />
+    <Compile Include="PmtOpenAction.cs" />
+    <Compile Include="PmtOpenActionModelDetail.cs" />
+    <Compile Include="PmtOpenActionModelMain.cs" />
+    <Compile Include="PmtPMILLMain.cs" />
+    <Compile Include="PmtProcedure.cs" />
+    <Compile Include="PmtRecipe.cs" />
+    <Compile Include="PmtRecipeLog.cs" />
+    <Compile Include="PmtRecipeMixing.cs" />
+    <Compile Include="PmtRecipeMixingLog.cs" />
+    <Compile Include="PmtRecipeOpenMixing.cs" />
+    <Compile Include="PmtRecipeWeight.cs" />
+    <Compile Include="PmtRecipeWeightLog.cs" />
+    <Compile Include="PmtRecipeWeightMid.cs" />
+    <Compile Include="PmtRubWeightSetting.cs" />
+    <Compile Include="PmtSMILLMain.cs" />
+    <Compile Include="PmtTerm.cs" />
+    <Compile Include="PmtWeightAction.cs" />
+    <Compile Include="Pmt_equip.cs" />
+    <Compile Include="Pmt_equipclass.cs" />
+    <Compile Include="Pmt_ikind.cs" />
+    <Compile Include="Pmt_istopkind.cs" />
+    <Compile Include="Pmt_material.cs" />
+    <Compile Include="Pmt_Mixing.cs" />
+    <Compile Include="Pmt_mstopkind.cs" />
+    <Compile Include="Pmt_Recipe.cs" />
+    <Compile Include="Pmt_Weight.cs" />
+    <Compile Include="Pmt_wm.cs" />
+    <Compile Include="Pmt_XLbagSet.cs" />
+    <Compile Include="PpmEquipScanRate.cs" />
+    <Compile Include="PpmEquipYieldReport.cs" />
+    <Compile Include="PpmInventory.cs" />
+    <Compile Include="PpmInventoryDatelist.cs" />
+    <Compile Include="PpmReturnRubber.cs" />
+    <Compile Include="PpmRubber001.cs" />
+    <Compile Include="PpmRubberAdjust.cs" />
+    <Compile Include="PpmRubberAdjustDetail.cs" />
+    <Compile Include="PpmRubberAdjusting.cs" />
+    <Compile Include="PpmRubberAdjustingDetail.cs" />
+    <Compile Include="PpmRubberBackNormalLog.cs" />
+    <Compile Include="PpmRubberBackReason.cs" />
+    <Compile Include="PpmRubberCarryover.cs" />
+    <Compile Include="PpmRubberCarryoverDetail.cs" />
+    <Compile Include="PpmRubberChk.cs" />
+    <Compile Include="PpmRubberChkDetail.cs" />
+    <Compile Include="PpmRubberInventory.cs" />
+    <Compile Include="PpmRubberInventoryDetail.cs" />
+    <Compile Include="PpmRubberJZByShift.cs" />
+    <Compile Include="PpmRubberReturn.cs" />
+    <Compile Include="PpmRubberReturnDetail.cs" />
+    <Compile Include="PpmRubberReturnin.cs" />
+    <Compile Include="PpmRubberReturninDetail.cs" />
+    <Compile Include="PpmRubberStorage.cs" />
+    <Compile Include="PpmRubberStorageDeal.cs" />
+    <Compile Include="PpmRubberStorageDetail.cs" />
+    <Compile Include="PpmRubberStorein.cs" />
+    <Compile Include="PpmRubberStoreinDetail.cs" />
+    <Compile Include="PpmRubberStoreout.cs" />
+    <Compile Include="PpmRubberStoreoutDetail.cs" />
+    <Compile Include="PpmRubConsume.cs" />
+    <Compile Include="PpmSemiStorage.cs" />
+    <Compile Include="PpmSemiStorageDetail.cs" />
+    <Compile Include="PpmStorage.cs" />
+    <Compile Include="PpmStorageDetail.cs" />
+    <Compile Include="PptAlarm.cs" />
+    <Compile Include="PptAlarmData.cs" />
+    <Compile Include="PptBarBomData.cs" />
+    <Compile Include="PptClass.cs" />
+    <Compile Include="PptCurveData.cs" />
+    <Compile Include="PPTEquipChanliangReport.cs" />
+    <Compile Include="PptEquipRubTime.cs" />
+    <Compile Include="PptLot.cs" />
+    <Compile Include="PptLotData.cs" />
+    <Compile Include="PptMixData.cs" />
+    <Compile Include="PptMixingData.cs" />
+    <Compile Include="PptMonthlyEntering.cs" />
+    <Compile Include="PptOpenMixData.cs" />
+    <Compile Include="PptPlan.cs" />
+    <Compile Include="PptPlanMgr.cs" />
+    <Compile Include="PptProcedure.cs" />
+    <Compile Include="PptScanBarcodeLog.cs" />
+    <Compile Include="PptSetTime.cs" />
+    <Compile Include="PptShift.cs" />
+    <Compile Include="PptShiftConfig.cs" />
+    <Compile Include="PptShiftTime.cs" />
+    <Compile Include="PptShiftTimeRule.cs" />
+    <Compile Include="PptWeigh.cs" />
+    <Compile Include="PptWeighData.cs" />
+    <Compile Include="Ppt_balanceCheck.cs" />
+    <Compile Include="Ppt_GeLiJi.cs" />
+    <Compile Include="Ppt_Lot.cs" />
+    <Compile Include="Ppt_MaterfirstEquip.cs" />
+    <Compile Include="Ppt_plantime.cs" />
+    <Compile Include="Ppt_pmdownrecord.cs" />
+    <Compile Include="Ppt_pmparts.cs" />
+    <Compile Include="Ppt_SetTime.cs" />
+    <Compile Include="Ppt_ShiftClass.cs" />
+    <Compile Include="Ppt_Shiftime.cs" />
+    <Compile Include="Ppt_Worker.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PstMaterialAdjust.cs" />
+    <Compile Include="PstMaterialAdjustDetail.cs" />
+    <Compile Include="PstMaterialAdjusting.cs" />
+    <Compile Include="PstMaterialAdjustingDetail.cs" />
+    <Compile Include="PstMaterialCarryover.cs" />
+    <Compile Include="PstMaterialCarryoverDetail.cs" />
+    <Compile Include="PstMaterialChk.cs" />
+    <Compile Include="PstMaterialChkDetail.cs" />
+    <Compile Include="PstMaterialInOast.cs" />
+    <Compile Include="PstMaterialInventory.cs" />
+    <Compile Include="PstMaterialInventoryDetail.cs" />
+    <Compile Include="PstMaterialReturn.cs" />
+    <Compile Include="PstMaterialReturnDetail.cs" />
+    <Compile Include="PstMaterialReturnin.cs" />
+    <Compile Include="PstMaterialReturninDetail.cs" />
+    <Compile Include="PstMaterialRubberSplit.cs" />
+    <Compile Include="PstMaterialStorein.cs" />
+    <Compile Include="PstMaterialStoreinDetail.cs" />
+    <Compile Include="PstMaterialStoreout.cs" />
+    <Compile Include="PstMaterialStoreoutDetail.cs" />
+    <Compile Include="PstMaterShopStore.cs" />
+    <Compile Include="Pstmminjar.cs" />
+    <Compile Include="Pstmmshopout.cs" />
+    <Compile Include="PstPlanGetMater.cs" />
+    <Compile Include="PstShopAdjust.cs" />
+    <Compile Include="PstShopStorage.cs" />
+    <Compile Include="PstShopStorageDetail.cs" />
+    <Compile Include="PstStorage.cs" />
+    <Compile Include="PstStorageDetail.cs" />
+    <Compile Include="PstStorageTemp.cs" />
+    <Compile Include="Pst_Minstock.cs" />
+    <Compile Include="Pst_mminjar.cs" />
+    <Compile Include="QmcCheckData.cs" />
+    <Compile Include="QmcCheckDataDetail.cs" />
+    <Compile Include="QmcCheckDataProperty.cs" />
+    <Compile Include="QmcCheckItem.cs" />
+    <Compile Include="QmcCheckItemDetail.cs" />
+    <Compile Include="QmcFactoryMapping.cs" />
+    <Compile Include="QmcFactoryNonCheck.cs" />
+    <Compile Include="QmcLedger.cs" />
+    <Compile Include="QmcLedgerDetail.cs" />
+    <Compile Include="QmcLedgerKey.cs" />
+    <Compile Include="QmcLedgerKeyValue.cs" />
+    <Compile Include="QmcProperty.cs" />
+    <Compile Include="QmcPropertyDetail.cs" />
+    <Compile Include="QmcPropertyValue.cs" />
+    <Compile Include="QmcSampleLedger.cs" />
+    <Compile Include="QmcSpec.cs" />
+    <Compile Include="QmcSpecMapping.cs" />
+    <Compile Include="QmcStandard.cs" />
+    <Compile Include="QmtCheckAssessDetail.cs" />
+    <Compile Include="QmtCheckAssessLot.cs" />
+    <Compile Include="QmtCheckAssessMaster.cs" />
+    <Compile Include="QmtCheckDetail.cs" />
+    <Compile Include="QmtCheckItem.cs" />
+    <Compile Include="QmtCheckItemType.cs" />
+    <Compile Include="QmtCheckLot.cs" />
+    <Compile Include="QmtCheckMaster.cs" />
+    <Compile Include="QmtCheckStandDetail.cs" />
+    <Compile Include="QmtCheckStandEquip.cs" />
+    <Compile Include="QmtCheckStandEquipGrade.cs" />
+    <Compile Include="QmtCheckStandGrade.cs" />
+    <Compile Include="QmtCheckStandMaster.cs" />
+    <Compile Include="QmtCheckStandType.cs" />
+    <Compile Include="QmtCPKSetting.cs" />
+    <Compile Include="QmtDealNotion.cs" />
+    <Compile Include="QmtItemClass.cs" />
+    <Compile Include="QmtQrigDetail.cs" />
+    <Compile Include="QmtQrigImportLogMaster.cs" />
+    <Compile Include="QmtQrigMaster.cs" />
+    <Compile Include="Qmt_QuaStandDetail.cs" />
+    <Compile Include="Qmt_QuaStandMaster.cs" />
+    <Compile Include="SearchKeyWord.cs" />
+    <Compile Include="SysCode.cs" />
+    <Compile Include="SysDeptAction.cs" />
+    <Compile Include="SysDeptRole.cs" />
+    <Compile Include="SysLoginLog.cs" />
+    <Compile Include="SysMesAction.cs" />
+    <Compile Include="SysPageAction.cs" />
+    <Compile Include="SysPageMenu.cs" />
+    <Compile Include="SysPageMethod.cs" />
+    <Compile Include="SysProblemRecord.cs" />
+    <Compile Include="SysRole.cs" />
+    <Compile Include="SysRoleAction.cs" />
+    <Compile Include="SysRubPowerUser.cs" />
+    <Compile Include="SysTaskRemind.cs" />
+    <Compile Include="SysUserAction.cs" />
+    <Compile Include="SysUserActionEqual.cs" />
+    <Compile Include="SysUserAllAction.cs" />
+    <Compile Include="SysUserCtrl.cs" />
+    <Compile Include="SysUserRole.cs" />
+    <Compile Include="SysWebLog.cs" />
+    <Compile Include="PpmStorageTemp.cs" />
+    <Compile Include="SYS_USER.cs" />
+    <Compile Include="TblMater.cs" />
+    <Compile Include="TblMix.cs" />
+    <Compile Include="TblRecipe.cs" />
+    <Compile Include="TblWeight.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

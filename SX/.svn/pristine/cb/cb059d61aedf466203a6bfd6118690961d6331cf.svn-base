@@ -1,0 +1,458 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="MeasurePlan.aspx.cs" Inherits="Manager_Equipment_SparePart_MeasurePlan" %>
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>计量校准计划</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js" ></script>
+    <style type="text/css">
+        .x-grid-row-collapsed .x-grid-cell
+        {
+        	background-color: #CCFF66 !important;
+        }
+    </style>
+    <script type="text/javascript">
+        //点击修改按钮
+        var cmdcol_click = function (command, record) {
+            if (command == "Edit") {
+                App.direct.pnlList_Edit(record.data.Mp_planid, {
+                    success: function () { },
+                    failure: function () { }
+                });
+            }
+            else if (command == "Delete") {
+                Ext.Msg.confirm("提示", '您确定需要删除此信息？删除后将不能恢复！', function (btn) { deleteStopRecord(btn, record) });
+            }
+        }
+
+        var deleteStopRecord = function (btn, record) {
+            if (btn != "yes") {
+                return;
+            }
+            var Mp_planid = record.data.Mp_planid;
+            App.direct.pnlList_Delete(Mp_planid, {
+                success: function () { },
+                failure: function () { }
+            });
+        }
+        //计划取消
+        var Cancel = function () {
+            var section = App.pnlList.getView().getSelectionModel().getSelection();
+
+            if (section && section.length == 0) {
+                Ext.Msg.alert('提示', '您没有选择任何项，请选择！');
+            }
+            else {
+                Ext.Msg.confirm("提示", '确定要取消此计划吗？', function (btn) { commandcolumn_direct_Cancel(btn) });
+            }
+        }
+        var commandcolumn_direct_Cancel = function (btn) {
+            if (btn != "yes") {
+                return;
+            }
+
+            App.direct.btnCancel_Click({
+                success: function (result) {
+                    if (result == "true") {
+                        Ext.Msg.alert('提示', "取消计划成功");
+                        return;
+                    }
+                    else {
+                        Ext.Msg.alert('提示', result);
+                    }
+                },
+
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('提示', errorMsg);
+                },
+                eventMask: {
+                    showMask: true
+                }
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <asp:Button ID="btnExportSubmit" runat="server" Text="Button" OnClick="btnExportSubmit_Click" Style="display:none" />
+    <ext:ResourceManager ID="ResourceManager1" runat="server" />
+    <ext:Hidden ID="hidden_stop_type" runat="server" />
+    <ext:Hidden ID="hidden_stop_fault" runat="server" />
+    <ext:Hidden ID="hidden_fault_reason" runat="server" />
+        <ext:Viewport ID="vwUnit" runat="server" Layout="border">
+            <Items>
+                <ext:Panel ID="pnlStopType" runat="server" Region="North" AutoHeight="true">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="barStopType">
+                            <Items>
+
+                                <ext:Button runat="server" Icon="Add" Text="添加" ID="btnAdd">
+                                    <ToolTips><ext:ToolTip ID="ttAdd" runat="server" Html="点击进行添加" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnAdd_Click"/></DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                    <ToolTips><ext:ToolTip ID="ttSearch" runat="server" Html="点击进行查询" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnSearch_Click">
+                                        <EventMask ShowMask="true" Target="Page"></EventMask>
+                                    </Click></DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                               <ext:Button runat="server" Icon="PageSave" Text="计划完成" ID="btnCompletePlan">
+                                    <ToolTips><ext:ToolTip ID="ToolTip4" runat="server" Html="点击进行完成" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnCompletePlan_Click"/></DirectEvents>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="LockEdit" Text="计划取消" ID="btnCancelPlan">
+
+                                    <Listeners>
+                                        <Click Handler="Cancel();" />
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="PageWhiteExcel" Text="导出" ID="btnExcel">
+                                    <ToolTips><ext:ToolTip ID="ToolTip1" runat="server" Html="点击进行结果导出" /></ToolTips>
+                                    <Listeners>
+                                        <Click Handler="$('#btnExportSubmit').click();"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:FormPanel ID="container_top" runat="server" Layout="ColumnLayout" AutoHeight="true" BodyPadding="5">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Container ID="container_1" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+<%--                                  <ext:TextField ID="txtPlan" Vtype="integer" runat="server" FieldLabel="计划状态" LabelAlign="Right" />--%>
+                                        <ext:ComboBox ID="cboPlan" runat="server" FieldLabel="计划状态" LabelAlign="Right"
+                                            Editable="false">
+                                            <Items>
+                                                <ext:ListItem Text="下达" Value="1">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="完成" Value="2">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="取消" Value="3">
+                                                </ext:ListItem>   
+                                            </Items>
+                                            <Triggers>
+                                                <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                </ext:FieldTrigger>
+                                            </Triggers>
+                                            <Listeners>
+                                                <TriggerClick Handler="this.setValue('');" />
+                                            </Listeners>
+                                        </ext:ComboBox>
+                                    </Items>
+                                </ext:Container>
+                                 <ext:Container ID="container1" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                          <ext:TextField ID="txtJLName" Vtype="integer" runat="server" FieldLabel="器具名称" LabelAlign="Right" />
+                                       
+                                    </Items>
+                                </ext:Container>
+                                 <ext:Container ID="container2" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                         <ext:DateField ID="DateBeginTime" runat="server" FieldLabel="开始时间" Width="208"  Editable="false" />
+                                        <ext:DateField ID="DateEndTime" runat="server" FieldLabel="结束时间" Width="208"  Editable="false" />
+                                    </Items>
+                                </ext:Container>
+                               
+                            </Items>
+                        </ext:FormPanel>
+                    </Items>
+                </ext:Panel>
+                <ext:GridPanel ID="pnlList" runat="server" Region="Center">
+                    <Store>
+                        <ext:Store ID="store" runat="server" PageSize="15">
+                            <Model>
+                                <ext:Model ID="model" runat="server" IDProperty="Mp_planid">
+                                    <Fields>
+                                        <ext:ModelField Name="JL_IDNO" />
+                                        <ext:ModelField Name="JL_code" />
+                                        <ext:ModelField Name="JL_name" />
+                                        <ext:ModelField Name="Fac_name" />
+                                        <ext:ModelField Name="JL_Grade" />
+                                        <ext:ModelField Name="JL_spec" />
+                                        <ext:ModelField Name="JL_Precis" />
+                                        <ext:ModelField Name="JL_type" />
+                                        <ext:ModelField Name="Pos_code" />
+                                        <ext:ModelField Name="Check_media" />
+                                        <ext:ModelField Name="WorkShop" />
+                                        <ext:ModelField Name="Mem_note" />
+                                        <ext:ModelField Name="LastCheckDate" />
+                                        <ext:ModelField Name="confirm_date" />
+                                        <ext:ModelField Name="check_stand" />
+                                        <ext:ModelField Name="begin_date" />
+                                        <ext:ModelField Name="check_term" />
+                                        <ext:ModelField Name="manage_type" />
+                                        <ext:ModelField Name="check_user" />
+                                        <ext:ModelField Name="confirm_user" />
+                                        <ext:ModelField Name="remark" />
+                                        <ext:ModelField Name="manage_type" />
+                                        <ext:ModelField Name="check_user" />
+                                        <ext:ModelField Name="confirm_user" />
+                                        <ext:ModelField Name="handle_name" />
+                                        <ext:ModelField Name="Use_state" />
+                                        <ext:ModelField Name="Mem_note" />
+                                        <ext:ModelField Name="YX_Date" />
+                                        <ext:ModelField Name="confirm_date" />
+                                        <ext:ModelField Name="begin_date" />
+                                        <ext:ModelField Name="LastCheckDate" />
+                                        <ext:ModelField Name="check_term" />
+                                        <ext:ModelField Name="Mp_result" />
+                                        <ext:ModelField Name="Plan_state" />
+                                        <ext:ModelField Name="JL_planday" />
+                                        <ext:ModelField Name="JL_Realday" />
+                                        <ext:ModelField Name="JL_planDate" />
+                                        <ext:ModelField Name="JL_RealDate" />
+                                        <ext:ModelField Name="Mp_planid" />
+                                    </Fields>
+                                </ext:Model>
+                            </Model>
+                        </ext:Store>
+                    </Store>
+                    <ColumnModel ID="colModel" runat="server">
+                        <Columns>
+                            <ext:Column ID="Mp_planid" runat="server" Text="Mp_planid" DataIndex="Mp_planid" Width="100" hidden="true"/>
+                            <ext:Column ID="Column3" runat="server" Text="代码" DataIndex="JL_code" Width="80"/>
+                            <ext:Column ID="clEquip" runat="server" Text="编号" DataIndex="JL_IDNO" Width="100"/>
+                            <ext:Column ID="Column10" runat="server" Text="厂房" DataIndex="WorkShop" Width="120"/>
+                            <ext:Column ID="Column21" runat="server" Text="检定结果" DataIndex="Mp_result" Width="120"/>
+                            <ext:Column ID="Column22" runat="server" Text="名称" DataIndex="JL_name" Width="120"/>
+                            <ext:Column ID="clStartTime" runat="server" Text="生产厂家" DataIndex="Fac_name" Width="135"/>
+                            <ext:Column ID="clEndTime" runat="server" Text="出厂编号" DataIndex="JL_Grade" Width="135"/>
+                            <ext:Column ID="Column1" runat="server" Text="规格型号" DataIndex="JL_spec" Width="65" />
+                            <ext:Column ID="Column2" runat="server" Text="计划状态" DataIndex="Plan_state" Width="80"/>
+                            <ext:Column ID="Column4" runat="server" Text="计划工时" DataIndex="JL_planday" Width="80"/>
+                            <ext:Column ID="Column5" runat="server" Text="实际工时" DataIndex="JL_Realday" Width="80"/>
+                            <ext:Column ID="Column20" runat="server" Text="准确度" DataIndex="JL_Precis" Width="80"/>
+                            <ext:Column ID="Column6" runat="server" Text="测量范围" DataIndex="JL_type" Width="80"/>
+                            <ext:Column ID="Column7" runat="server" Text="安装位置" DataIndex="Pos_code" Width="120"/>
+                            <ext:Column ID="Column8" runat="server" Text="检测介质" DataIndex="Check_media" Width="120"/>
+                            <ext:Column ID="Column12" runat="server" Text="检定周期（月）" DataIndex="check_stand"  Width="120"/>
+                            <ext:DateColumn ID="DateColumn2" runat="server" Text="计划日期" DataIndex="JL_planDate" format="yyyy-MM-dd" Width="120"/>
+                            <ext:DateColumn ID="DateColumn3" runat="server" Text="实际日期" DataIndex="JL_RealDate" format="yyyy-MM-dd" Width="120"/>
+
+                            <ext:CommandColumn ID="cmdCol" runat="server" Align="Center" Text="操作" Width="185">
+                                <Commands>
+                                    <ext:GridCommand Icon="TableEdit" CommandName="Edit" Text="修改"/>
+                                    <ext:GridCommand Icon="TableDelete" CommandName="Delete" Text="删除"/>
+                                    <%--<ext:GridCommand Icon="Add" CommandName="Add" Text="报修"/>--%>
+                                </Commands>
+                                <Listeners>
+                                    <Command Handler="cmdcol_click(command, record);" />
+                                </Listeners>
+                            </ext:CommandColumn>
+                        </Columns>
+                    </ColumnModel>
+                    <SelectionModel>
+                        <ext:RowSelectionModel ID="rowSelectMuti" runat="server" Mode="Single">
+                            <Listeners>
+                                <Select Handler="#{detailStore}.reload();" Buffer="250" />
+                            </Listeners>
+                        </ext:RowSelectionModel>
+                    </SelectionModel>
+                    <%--<View>
+                        <ext:GridView ID="gvRows" runat="server">
+                            <GetRowClass Fn="SetRowClass" />
+                        </ext:GridView>
+                    </View>--%>
+                    <BottomBar>
+                        <ext:PagingToolbar ID="pageToolBar" runat="server">
+                            <Plugins>
+                                <ext:ProgressBarPager ID="ProgressBarPager" runat="server"/>
+                            </Plugins>
+                        </ext:PagingToolbar>
+                    </BottomBar>
+                </ext:GridPanel>
+                <ext:Window ID="winSave" runat="server" Icon="MonitorAdd" Closable="false" Title="计量校准计划维护" Width="550" Height="500" Resizable="false" Modal="true" BodyStyle="background-color:#fff;" BodyPadding="5" Layout="FormLayout">
+                    <Items>
+                        <ext:FormPanel ID="pnlAdd" runat="server" BodyPadding="5" Layout="FormLayout">
+                             <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="LabelWidth" Value="70" Mode="Raw" />
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Hidden runat="server" ID="hideObjID" />
+                                <ext:FieldSet ID="FieldSet1" runat="server" Title="计量校准计划维护">
+                                    <Items>
+                                        <ext:FieldContainer ID="FieldContainer12"  runat="server" Layout="HBoxLayout"  AnchorHorizontal="100%">
+                                            <Items>
+                                         
+                                                <ext:FieldContainer ID="FieldContainer7" runat="server" FieldLabel="代码" >
+                                                    <Items>
+                                                        <ext:TextField ID="txtJL_code" runat="server" Width="100" AllowBlank="false" inputtype="Number" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer16" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:DateField ID="txtJL_planDate" runat="server" FieldLabel="计划日期" Width="208" Editable="false" allowblank="false"/>
+                                                <ext:FieldContainer ID="FieldContainer13" runat="server" FieldLabel="计划工时">
+                                                    <Items>
+                                                        <ext:TextField ID="txtJL_planday" runat="server" Width="100"  allowblank="false"/>
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer2" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <%--  <ext:FieldContainer ID="FieldContainer14" runat="server" FieldLabel="计划状态">
+                                                    <Items>
+                                                        <ext:TextField ID="txtPlan_state" runat="server" Width="100"/>
+                                                    </Items>
+                                                </ext:FieldContainer>--%>
+                                                <ext:ComboBox ID="txtPlan_state" runat="server" FieldLabel="计划状态" LabelAlign="left" Width="400" allowblank="false"
+                                                    Editable="false">
+                                                    <Items>
+                                                        <ext:ListItem Text="下达" Value="1">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="完成" Value="2">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="取消" Value="3">
+                                                        </ext:ListItem>
+                                                    </Items>
+                                                    <Triggers>
+                                                        <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                        </ext:FieldTrigger>
+                                                    </Triggers>
+                                                    <Listeners>
+                                                        <TriggerClick Handler="this.setValue('');" />
+                                                    </Listeners>
+                                                </ext:ComboBox>
+
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer1" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:DateField ID="txtJL_RealDate" runat="server" FieldLabel="校准日期" Width="208"  Editable="false" />
+                                                <ext:FieldContainer ID="FieldContainer3" runat="server" FieldLabel="实际校准工时">
+                                                    <Items>
+                                                        <ext:TextField ID="txtJL_RealDay" runat="server" Width="100" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                                 
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer34" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:ComboBox ID="cbohandle_name" runat="server" Disabled="false" Width="208"  FieldLabel="校准人"/>
+                                                <%--<ext:FieldContainer ID="FieldContainer17" runat="server" FieldLabel="校准人">
+                                                    <Items>
+                                                        <ext:TextField ID="txthandle_name" runat="server" Width="100"/>
+                                                    </Items>
+                                                </ext:FieldContainer>--%>
+                                                <ext:FieldContainer ID="FieldContainer4" runat="server" FieldLabel="检定结果">
+                                                    <Items>
+                                                        <ext:TextField ID="txtMp_result" runat="server" Width="100" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:Hidden runat="server" ID="hideMode" Text="Add" />
+                                    </Items>
+                                </ext:FieldSet>
+                            </Items>
+                            <Listeners>
+                                <ValidityChange Handler="#{btnSave}.setDisabled(!valid);" />
+                            </Listeners>
+                        </ext:FormPanel>
+                    </Items>
+                     <Buttons>
+                        <ext:Button ID="btnSave" runat="server" Text="确定" Icon="Accept" Disabled="true">
+                            <DirectEvents>
+                                <Click OnEvent="btnSave_Click">
+                                    <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                                </Click>
+                            </DirectEvents>
+                        </ext:Button>
+                        <ext:Button ID="btnCancel" runat="server" Text="取消" Icon="Cancel">
+                            <DirectEvents>
+                                <Click OnEvent="btnCancel_Click"/>
+                            </DirectEvents>
+                        </ext:Button>
+                    </Buttons>
+                </ext:Window>
+
+                <ext:Window ID="winDone" runat="server" Icon="MonitorAdd" Closable="false" Title="计划完成情况" Width="550" Height="500" Resizable="false" Modal="true" BodyStyle="background-color:#fff;" BodyPadding="5" Layout="FormLayout">
+                    <Items>
+                        <ext:FormPanel ID="FormPanel1" runat="server" BodyPadding="5" Layout="FormLayout">
+                             <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="LabelWidth" Value="70" Mode="Raw" />
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Hidden runat="server" ID="HiddenSaveObjid" />
+                                <ext:FieldSet ID="FieldSet2" runat="server" Title="计划完成情况">
+                                    <Items>
+
+                                        <ext:FieldContainer ID="FieldContainer11" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:DateField ID="txtJL_RealDate1" runat="server" FieldLabel="实际校准日期" Width="208"  Editable="false" />
+                                                <ext:FieldContainer ID="FieldContainer14" runat="server" FieldLabel="校准工时">
+                                                    <Items>
+                                                        <ext:TextField ID="txtJL_RealDay1" runat="server" Width="100" Editable="true" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer15" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:ComboBox ID="cbohandle_name1" runat="server" Disabled="false" Width="208"  FieldLabel="校准人"/>
+                                                <ext:FieldContainer ID="FieldContainer17" runat="server" FieldLabel="检定结果">
+                                                    <Items>
+                                                        <ext:TextField ID="txtMp_result1" runat="server" Width="100" Editable="ture"  />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:Hidden runat="server" ID="Hidden2" Text="Add" />
+                                    </Items>
+                                </ext:FieldSet>
+                            </Items>
+                            <Listeners>
+                                <ValidityChange Handler="#{Button3}.setDisabled(!valid);" />
+                            </Listeners>
+                        </ext:FormPanel>
+                    </Items>
+                     <Buttons>
+                        <ext:Button ID="Button3" runat="server" Text="确定" Icon="Accept" Disabled="true">
+                            <DirectEvents>
+                                <Click OnEvent="btnSave_Click1">
+                                    <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                                </Click>
+                            </DirectEvents>
+                        </ext:Button>
+                        <ext:Button ID="Button4" runat="server" Text="取消" Icon="Cancel">
+                            <DirectEvents>
+                                <Click OnEvent="btnCancel_Click1"/>
+                            </DirectEvents>
+                        </ext:Button>
+                    </Buttons>
+                </ext:Window>
+
+            </Items>
+        </ext:Viewport>
+    </form>
+</body>
+</html>

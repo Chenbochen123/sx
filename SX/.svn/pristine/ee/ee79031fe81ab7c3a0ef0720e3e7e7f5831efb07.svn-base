@@ -1,0 +1,156 @@
+﻿using System;
+using System.Data;
+using System.Xml;
+using System.Xml.Xsl;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using NBear.Common;
+using System.Collections.Generic;
+using System.Text;
+using Mesnac.Entity;
+
+
+public partial class Manager_Technology_Manage_XlAutoCreate : Mesnac.Web.UI.Page
+{
+    protected Pmt_XLAutoCreateManager Manager = new Pmt_XLAutoCreateManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if ( !X.IsAjaxRequest&&!Page.IsPostBack )
+        {
+            PageInit();
+        }
+    }
+
+    #region 初始化下拉列表
+    private void PageInit()
+    {
+
+        
+        this.winSave.Hidden = true;
+        bindList();
+    }
+
+
+    private DataSet getList(string txtName)
+    {
+
+
+        return GetDataByParas(txtName);
+       // return GetDataByParas(cboPlan.Value.ToString);
+    }
+
+    public System.Data.DataSet GetDataByParas(string txtname)
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select * from  pmt_XlAutoCreate");
+        sb.AppendLine("WHERE 1=1");
+        if (!string.IsNullOrEmpty(txtname))
+        {
+            sb.AppendLine("AND mater_name='" + txtname + "'");
+        }
+        #endregion
+
+        NBear.Data.CustomSqlSection css = Manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+    private void bindList()
+    {
+        string Name = "";
+        if (!string.IsNullOrEmpty(txtmater1.Text))
+        {
+            Name = txtmater1.Text.ToString();
+        }
+        this.store.DataSource = getList(Name);
+        this.store.DataBind();
+    }
+    #endregion
+
+
+
+    #region 按钮事件响应
+    protected void btnSearch_Click( object sender , EventArgs e )
+    {
+        bindList();
+    }
+   
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "Add";
+        txtmater2.Text = "";
+        this.winSave.Hidden = false;
+    }
+    //添加计划确定
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        if (this.hideMode.Text == "Add")//添加
+        {
+            EntityArrayList<Pmt_XLAutoCreate> listAdd = Manager.GetListByWhere(Pmt_XLAutoCreate._.Mater_name == txtmater2.Text);
+            if (listAdd.Count > 0)
+            { X.Msg.Alert("提示", "已有该物料！").Show(); return; }
+            Pmt_XLAutoCreate record = new Pmt_XLAutoCreate();
+            record.Mater_name = txtmater2.Text;
+            record.Mater_Code = GetMaxPlanID();
+
+            if (Manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("物料添加", "添加物料号：" + record.Mater_Code);
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    #endregion
+
+    #region 信息列表事件响应
+  
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Pmt_XLAutoCreate record = Manager.GetById(ObjID);
+        if(record != null)
+        {
+            Manager.Delete(ObjID);
+            this.AppendWebLog("物料删除", "修改物料号：" + record.Mater_Code);
+            bindList();
+            X.Msg.Alert("提示", "删除成功！").Show();
+        }
+        else
+        {
+            X.Msg.Alert("提示", "该记录已经不存在！").Show();
+            return;
+        }
+    }
+
+
+    //自动生成油品主键号
+    protected string GetMaxPlanID()
+    {
+        string planID = "";
+        EntityArrayList<Pmt_XLAutoCreate> list = Manager.GetAllListOrder(Pmt_XLAutoCreate._.Mater_Code.Desc);
+        if (list.Count > 0)
+        {
+            planID = Convert.ToString(Convert.ToInt64(list[0].Mater_Code) + 1);
+        }
+        else
+        { planID = "2014000212274"; }
+        
+        return planID;
+    }
+
+    #endregion
+
+
+}

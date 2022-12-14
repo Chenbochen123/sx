@@ -1,0 +1,264 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+
+public partial class Manager_Technology_Manage_ChemicalManage : Mesnac.Web.UI.Page
+{
+    protected Pmt_XLbagSetManager manager = new Pmt_XLbagSetManager();
+    protected Pmt_materialManager materialManager = new Pmt_materialManager();
+    protected Pmt_ikindManager kindManager = new Pmt_ikindManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+            bindBagSet();
+            bindList();
+            bindMaterial();
+
+
+        }
+    }
+
+
+    #region 初始化控件
+
+    private void bindMaterial()
+    {
+        cbxMaterial.Clear();
+        EntityArrayList<Pmt_material> list = materialManager.GetListByWhereAndOrder(Pmt_material._.Ikind_code == "10", Pmt_material._.Ikind_code.Asc);
+        foreach (Pmt_material type in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(type.Mater_name, type.Mater_name);
+            cbxMaterial.Items.Add(item);
+        }
+    }
+
+
+    private void bindBagSet()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(@"select mater_Code,mater_name,avg(total_weight) as total_weight,workshop_Code  
+	from pmt_recipe a 
+	join pmt_equip b on a.equip_Code=b.equip_Code   
+	where left(mater_Code,1)='2' and mater_name<>'' and recipe_state='1'
+	and not exists(select 1 from pmt_xlbagset c where a.Mater_Code = c.Mater_Code)
+	group by workshop_Code,mater_Code,mater_name");
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        DataSet ds = css.ToDataSet();
+        if(ds.Tables.Count>0 && ds.Tables[0].Rows.Count>0)
+        {
+            foreach(DataRow dr in ds.Tables[0].Rows)
+            {
+                Pmt_XLbagSet record = new Pmt_XLbagSet();
+                record.Mater_Code = dr["mater_Code"].ToString();
+                record.Mater_name = dr["mater_name"].ToString();
+                record.Set_Weight = Convert.ToDecimal(dr["total_weight"]);
+                record.Workshop = Convert.ToInt32(dr["workshop_Code"]);
+                manager.Insert(record);
+            }
+        }
+    }
+
+
+    #endregion
+
+
+    #region 树
+    /// <summary>
+    /// 初始化机台列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        treeEquip.GetRootNode().RemoveAll();
+        treeEquip.GetRootNode().AppendChild(getTreeNodeByDelLevel());
+    }
+
+    /// <summary>
+    /// 获取机台树的算法
+    /// </summary>
+    /// <param name="dep_num"></param>
+    /// <returns></returns>
+    private Node getTreeNodeByDelLevel()
+    {
+        Node node = new Node();
+        node.NodeID = "0";
+        node.Text = "物料分组";
+        node.Expanded = true;
+        Dictionary<string, string> depChildFristList = new Dictionary<string, string>();
+        var query = kindManager.GetListByWhereAndOrder(Pmt_ikind._.Mkind_code == "2", Pmt_ikind._.Ikind_code.Asc);
+        foreach (var info in query)
+        {
+            Node childNode = new Node();
+            childNode.Qtip = info.Mkind_code + info.Ikind_code;
+            childNode.Text = info.Ikind_name;
+            childNode.Leaf = true;
+            node.Children.Add(childNode);
+        }
+        return node;
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 相应点击机台树事件
+    /// </summary>
+    /// <param name="group"></param>
+    [DirectMethod]
+    public void LoadGridData(string group)
+    {
+        //判断当前机台当前时间是否设置班组信息
+        //hidden_parent_num.Value = group;
+        hidden_equip_code.Text = group;
+        this.store.DataSource = getList(group);
+        this.store.DataBind();
+
+
+    }
+
+    private DataSet getList(string group)
+    {
+
+        return GetDataByParas(group);
+    }
+
+
+    public System.Data.DataSet GetDataByParas(string group)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine(@"select a.Mater_Code,a.Mater_name,a.Set_Weight,b.Mater_name BagName,a.workshop from pmt_xlbagset a
+	left join Pmt_material b on a.Bag_Code = b.Mater_code
+    ");
+        sb.AppendLine("WHERE 1=1");
+        if(!string.IsNullOrEmpty(group))
+        {
+            sb.AppendLine("AND left(a.Mater_Code,3) ='" + group + "'");
+        }
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList(hidden_equip_code.Text);
+        this.store.DataBind();
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList(hidden_equip_code.Text);
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "设备能耗管理导出");
+        }
+    }
+
+
+    #endregion
+
+
+    #region 信息列表事件响应
+
+    [DirectMethod]
+    public void pnlList_Delete(string Mater_Code, string workshop)
+    {
+        EntityArrayList<Pmt_XLbagSet> list = manager.GetListByWhere(Pmt_XLbagSet._.Mater_Code == Mater_Code & Pmt_XLbagSet._.Workshop == workshop);
+        if(list.Count>0)
+        {
+            Pmt_XLbagSet record = list[0];
+            manager.Delete(record);
+            this.AppendWebLog("药品袋设置删除", "删除物料：" + record.Mater_Code.ToString());
+
+            bindList();
+            X.Msg.Alert("提示", "删除完成！").Show();
+        }
+        else
+        {
+            X.Msg.Alert("提示", "删除失败！").Show();
+        }
+    }
+    [DirectMethod]
+    public void pnlList_Add(string Mater_Code, string workshop,string BagName)
+    {
+        EntityArrayList<Pmt_XLbagSet> list = manager.GetListByWhere(Pmt_XLbagSet._.Mater_Code == Mater_Code & Pmt_XLbagSet._.Workshop == workshop);
+        if (list.Count > 0)
+        {
+            Pmt_XLbagSet record = list[0];
+            EntityArrayList<Pmt_material> listMaterial = materialManager.GetListByWhere(Pmt_material._.Mater_name == BagName);
+            if(listMaterial.Count>0)
+            {
+                record.Bag_Code = listMaterial[0].Mater_code;
+                if (manager.Update(record) >= 0)
+                {
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+            else if (BagName == null || BagName =="")
+            {
+                record.Bag_Code = "";
+                if (manager.Update(record) >= 0)
+                {
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+            else
+            {
+                X.Msg.Alert("提示", "不存在此种塑料袋规格").Show();
+            }
+        }
+        else
+        {
+            X.Msg.Alert("提示", "此记录已不存在！").Show();
+        }
+    }
+    #endregion
+}

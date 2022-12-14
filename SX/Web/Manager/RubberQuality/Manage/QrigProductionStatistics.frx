@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ConvertNulls="false" DoublePass="true" ReportInfo.Created="08/06/2013 17:04:31" ReportInfo.Modified="11/19/2013 11:25:46" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    // The idea is to collect group totals on the first report pass, and to print
+    // the collected values on the second pass. 
+    
+    // The variable that we going to print in the group header.
+    private int total;
+    
+    // The list that will hold totals for each group.
+    private List&lt;int&gt; totals = new List&lt;int&gt;();
+    
+    // This handler is called before printing the group header. To create this handler:
+    // - select the group header;
+    // - go Properties window;
+    // - press &quot;Events&quot; button;
+    // - select &quot;BeforePrint&quot; event and doubleclick it.
+    private void GroupHeader1_BeforePrint(object sender, EventArgs e)
+    {
+      // Note: ((Int32)Report.GetVariableValue(&quot;Row#&quot;)) is a current group number;
+      // this string is automatically inserted when you drag &amp; drop
+      // the &quot;Row#&quot; system variable from the Data Dictionary window to the script.
+      // This value is not zero-based.
+      int groupNumber = ((Int32)Report.GetVariableValue(&quot;Row#&quot;));
+
+      // If this pass is final, get the collected value.
+      if (Engine.FinalPass)
+        total = totals[groupNumber - 1];
+    }
+
+    // This handler is called before printing the group footer.
+    private void GroupFooter1_BeforePrint(object sender, EventArgs e)
+    {
+      // Note: Report.GetTotalValue(&quot;TotalProducts&quot;) is a total value;
+      // this string is automatically inserted when you drag &amp; drop
+      // the &quot;TotalProducts&quot; total from the Data Dictionary window to the script.
+      int totalValue = (int)Report.GetTotalValue(&quot;Total&quot;);
+      
+      // if this pass is not final, add the total value to the totals list.
+      if (!Engine.FinalPass)
+        totals.Add(totalValue);
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="MENS" ConnectionString="rijcmlqxfki+t8jnSxof6qn6ng9vYSsIy0obIa8gCIZU/gjbP6VgVVQek4BDHjWSof0mJWoQ+0Cprlccf0AmhmaDEerIzVGZTcERqxit7zOa2+WyX0+OMcLInrQbBhSIoC/PHwug//ojrioy0KSPSNerDLjBOQcrrvrCvOpwSB9WLc+T54Qc/ES8uUzaRs6A65n77bbwbcFhwZS7Qu1QLcRuDQEuQ==">
+      <TableDataSource Name="Table" Alias="QmtQrigProdStatInfo" DataType="System.Int32" Enabled="true" SelectCommand="EXEC [ProcQmtStatQrigProd] '2013-11-11', '2013-11-12'">
+        <Column Name="检验类型" DataType="System.String"/>
+        <Column Name="检验机台" DataType="System.String"/>
+        <Column Name="检验班组" DataType="System.String"/>
+        <Column Name="车数" DataType="System.Int32"/>
+        <Column Name="车间" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Total Name="Total" Expression="[QmtQrigProdStatInfo.车数]" Evaluator="Data1" PrintOn="GroupFooter1"/>
+    <Total Name="Totals" Expression="[QmtQrigProdStatInfo.车数]" Evaluator="Data1" ResetAfterPrint="false"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="1297">
+    <ColumnHeaderBand Name="ColumnHeader1" Width="718.2" Height="18.9" CanShrink="true">
+      <TextObject Name="Text5" Left="94.5" Width="151.2" Height="18.9" Border.Lines="All" Border.Color="DarkGray" Fill.Color="Gainsboro" Text="检验机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text3" Left="245.7" Width="151.2" Height="18.9" Border.Lines="All" Border.Color="DarkGray" Fill.Color="Gainsboro" Text="检验类型" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text7" Left="396.9" Width="94.5" Height="18.9" Border.Lines="All" Border.Color="DarkGray" Fill.Color="Gainsboro" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text12" Width="94.5" Height="18.9" Border.Lines="All" Border.Color="DarkGray" Fill.Color="Gainsboro" Text="车间" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+    </ColumnHeaderBand>
+    <GroupHeaderBand Name="GroupHeader1" Top="22.9" Width="718.2" Height="18.9" CanShrink="true" BeforePrintEvent="GroupHeader1_BeforePrint" Guides="18.9,9.45,0,0,0,9.45,18.9" Condition="[QmtQrigProdStatInfo.检验班组]">
+      <TextObject Name="Text1" Width="491.4" Height="18.9" Fill.Color="WhiteSmoke" Text="检验班组：[QmtQrigProdStatInfo.检验班组](SUM=[total])" VertAlign="Center" Font="宋体, 9pt"/>
+      <GroupHeaderBand Name="GroupHeader2" Top="45.8" Width="718.2" Condition="[QmtQrigProdStatInfo.车间]">
+        <GroupHeaderBand Name="GroupHeader3" Top="49.8" Width="718.2" Condition="[QmtQrigProdStatInfo.检验机台]">
+          <DataBand Name="Data1" Top="53.8" Width="718.2" Height="18.9" CanShrink="true" DataSource="Table">
+            <TextObject Name="Text2" Left="245.7" Width="151.2" Height="18.9" Border.Lines="Top, Bottom" Border.Color="DarkGray" Text="[QmtQrigProdStatInfo.检验类型]" VertAlign="Center" Font="宋体, 9pt"/>
+            <TextObject Name="Text4" Left="94.5" Width="151.2" Height="18.9" Border.Lines="Top, Bottom" Border.Color="DarkGray" Text="[QmtQrigProdStatInfo.检验机台]" VertAlign="Center" Font="宋体, 9pt"/>
+            <TextObject Name="Text6" Left="396.9" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="DarkGray" Text="[QmtQrigProdStatInfo.车数]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+            <TextObject Name="Text11" Width="94.5" Height="18.9" Border.Lines="Top, Bottom" Border.Color="DarkGray" Text="[QmtQrigProdStatInfo.车间]" VertAlign="Center" Font="宋体, 9pt"/>
+            <Sort>
+              <Sort Expression="[QmtQrigProdStatInfo.检验类型]"/>
+              <Sort Expression="[QmtQrigProdStatInfo.检验机台]"/>
+            </Sort>
+          </DataBand>
+        </GroupHeaderBand>
+      </GroupHeaderBand>
+      <GroupFooterBand Name="GroupFooter1" Top="76.7" Width="718.2" Height="37.8" Visible="false" CanShrink="true" BeforePrintEvent="GroupFooter1_BeforePrint">
+        <TextObject Name="Text8" Left="396.9" Top="9.45" Width="94.5" Height="18.9" Text="A:[Total]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+      </GroupFooterBand>
+    </GroupHeaderBand>
+    <ColumnFooterBand Name="ColumnFooter1" Top="118.5" Width="718.2" Height="18.9" CanShrink="true">
+      <TextObject Name="Text10" Left="-9.45" Width="500.85" Height="18.9" Fill.Color="WhiteSmoke" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text9" Left="396.9" Width="94.5" Height="18.9" Border.Lines="All" Border.Color="DarkGray" Text="[Totals]" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+    </ColumnFooterBand>
+  </ReportPage>
+</Report>

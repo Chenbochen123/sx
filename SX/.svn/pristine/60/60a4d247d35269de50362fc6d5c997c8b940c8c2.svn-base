@@ -1,0 +1,936 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text;
+using System.Threading;
+using System.IO;
+
+public partial class Manager_Equipment_SparePart_SparePartRecord : Mesnac.Web.UI.Page
+{
+    BasEquipManager baseEquipManager = new BasEquipManager();
+    protected Eqm_bjtpcdManager bjTypeManager = new Eqm_bjtpcdManager();
+    protected SysCodeManager sysCodeManager = new SysCodeManager();
+    protected Pmt_equipclassManager equipClassManager = new Pmt_equipclassManager();
+    protected Pmt_equipManager equipManager = new Pmt_equipManager();
+    protected Ppt_pmpartsManager equipTypeManager = new Ppt_pmpartsManager();
+    protected Eqm_MpParamManager typeMainManager = new Eqm_MpParamManager();
+    protected Eqm_pmspareManager manager = new Eqm_pmspareManager();
+    protected SYS_USERManager userManager = new SYS_USERManager();
+    protected JCZL_WorkShopManager workshopManager = new JCZL_WorkShopManager();
+    protected Eqm_MainStandManager standManager = new Eqm_MainStandManager();
+    protected Eqm_MainDailyManager dailyManager = new Eqm_MainDailyManager();
+    protected Eqm_bjStockManager stockManager = new Eqm_bjStockManager();
+    protected Eqm_bjsparecdManager bjManager = new Eqm_bjsparecdManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+
+            bindList();
+            bindWorkShop();
+            //bindEquipType();
+            bindEquip();
+            bindMaintainers();
+
+            this.winSave.Hidden = true;
+        }
+    }
+
+
+    #region 初始化控件
+    private void bindWorkShop()
+    {
+        cbxWorkShopQuery.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<JCZL_WorkShop> list = workshopManager.GetListByWhereAndOrder(where, JCZL_WorkShop._.WorkShop_Code.Asc);
+        this.storeWorkShopQuery.DataSource = list;
+        this.storeWorkShopQuery.DataBind();
+    }
+    private void bindEquip()
+    {
+        cbxEquip.Clear();
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhereAndOrder(where, Pmt_equip._.Equip_code.Asc);
+        this.storeEquip.DataSource = list;
+        this.storeEquip.DataBind();
+        this.storeEquipQuery.DataSource = list;
+        this.storeEquipQuery.DataBind();
+    }
+
+    private void bindMaintainers()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<SYS_USER> list = userManager.GetListByWhere(where);
+        foreach (SYS_USER user in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(user.Real_name, user.USER_ID);
+            cbxMaintainers.Items.Add(item);
+            cbxMaintainersUse.Items.Add(item);
+        }
+    }
+
+    private void changeBJ_code()
+    {
+        string bjCode = txtBJ_codeAdd.Text;//备件编码
+
+        EntityArrayList<Eqm_bjsparecd> listBJ = bjManager.GetListByWhere(Eqm_bjsparecd._.BJ_code == bjCode);
+        if (listBJ.Count > 0)
+        {
+            txtBJ_NameAdd.Text = listBJ[0].BJ_name;
+            txtBJ_specTypeAdd.Text = listBJ[0].BJ_specType;
+            hidden_BJ_tpCode.Text = listBJ[0].BJ_tpcode;
+            if(hideMode.Text != "Edit")
+            {
+                txtBJ_Price.Text = listBJ[0].Plan_price.ToString();
+                txtPos_name.Text = listBJ[0].Pos_code;
+            }
+        }
+        if(!string.IsNullOrEmpty(cbxBatch_Code.Text))
+        {
+            EntityArrayList<Eqm_bjStock> list = stockManager.GetListByWhereAndOrder(Eqm_bjStock._.BJ_code == bjCode & Eqm_bjStock._.Batch_Code == cbxBatch_Code.Text, Eqm_bjStock._.BJ_code.Asc);
+            if (list.Count > 0)
+            {
+                lblPrice.Text = list[0].Total_Price.ToString();
+                lblStorage.Text = list[0].Stock_num.ToString();
+                lblPriceNew.Text = list[0].Total_Price.ToString();
+                lblStorageNew.Text = list[0].Stock_num.ToString();
+            }
+        }
+        else
+        {
+            lblPrice.Text = "0";
+            lblStorage.Text = "0";
+            lblPriceNew.Text = "0";
+            lblStorageNew.Text = "0";
+        }
+    }
+    private void changeNumPrice()
+    {
+        if(!string.IsNullOrEmpty(txtBJ_Num.Text) && !string.IsNullOrEmpty(txtBJ_Price.Text))
+        {
+            //if (this.hideMode.Text != "Edit")
+            //{
+                lblPriceNew.Text = (Convert.ToDecimal(lblPrice.Text) + (Convert.ToDecimal(txtBJ_Num.Text) * Convert.ToDecimal(txtBJ_Price.Text)) * Convert.ToDecimal(hidden_flag.Text)).ToString();
+                lblStorageNew.Text = (Convert.ToDecimal(txtBJ_Num.Text) * Convert.ToDecimal(hidden_flag.Text) + (Convert.ToDecimal(lblStorage.Text))).ToString();
+            //}
+            txtTotal_Price.Text = (Convert.ToDecimal(txtBJ_Num.Text) * Convert.ToDecimal(txtBJ_Price.Text)).ToString();
+        }
+    }
+    private void changeStock_date()
+    {
+        if(txtStock_date.SelectedDate != null && txtStock_date.SelectedDate != DateTime.MinValue)
+        {
+            if (hideMode.Text == "StoreOut")
+            {
+                cbxBatch_Code.Clear();
+                EntityArrayList<Eqm_pmspare> list = manager.GetListByWhereAndOrder(Eqm_pmspare._.Stock_date == txtStock_date.SelectedDate.ToString("yyyy-MM-dd") & Eqm_pmspare._.Bus_class == "A", Eqm_pmspare._.Batch_Code.Asc);
+                if (list.Count > 0)
+                {
+                    storeBatch_Code.DataSource = list;
+                    storeBatch_Code.DataBind();
+                }
+            }
+        }
+    }
+    private void changeBatch_Code()
+    {
+        if (txtStock_date.SelectedDate != null && txtStock_date.SelectedDate != DateTime.MinValue)
+        {
+            if (hideMode.Text == "StoreOut")
+            {
+                EntityArrayList<Eqm_pmspare> list = manager.GetListByWhereAndOrder(Eqm_pmspare._.Stock_date == txtStock_date.SelectedDate.ToString("yyyy-MM-dd") & Eqm_pmspare._.Bus_class == "A" & Eqm_pmspare._.Batch_Code == cbxBatch_Code.Text, Eqm_pmspare._.Batch_Code.Asc);
+                if (list.Count > 0)
+                {
+                    txtBJ_codeAdd.Text = list[0].BJ_code;
+                }
+            }
+        }
+    }
+
+
+
+    #endregion
+
+    #region 树
+    /// <summary>
+    /// 初始化机台列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        treeEquip.GetRootNode().RemoveAll();
+        treeEquip.GetRootNode().AppendChild(getTreeNodeByDelLevel());
+    }
+
+    /// <summary>
+    /// 获取机台树的算法
+    /// </summary>
+    /// <param name="dep_num"></param>
+    /// <returns></returns>
+    private Node getTreeNodeByDelLevel()
+    {
+        Node node = new Node();
+        node.NodeID = "0";
+        node.Text = "全部";
+        node.Expanded = true;
+        Dictionary<string, string> depChildFristList = new Dictionary<string, string>();
+        var query = bjTypeManager.GetListByWhereAndOrder(Eqm_bjtpcd._.BJ_tpcode.Length == 2, Eqm_bjtpcd._.BJ_tpcode.Asc);
+        foreach (var info in query)
+        {
+            Node childNode = new Node();
+            childNode.NodeID = info.BJ_tpcode;
+            childNode.Text = info.BJ_tpname;
+            childNode.Expanded = false;
+            var child = bjTypeManager.GetListByWhereAndOrder(Eqm_bjtpcd._.BJ_ParentCode == info.BJ_tpcode & Eqm_bjtpcd._.BJ_tpcode.Length > 2, Eqm_bjtpcd._.BJ_tpcode.Asc);
+            foreach (var item in child)
+            {
+                Node nodeLeaf = new Node();
+                nodeLeaf.Text = item.BJ_tpname;
+                nodeLeaf.Qtip = item.BJ_tpcode;
+                nodeLeaf.Leaf = true;
+                childNode.Children.Add(nodeLeaf);
+            }
+            node.Children.Add(childNode);
+        }
+        return node;
+    }
+    #endregion
+
+
+    /// <summary>
+    /// 相应点击机台树事件
+    /// </summary>
+    /// <param name="group"></param>
+    [DirectMethod]
+    public void LoadGridData(string group)
+    {
+        //判断当前机台当前时间是否设置班组信息
+        //hidden_parent_num.Value = group;
+        hidden_equip_code.Text = group;
+        this.store.DataSource = getList(group);
+        this.store.DataBind();
+
+
+    }
+
+    private DataSet getList(string BJ_Code)
+    {
+
+        return GetDataByParas(BJ_Code);
+    }
+
+
+    public System.Data.DataSet GetDataByParas(string BJ_tpCode)
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"SELECT T.Dep_Code,T.Serial_Id,T.stock_date,T.Bus_class,T1.Fac_Name,T.Batch_Code,T.stock_date,T.BJ_code,T.BJ_Name,T.BJ_specType,T.BJ_Num,T.BJ_Price,T.Total_Price,case T.Bus_class when 'A' then '入库' else '出库' end Bus_className,T.Used_name,
+                        T.Pos_name,T.K3_stockPlace,T.planUser
+                        FROM Eqm_pmspare T
+                        LEFT JOIN JCZL_SubFac T1 ON T.Dep_Code = T1.Dep_Code");
+        sb.AppendLine("WHERE 1=1");
+        if (!string.IsNullOrEmpty(BJ_tpCode))
+            sb.AppendLine("AND T.BJ_tpCode='" + BJ_tpCode + "'");
+        if (dStartDate.SelectedDate!=DateTime.MinValue)
+            sb.AppendLine("AND T.stock_date>='" + dStartDate.SelectedDate + "'");
+        if (dEndDate.SelectedDate != DateTime.MinValue)
+            sb.AppendLine("AND T.stock_date<='" + dEndDate.SelectedDate + "'");
+        if (!string.IsNullOrEmpty(cbxBJState.Text))
+            sb.AppendLine("AND T.Bus_class='" + cbxBJState.SelectedItem.Value + "'");
+        if (!string.IsNullOrEmpty(txtBJ_code.Text))
+            sb.AppendLine("AND T.BJ_code='" + txtBJ_code.Text + "'");
+        if (!string.IsNullOrEmpty(cbxEquipQuery.Text))
+            sb.AppendLine("AND T.Equip_Code='" + cbxEquipQuery.SelectedItem.Value + "'");
+        #endregion
+
+        NBear.Data.CustomSqlSection css = manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+
+
+    private void bindList()
+    {
+        this.store.DataSource = getList(hidden_equip_code.Text);
+        this.store.DataBind();
+    }
+
+    protected string GetMaxPlanID()
+    {
+        string planID = DateTime.Now.Date.ToString("yyyyMMdd") +"-"+ "0001";
+        DataSet ds = dailyManager.GetBySql("select max(Batch_Code) Batch_Code from Eqm_pmspare").ToDataSet();
+        if (ds.Tables.Count > 0)
+        {
+            if (ds.Tables[0].Rows.Count > 0)
+            {
+                planID = ds.Tables[0].Rows[0]["Batch_Code"].ToString();
+                if (planID.Substring(0, 8) == DateTime.Now.Date.ToString("yyyyMMdd"))
+                {
+                    planID = planID.Substring(0, 9) + (Convert.ToInt32(planID.Substring(9, 4)) + 1).ToString().PadLeft(4, '0');
+                }
+                else
+                {
+                    planID = DateTime.Now.Date.ToString("yyyyMMdd") + "-" + "0001";
+                }
+            }
+        }
+        return planID;
+    }
+
+    #region 按钮事件响应
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        bindList();
+    }
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = getList(hidden_equip_code.Text);
+        //huiw,2013-10-28添加，判断不为空时才导出excel
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查询出数据！").Show();
+        }
+        else
+        {
+            for (int i = 0; i < ds.Tables[0].Columns.Count; i++)
+            {
+                bool isshow = false;
+                DataColumn dc = ds.Tables[0].Columns[i];
+                foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+                {
+                    if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                    {
+                        dc.ColumnName = cb.Text;
+                        isshow = true;
+                        break;
+                    }
+                }
+                if (!isshow)
+                {
+                    ds.Tables[0].Columns.Remove(dc.ColumnName);
+                    i--;
+                }
+            }
+            new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "备件出入库记录导出");
+        }
+    }
+    protected void btnStoreIn_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "StoreIn";
+        hidden_flag.Text = "1";
+        txtStock_date.SetValue(DateTime.Now.Date);
+        cbxBus_class.SetValue("A");
+        cbxBatch_Code.Text = "";
+        txtBJ_codeAdd.Text = "";
+        txtBJ_specTypeAdd.Text = "";
+        txtBJ_NameAdd.Text = "";
+        lblStorage.Text = "0";
+        lblStorageNew.Text = "0";
+        lblPrice.Text = "0";
+        lblPriceNew.Text = "0";
+        txtBJ_Num.Text = "0";
+        txtBJ_Price.Text = "0";
+        txtBJ_ratio.Text = "0";
+        txtTotal_Price.Text = "0";
+        cbxMaintainers.SetValue(null);
+        txtPos_name.Text = "";
+        txtplanUser.Text = "";
+        cbxEquip.SetValue(null);
+        txtMp_Code.Text = "";
+        cbxMaintainersUse.SetValue(null);
+        cbxClass.SetValue(null);
+        cbxOutType.SetValue(null);
+        cbxBJ_type.SetValue(null);
+        txtmemo_note.Text = "";
+        txtPos_name.Text = "";
+
+        cbxEquip.Visible = false;
+        txtMp_Code.Visible = false;
+        cbxMaintainersUse.Visible = false;
+        cbxClass.Visible = false;
+        cbxOutType.Visible = false;
+        cbxBJ_type.Visible = false;
+        txtmemo_note.Visible = false;
+
+
+        this.winSave.Hidden = false;
+    }
+    protected void btnStoreOut_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "StoreOut";
+
+        hidden_flag.Text = "-1";
+        txtStock_date.SetValue(DateTime.Now.Date);
+        cbxBus_class.SetValue("B");
+        cbxBatch_Code.Text = "";
+        txtBJ_codeAdd.Text = "";
+        txtBJ_specTypeAdd.Text = "";
+        txtBJ_NameAdd.Text = "";
+        lblStorage.Text = "0";
+        lblStorageNew.Text = "0";
+        lblPrice.Text = "0";
+        lblPriceNew.Text = "0";
+        txtBJ_Num.Text = "0";
+        txtBJ_Price.Text = "0";
+        txtBJ_ratio.Text = "0";
+        txtTotal_Price.Text = "0";
+        cbxMaintainers.SetValue(null);
+        txtPos_name.Text = "";
+        txtplanUser.Text = "";
+        cbxEquip.SetValue(null);
+        txtMp_Code.Text = "";
+        cbxMaintainersUse.SetValue(null);
+        cbxClass.SetValue(null);
+        cbxOutType.SetValue(null);
+        cbxBJ_type.SetValue(null);
+        txtmemo_note.Text = "";
+        txtPos_name.Text = "";
+
+        cbxEquip.Visible = true;
+        txtMp_Code.Visible = true;
+        cbxMaintainersUse.Visible = true;
+        cbxClass.Visible = true;
+        cbxOutType.Visible = true;
+        cbxBJ_type.Visible = true;
+        txtmemo_note.Visible = true;
+
+
+        this.winSave.Hidden = false;
+    }
+
+
+
+
+
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        if (this.hideMode.Text == "StoreIn")//入库添加
+        {
+            Eqm_pmspare record = new Eqm_pmspare();
+            record.Batch_Code = GetMaxPlanID();
+            record.Dep_Code = "01";
+            record.Serial_Id = 1;
+            record.Bus_class = "A";
+            record.Stock_date = txtStock_date.SelectedDate.ToString("yyyy-MM-dd");
+            record.Up_dwn_mark = 1;
+            record.BJ_code = txtBJ_codeAdd.Text;
+            record.BJ_specType = txtBJ_specTypeAdd.Text;
+            record.BJ_Name = txtBJ_NameAdd.Text;
+            record.BJ_Num = Convert.ToDecimal(txtBJ_Num.Text);
+            record.BJ_Price = Convert.ToDecimal(txtBJ_Price.Text);
+            if (!string.IsNullOrEmpty(txtBJ_ratio.Text))
+            {
+                record.BJ_ratio = Convert.ToDecimal(txtBJ_ratio.Text);
+            }
+            record.Total_Price = Convert.ToDecimal(txtTotal_Price.Text);
+            if (!string.IsNullOrEmpty(cbxMaintainers.Text))
+            {
+                record.Handle_name = cbxMaintainers.SelectedItem.Value.ToString();
+            }
+            record.Pos_name = txtPos_name.Text;
+            record.PlanUser = txtplanUser.Text;
+            record.BJ_tpCode = hidden_BJ_tpCode.Text;
+
+
+            Eqm_bjStock stockNew = new Eqm_bjStock();
+            stockNew.Batch_Code = record.Batch_Code;
+            stockNew.BJ_code = record.BJ_code;
+            stockNew.BJ_Name = record.BJ_Name;
+            stockNew.BJ_specType = record.BJ_specType;
+            stockNew.Dep_Code = record.Dep_Code;
+            stockNew.Total_Price = record.Total_Price;
+            stockNew.Stock_num = record.BJ_Num;
+            stockNew.BJ_tpCode = "";
+            stockNew.Pos_Name = record.Pos_name;
+            stockNew.In_date = DateTime.Now;
+            stockNew.Bjprice = record.BJ_Price;
+            stockNew.BJ_tpCode = record.BJ_tpCode;
+            stockNew.Planuser = record.PlanUser;
+            stockManager.Insert(stockNew);
+
+            if (manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("备件入库添加", "添加批次号：" + record.Batch_Code);
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else if (this.hideMode.Text == "StoreOut")
+        {
+            if(string.IsNullOrEmpty(cbxBatch_Code.Text))
+            {
+                X.Msg.Alert("提示", "请选择入库批次号！").Show();
+                return;
+            }
+            Eqm_pmspare record = new Eqm_pmspare();
+            record.Batch_Code = cbxBatch_Code.Text;
+            record.Dep_Code = "01";
+            DataSet ds = manager.GetBySql("select max(Serial_Id) Serial_Id from Eqm_pmspare where Batch_Code = '" + cbxBatch_Code.Text + "'").ToDataSet();
+            if(ds.Tables.Count>0)
+            {
+                if(ds.Tables[0].Rows.Count>0)
+                {
+                    record.Serial_Id = Convert.ToInt32(ds.Tables[0].Rows[0]["Serial_Id"]) + 1;
+                }
+                else
+                {
+                    record.Serial_Id = 1;
+                }
+            }
+            else
+            {
+                record.Serial_Id = 1;
+            }
+            record.Bus_class = "B";
+            record.Up_dwn_mark = -1;
+            record.Stock_date = txtStock_date.SelectedDate.ToString("yyyy-MM-dd");
+            record.BJ_code = txtBJ_codeAdd.Text;
+            record.BJ_specType = txtBJ_specTypeAdd.Text;
+            record.BJ_Name = txtBJ_NameAdd.Text;
+            record.BJ_Num = Convert.ToDecimal(txtBJ_Num.Text);
+            record.BJ_Price = Convert.ToDecimal(txtBJ_Price.Text);
+            if (!string.IsNullOrEmpty(txtBJ_ratio.Text))
+            {
+                record.BJ_ratio = Convert.ToDecimal(txtBJ_ratio.Text);
+            }
+            record.Total_Price = Convert.ToDecimal(txtTotal_Price.Text);
+            if (!string.IsNullOrEmpty(cbxMaintainers.Text))
+            {
+                record.Handle_name = cbxMaintainers.SelectedItem.Value.ToString();
+            }
+            record.Pos_name = txtPos_name.Text;
+            record.PlanUser = txtplanUser.Text;
+            record.BJ_tpCode = hidden_BJ_tpCode.Text;
+            if (!string.IsNullOrEmpty(cbxEquip.Text))
+            {
+                record.Equip_Code = cbxEquip.SelectedItem.Value.ToString();
+            }
+            record.Mp_Code = txtMp_Code.Text;
+            if (!string.IsNullOrEmpty(cbxMaintainersUse.Text))
+            {
+                record.Used_name = cbxMaintainersUse.Text;
+            }
+            record.ShiftClass = cbxClass.Text;
+            record.Out_type = cbxOutType.Text;
+            record.BJ_type = cbxBJ_type.Text;
+            record.Memo_note = txtmemo_note.Text;
+
+            EntityArrayList<Eqm_bjStock> list = stockManager.GetListByWhereAndOrder(Eqm_bjStock._.BJ_code == txtBJ_codeAdd.Text & Eqm_bjStock._.Batch_Code == cbxBatch_Code.Text, Eqm_bjStock._.BJ_code.Asc);
+            if (list.Count > 0)
+            {
+                if (Convert.ToDecimal(txtBJ_Num.Text) >= 0 && Convert.ToDecimal(txtTotal_Price.Text) >= 0)
+                {
+                    list[0].Stock_num = Convert.ToDecimal(txtBJ_Num.Text);
+                    list[0].Total_Price = Convert.ToDecimal(txtTotal_Price.Text);
+                    stockManager.Update(list[0]);
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "库存不允许小于0！").Show();
+                    return;
+                }
+            }
+            else
+            {
+                X.Msg.Alert("提示", "无此批次的库存，不允许出库！").Show();
+                return;
+            }
+            if (manager.Insert(record) >= 0)
+            {
+                this.AppendWebLog("备件出库添加", "添加批次号：" + record.Batch_Code);
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改//修改有问题  5个主键
+        {
+            string busClass = "";
+            if(hidden_flag.Text == "1")
+            {
+                busClass = "A";
+            }
+            else
+            {
+                busClass = "B";
+            }
+            EntityArrayList<Eqm_pmspare> listEdit = manager.GetListByWhere(Eqm_pmspare._.Batch_Code == hideObjID.Text & Eqm_pmspare._.BJ_code == txtBJ_codeAdd.Text & Eqm_pmspare._.Stock_date == txtStock_date.SelectedDate.ToString("yyyy-MM-dd") & Eqm_pmspare._.Dep_Code == "01" & Eqm_pmspare._.Bus_class == busClass & Eqm_pmspare._.Serial_Id == Convert.ToInt32(hidden_Serial_Id.Text));
+            if (listEdit.Count == 0)
+            {
+                X.Msg.Alert("提示", "无此信息，修改失败！").Show();
+                return;
+            }
+            Eqm_pmspare record = listEdit[0];
+            decimal oldNum = Convert.ToDecimal(record.BJ_Num);
+            decimal oldPrice = Convert.ToDecimal(record.Total_Price);
+            if (record != null)
+            {
+                //record.Stock_date = txtStock_date.SelectedDate.ToString("yyyy-MM-dd");
+                record.BJ_code = txtBJ_codeAdd.Text;
+                record.BJ_specType = txtBJ_specTypeAdd.Text;
+                record.BJ_Name = txtBJ_NameAdd.Text;
+                record.BJ_Num = Convert.ToDecimal(txtBJ_Num.Text);
+                record.BJ_Price = Convert.ToDecimal(txtBJ_Price.Text);
+                if (!string.IsNullOrEmpty(txtBJ_ratio.Text))
+                {
+                    record.BJ_ratio = Convert.ToDecimal(txtBJ_ratio.Text);
+                }
+                record.Total_Price = Convert.ToDecimal(txtTotal_Price.Text);
+                if (!string.IsNullOrEmpty(cbxMaintainers.Text))
+                {
+                    record.Handle_name = cbxMaintainers.SelectedItem.Value.ToString();
+                }
+                record.Pos_name = txtPos_name.Text;
+                record.PlanUser = txtplanUser.Text;
+                if (record.Bus_class == "B")
+                {
+                    if (!string.IsNullOrEmpty(cbxEquip.Text))
+                    {
+                        record.Equip_Code = cbxEquip.SelectedItem.Value.ToString();
+                    }
+                    record.Mp_Code = txtMp_Code.Text;
+                    if (!string.IsNullOrEmpty(cbxMaintainersUse.Text))
+                    {
+                        record.Used_name = cbxMaintainersUse.Text;
+                    }
+                    record.ShiftClass = cbxClass.Text;
+                    record.Out_type = cbxOutType.Text;
+                    record.BJ_type = cbxBJ_type.Text;
+                    record.Memo_note = txtmemo_note.Text;
+                }
+
+                EntityArrayList<Eqm_bjStock> list = stockManager.GetListByWhereAndOrder(Eqm_bjStock._.BJ_code == txtBJ_codeAdd.Text & Eqm_bjStock._.Batch_Code == cbxBatch_Code.Text, Eqm_bjStock._.BJ_code.Asc);
+                if (list.Count > 0)
+                {
+                    decimal newStockNum =  Convert.ToDecimal(list[0].Stock_num) + Convert.ToDecimal(txtBJ_Num.Text) - oldNum;
+                    decimal newTotalPrice = Convert.ToDecimal(list[0].Total_Price) + Convert.ToDecimal(txtTotal_Price.Text) - oldNum;
+                    if (newStockNum >= 0 && newTotalPrice >= 0)
+                    {
+                        list[0].Stock_num = newStockNum;
+                        list[0].Total_Price = newTotalPrice;
+                        stockManager.Update(list[0]);
+                    }
+                    else
+                    {
+                        X.Msg.Alert("提示", "库存不允许小于0！").Show();
+                    }
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "无此批次的库存，不允许出库！").Show();
+                    return;
+                }
+                if (manager.Update(record) >= 0)
+                {
+                    this.AppendWebLog("备件出入库修改", "修改批次号：" + record.Batch_Code);
+                    winSave.Hidden = true;
+                    bindList();
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+        }
+        
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    #endregion
+
+    #region 下拉列表事件响应
+    [DirectMethod]
+    protected void txtBJ_codeAdd_TextChanged(object sender, EventArgs e)
+    {
+        changeBJ_code();
+    }
+    [DirectMethod]
+    protected void txtNumPrice_TextChanged(object sender, EventArgs e)
+    {
+        changeNumPrice();
+    }
+    [DirectMethod]
+    protected void txtStock_date_DateChanged(object sender, EventArgs e)
+    {
+        changeStock_date();
+    }
+    [DirectMethod]
+    protected void cbxBatch_Code_SelectChanged(object sender, EventArgs e)
+    {
+        changeBatch_Code();
+    }
+    #endregion
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Edit(string ObjID, string Dep_Code, string Serial_Id, string Bus_class, string stock_date)
+    {
+        //hidden_type.Text = "2";
+        EntityArrayList<Eqm_pmspare> list = manager.GetListByWhere(Eqm_pmspare._.Batch_Code == ObjID & Eqm_pmspare._.Dep_Code == Dep_Code & Eqm_pmspare._.Serial_Id == Serial_Id & Eqm_pmspare._.Bus_class == Bus_class & Eqm_pmspare._.Stock_date == stock_date);
+        if(list.Count==0)
+        {
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+            return;
+        }
+        Eqm_pmspare record = list[0];
+
+
+        if (record != null)
+        {
+            if(record.Bus_class == "A")//入库
+            {
+                hidden_flag.Text = "1";
+                cbxBatch_Code.Text = record.Batch_Code;
+                txtStock_date.SelectedDate = Convert.ToDateTime(record.Stock_date);
+                cbxBus_class.Select(0);
+                txtBJ_specTypeAdd.Text = record.BJ_specType;
+                txtBJ_NameAdd.Text = record.BJ_Name;
+                txtBJ_Num.Text = record.BJ_Num.ToString();
+                txtBJ_Price.Text = record.BJ_Price.ToString();
+                txtBJ_ratio.Text = record.BJ_ratio.ToString();
+                txtTotal_Price.Text = record.Total_Price.ToString();
+                cbxMaintainers.SetValue(record.Handle_name);
+                txtPos_name.Text = record.Pos_name;
+                txtplanUser.Text = record.PlanUser;
+                cbxEquip.SetValue(record.Equip_Code);
+                txtMp_Code.Text = record.Mp_Code;
+                cbxMaintainersUse.SetValue(record.Used_name);
+                cbxClass.SetValue(record.ShiftClass);
+                cbxOutType.SetValue(record.Out_type);
+                cbxBJ_type.SetValue(record.BJ_type);
+                txtmemo_note.Text = record.Memo_note;
+                hidden_BJ_tpCode.Text = record.BJ_tpCode;
+                hidden_Serial_Id.Text = record.Serial_Id.ToString();
+                txtBJ_codeAdd.Text = record.BJ_code;
+
+                cbxEquip.Visible = false;
+                txtMp_Code.Visible = false;
+                cbxMaintainersUse.Visible = false;
+                cbxClass.Visible = false;
+                cbxOutType.Visible = false;
+                cbxBJ_type.Visible = false;
+                txtmemo_note.Visible = false;
+
+            }
+            else//出库
+            {
+                hidden_flag.Text = "-1";
+                cbxBatch_Code.Text = record.Batch_Code;
+                txtStock_date.SelectedDate = Convert.ToDateTime(record.Stock_date);
+                cbxBus_class.Select(1);
+                txtBJ_specTypeAdd.Text = record.BJ_specType;
+                txtBJ_NameAdd.Text = record.BJ_Name;
+                txtBJ_Num.Text = record.BJ_Num.ToString();
+                txtBJ_Price.Text = record.BJ_Price.ToString();
+                txtBJ_ratio.Text = record.BJ_ratio.ToString();
+                txtTotal_Price.Text = record.Total_Price.ToString();
+                cbxMaintainers.SetValue(record.Handle_name);
+                txtPos_name.Text = record.Pos_name;
+                txtplanUser.Text = record.PlanUser;
+                cbxEquip.SetValue(record.Equip_Code);
+                txtMp_Code.Text = record.Mp_Code;
+                cbxMaintainersUse.SetValue(record.Used_name);
+                cbxClass.SetValue(record.ShiftClass);
+                cbxOutType.SetValue(record.Out_type);
+                cbxBJ_type.SetValue(record.BJ_type);
+                txtmemo_note.Text = record.Memo_note;
+                hidden_BJ_tpCode.Text = record.BJ_tpCode;
+                hidden_Serial_Id.Text = record.Serial_Id.ToString();
+                txtBJ_codeAdd.Text = record.BJ_code;
+
+                cbxEquip.Visible = true;
+                txtMp_Code.Visible = true;
+                cbxMaintainersUse.Visible = true;
+                cbxClass.Visible = true;
+                cbxOutType.Visible = true;
+                cbxBJ_type.Visible = true;
+                txtmemo_note.Visible = false;
+
+            }
+            hideObjID.Text = ObjID;
+            this.hideMode.Text = "Edit";
+            ////cbxEquipClass.DirectChange += this.cbxEquipClass_SelectChanged;
+            ////cbxEquipClass.DirectEvents.Change.HandlerIsNotEmpty = this.cbxEquipClass_SelectChanged;
+            //cbxEquipClass.DirectSelect += this.cbxEquipClass_SelectChanged;
+            ////cbxEquipClass.DirectChange += new System.EventHandler(this.cbxEquipClass_SelectChanged);
+            this.winSave.Hidden = false;
+        }
+        else
+        {
+            bindList();
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+        }
+
+    }
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        EntityArrayList<Eqm_pmspare> list = manager.GetListByWhere(Eqm_pmspare._.Batch_Code == ObjID);
+        if (list.Count == 0)
+        {
+            X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+            return;
+        }
+        Eqm_pmspare record = list[0];
+
+        manager.DeleteByWhere(Eqm_pmspare._.Batch_Code == ObjID);
+        this.AppendWebLog("备件出入库记录删除", "删除批次号：" + record.Batch_Code);
+
+        bindList();
+        X.Msg.Alert("提示", "删除完成！").Show();
+    }
+
+
+    [DirectMethod]
+    public void btnDownload_ClickEvent(object sender, DirectEventArgs args)
+    {
+        try
+        {
+            Response.Clear();
+            Response.AddHeader("Content-Disposition", "attachment;filename=备件入库导入模板.xls");
+            //Response.ContentEncoding = System.Text.Encoding.UTF8;
+            Response.ContentType = "application/ms-excel";
+            Response.WriteFile(Path.Combine(Request.PhysicalApplicationPath, "\\resources\\xls\\备件入库导入模板.xls"));
+            Response.Flush();
+            Response.End();
+        }
+        catch (Exception ex)
+        {
+            X.Msg.Alert("系统错误", "下载失败：" + ex.Message);
+        }
+
+    }
+
+    //备件模板导入
+    public void UploadClickBill(object sender, DirectEventArgs e)
+    {
+        //var rowcount = 0;
+        //try
+        //{
+        //    //excel列头格式：单据编号 行号 工厂编号 库存地点编号 胎号 物料编号 物料描述 品级 生产日期 库龄 移动类型 扫描人 扫描时间
+        //    //Sheet名：Sheet1
+        //    var file = FileUploadField2.PostedFile.InputStream;
+        //    //var file = FileUploadField2.PostedFile.InputStream.ToString();
+        //    //Mesnac.Util.Excel.DataToFile dtf = new Mesnac.Util.Excel.DataToFile();
+        //    DataTable dt = Mesnac.Util.Excel.DataToFile.RenderFromExcel(file, "Sheet1");
+        //    string[] oldColName = { "备件代码",
+        //                            "入库数量",
+        //                            "规格型号",
+        //                            "标准单位",
+        //                            "备件分类",
+        //                            "最高储备定额",
+        //                            "最低储备定额",
+        //                            "存放货位",
+        //                            "计划价格",
+        //                            "ABC分类",
+        //                            "备注"};
+        //    string[] newColName = { "BJ_code",
+        //                            "BJ_name",
+        //                            "BJ_specType" ,
+        //                            "Unit_name",
+        //                            "BJ_tpname",
+        //                            "high_reserve",
+        //                            "low_reserve",
+        //                            "Pos_code",
+        //                            "Plan_price",
+        //                            "BJ_Class",
+        //                            "memo"};
+        //    rowcount = dt.Rows.Count;
+        //    if (dt.Rows.Count == 0)
+        //    {
+        //        X.Msg.Show(new MessageBoxConfig { Title = "提示", Message = "要导入的文件中无数据：", Buttons = MessageBox.Button.OK, Icon = MessageBox.Icon.WARNING });
+        //        this.Progress2.Reset();
+        //        this.Progress2.UpdateProgress(0, "要导入的文件中无数据");
+        //        return;
+        //    }
+        //    bool existsCol = true;
+        //    string msg = "";
+        //    //判断文件列是否存在
+        //    for (int i = 0; i < oldColName.Length; i++)
+        //    {
+        //        if (!dt.Columns.Contains(oldColName[i]))
+        //        {
+        //            existsCol = false;
+        //            msg += oldColName[i] + "<br/>";
+        //        }
+        //        else
+        //        {
+        //            dt.Columns[oldColName[i]].ColumnName = newColName[i];
+        //        }
+        //    }
+        //    if (!existsCol)
+        //    {
+        //        X.Msg.Show(new MessageBoxConfig { Title = "提示", Message = "要导入的文件中缺少列：<br/>" + msg, Buttons = MessageBox.Button.OK, Icon = MessageBox.Icon.WARNING });
+        //        this.Progress2.Reset();
+        //        this.Progress2.UpdateProgress(0, "要导入的文件中缺少相关列");
+        //        return;
+        //    }
+
+        //    if (dt.Rows.Count > 0)
+        //    {
+
+        //        foreach (DataRow dr in dt.Rows)
+        //        {
+        //            //Eqm_bjsparecd record = new Eqm_bjsparecd();
+        //            //Eqm_bjtpcd record1 = new Eqm_bjtpcd();
+        //            //EntityArrayList<Eqm_bjtpcd> list = bjTypeManager.GetListByWhere(Eqm_bjtpcd._.BJ_tpname == dr["BJ_tpname"].ToString());
+        //            //if (list.Count == 0)
+        //            //{
+        //            //    X.Msg.Alert("提示", "不存在该备件分类，请先添加！").Show(); return;
+        //            //}
+        //            //EntityArrayList<Eqm_bjsparecd> list1 = Eqm_bjsparecdManager.GetListByWhere(Eqm_bjsparecd._.BJ_code == dr["BJ_code"].ToString());
+        //            //if (list1.Count > 0)
+        //            //{
+        //            //    X.Msg.Alert("提示", "备件编码有重复，请检查！").Show(); return;
+        //            //}
+
+        //            //record.BJ_tpcode = list[0].BJ_tpcode;
+        //            //record.BJ_code = dr["BJ_code"].ToString();
+        //            //record.BJ_name = dr["BJ_name"].ToString();
+        //            //record.BJ_specType = dr["BJ_specType"].ToString();
+        //            //record.Unit_name = dr["Unit_name"].ToString();
+        //            //record.High_reserve = Convert.ToDecimal(dr["high_reserve"]);
+        //            //record.Low_reserve = Convert.ToDecimal(dr["low_reserve"]);
+        //            //record.Pos_code = dr["Pos_code"].ToString();
+        //            //record.Plan_price = Convert.ToDecimal(dr["Plan_price"]);
+        //            //record.BJ_Class = dr["BJ_Class"].ToString();
+        //            //record.Memo = dr["memo"].ToString();
+        //            //Eqm_bjsparecdManager.Insert(record);
+
+        //        }
+        //    }
+
+
+        //    this.Progress2.Reset();
+        //    this.Progress2.UpdateProgress(1, "已完成!");
+        //}
+        //catch (Exception ex)
+        //{
+        //    this.Progress2.Reset();
+        //    this.Progress2.UpdateProgress(1, "数据读取异常：" + ex.Message);
+        //}
+    }
+
+    #endregion
+}

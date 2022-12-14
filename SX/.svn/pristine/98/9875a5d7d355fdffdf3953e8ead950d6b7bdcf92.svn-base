@@ -1,0 +1,669 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="CheckRubberQualityCPK.aspx.cs" Inherits="Manager_RubberQuality_Manage_CheckRubberQualityCPK" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>检验数据曲线</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js" ></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/echarts.min.js"></script>
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/ecStat.js"></script>
+    <script type="text/javascript">
+        Ext.create("Ext.window.Window", {
+            id: "Manager_BasicInfo_CommonPage_QueryMaterial_Window",
+            hidden: true,
+            width: 370,
+            height: 470,
+            html: "<iframe src='../../BasicInfo/CommonPage/QueryMaterial.aspx?MajorTypeID=3,4,5' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "请选择物料",
+            modal: true
+        })
+
+        var Manager_BasicInfo_CommonPage_QueryMaterial_Request = function (record) {
+            App.txMaterialName.getTrigger(0).show();
+            App.hiddenMaterialCode.setValue(record.data.MaterialCode);
+            App.txMaterialName.setValue(record.data.MaterialName);
+        }
+        var QueryMaterialInfo = function (field, trigger, index) {
+            switch (index) {
+                case 0:
+                    field.getTrigger(0).hide();
+                    field.setValue('');
+                    App.hiddenMaterialCode.setValue('');
+                    field.getEl().down('input.x-form-text').setStyle('background', "white");
+                    break;
+                case 1:
+                    App.Manager_BasicInfo_CommonPage_QueryMaterial_Window.show();
+                    break;
+            }
+        }
+        var Fuzhi = function () {
+            App.direct.ChangeFuzhi({
+                success: function (result) { },
+
+                failure: function (errorMsg) { }
+            })
+        }
+
+        function TipsRenderer(tip, record) {
+            //debugger;
+            var ss = "日期：" + record.get('plandate').getFullYear()
+                + "-" + (record.get('plandate').getMonth() + 1)
+                + "-" + record.get('plandate').getDate() + '<br />';
+            ss = ss + "检验值：" + record.get('checkvalue') + '<br />';
+
+            tip.setTitle(ss);
+        }
+
+        function saveChart(btn) {
+            var url = '../../ReportCenter/SvgToImage.aspx';
+            Ext.MessageBox.confirm('提示', '确定将当前的曲线图导出为图片？', function (choice) {
+                if (choice == 'yes') {
+                    App.Chart1.save({
+                        type: 'image/png',
+                        url: url
+                    });
+                }
+            });
+        }
+
+        function fun(x, u, a) {
+            return (1 / Math.sqrt(2 * Math.PI) * a) * Math.exp(-1 * ((x - u) * (x - u)) / (2 * a * a));
+        }
+
+        var refreshChart = function () {
+            //debugger;
+            App.direct.chartMainBindData({
+                success: function (result) {
+                    var arr = result.split("@");
+                    //console.log(arr[0]);
+                    //console.log(arr[1]);
+                    //console.log(arr[2]);
+                    //console.log(arr[3]);
+                    //console.log(arr[4]);
+                    //console.log(arr[5]);
+                    //console.log("arr[6]:"+arr[6]);
+                    //debugger;
+                    
+                    var stand = JSON.parse(arr[5]); //部分数据
+
+                    var data = JSON.parse(arr[6]);  //完整数据
+
+                    //console.log("data:"+data);
+
+                    var std = {};
+
+                    std.value = ((arr[2] - 0) + (arr[3] - 0)) / 2;
+                    std.up = (arr[2] - 0);
+                    std.down = (arr[3] - 0);
+
+                    var numberData = data.map(Number);
+                    std.mean = ecStat.statistics.mean(numberData);
+                    std.max = ecStat.statistics.max(numberData);
+                    std.min = ecStat.statistics.min(numberData);
+                    std.stdev = Math.sqrt(ecStat.statistics.sampleVariance(numberData));
+                    std.T = arr[2] - arr[3];
+                    std.Ca = 2 * (std.mean - std.value) / std.T;
+                    std.Cp = std.T / 6 / std.stdev;
+                    //std.Cpk = std.Cp * (1 - Math.abs(std.Ca));
+                    std.Ppk = std.Cp * (1 - Math.abs(std.Ca));
+
+                    var stdNew = {};
+                    stdNew.value = ((arr[2] - 0) + (arr[3] - 0)) / 2;
+                    stdNew.up = (arr[2] - 0);
+                    stdNew.down = (arr[3] - 0);
+
+                    var numberData1 = stand.map(Number);
+                    stdNew.mean = ecStat.statistics.mean(numberData1);
+                    stdNew.max = ecStat.statistics.max(numberData1);
+                    stdNew.min = ecStat.statistics.min(numberData1);
+                    stdNew.stdev = Math.sqrt(ecStat.statistics.sampleVariance(numberData1));
+                    stdNew.T = arr[2] - arr[3];
+                    stdNew.Ca = 2 * (stdNew.mean - stdNew.value) / stdNew.T;
+                    stdNew.Cp = stdNew.T / 6 / stdNew.stdev;
+                    stdNew.Cpk = stdNew.Cp * (1 - Math.abs(stdNew.Ca));
+
+                    //var cpkData = [
+                    //    { col1: '总样本数', col2: data.length, col3: '组数', col4: 10, col5: '子组大小', col6: 5 },
+                    //    { col1: '平均值', col2: std.mean.toFixed(2), col3: '最大值', col4: std.max, col5: '最小值', col6: std.min },
+                    //    { col1: '标准值', col2: std.value, col3: '上限值', col4: arr[2], col5: '下限值', col6: arr[3] },
+                    //    { col1: '', col2: '', col3: '', col4: '', col5: '', col6: '' },
+                    //    { col1: '标准差', col2: std.stdev.toFixed(2), col3: '公差T', col4: std.T.toFixed(2), col5: '中心值U', col6: std.value },
+                    //    { col1: 'Ca', col2: std.Ca.toFixed(2), col3: 'Cp', col4: std.Cp.toFixed(2), col5: 'Cpk', col6: stdNew.Cpk.toFixed(2) },
+                    //    { col1: 'Ppk', col2: std.Ppk.toFixed(2), col3: '', col4: '', col5: '', col6: '' }
+                    //];
+
+                    var cpkData = [
+                        { col1: '总样本数', col2: data.length, col3: '组数', col4: 10, col5: '子组大小', col6: 5 },
+                        { col1: '平均值', col2: stdNew.mean.toFixed(2), col3: '最大值', col4: stdNew.max, col5: '最小值', col6: stdNew.min },
+                        { col1: '标准值', col2: stdNew.value.toFixed(2), col3: '上限值', col4: arr[2], col5: '下限值', col6: arr[3] },
+                        { col1: '', col2: '', col3: '', col4: '', col5: '', col6: '' },
+                        { col1: '标准差', col2: stdNew.stdev.toFixed(2), col3: '公差T', col4: stdNew.T.toFixed(2), col5: '中心值U', col6: stdNew.value.toFixed(2) },
+                        { col1: 'Ca', col2: stdNew.Ca.toFixed(2), col3: 'Cp', col4: stdNew.Cp.toFixed(2), col5: 'Cpk', col6: stdNew.Cpk.toFixed(2) },
+                        { col1: 'Ppk', col2: std.Ppk.toFixed(2), col3: '', col4: '', col5: '', col6: '' }
+                    ];
+
+                    var bins = ecStat.histogram(data);
+                    drawBar(bins, std);
+
+                    //console.log(bins);
+                    //debugger;
+                    App.storecpk.removeAll();
+                    App.storecpk.add(cpkData);
+
+                    //console.log(data);
+                    //console.log(std);
+                    DrawLine(data, std);
+
+                },
+                failure: function (errorMsg) {
+                    Ext.Msg.alert("提示", errorMsg);
+                    return false;
+                },
+                eventMask: {
+                    showMask: true
+                }
+            });
+            return false;
+        }
+
+        var divLineResize = function () {
+            var width = App.pnlLine.getWidth() - 10;
+            var height = App.pnlLine.getHeight();
+            $('#divLine').height(height);
+            $('#divLine').width(width);
+            resizechartline();
+        }
+
+        var divBarResize = function () {
+            var width = App.pnlBar.getWidth() - 10;
+            var height = App.pnlBar.getHeight();
+            $('#divBar').height(height);
+            $('#divBar').width(width);
+            resizechartbar();
+        }
+
+        var resizechartline = function () {
+            chartLine.resize();
+        }
+
+        var resizechartbar = function () {
+            chartBar.resize();
+        }
+
+        var optionLine = {
+            title: {
+                text: '样本数据',
+                x: 'left'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            toolbox: {
+                feature: {
+                    dataView: { show: false, readOnly: false },
+                    restore: { show: false },
+                    saveAsImage: { show: false }
+                }
+            },
+            grid: {
+                top: 35,
+                left: 50,
+                right: 140,
+                bottom: 35
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: []
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    max: function (value) {
+                        return Math.ceil(value.max);
+                    },
+                    min: function (value) {
+                        return Math.floor(value.min);
+                    }
+                }
+            ],
+            visualMap: {
+                y: 'center',
+                right: 0,
+                precision: 1,
+                pieces: [{
+                    gt: 0.0,
+                    lte: 50.0,
+                    color: '#f4c414'
+                }, {
+                    gt: 50.0,
+                    lte: 100.0,
+                    color: '#5191d1'
+                }, {
+                    gt: 150.0,
+                    color: '#d9534f'
+                }],
+                outOfRange: {
+                    color: '#999'
+                }
+            },
+            series: [{
+                name: '',
+                type: 'line',
+                data: [],
+                markLine: {
+                    silent: true,
+                    data: [
+                        { yAxis: null, lineStyle: { color: '#5191d1' } },
+                        { yAxis: null, lineStyle: { color: '#d9534f' } },
+                        { yAxis: null, lineStyle: { color: '#f4c414' } }
+                    ]
+                }
+            }]
+        };
+    </script>    
+</head>
+<body>
+    <form id="form1" runat="server">
+    <ext:ResourceManager runat="server" ID="ResourceManager1" />
+    <ext:Viewport runat="server" ID="Viewport1" Layout="BorderLayout">
+        <Items>
+            <ext:Hidden runat="server" ID="HiddenBeginDate" />
+            <ext:Hidden runat="server" ID="hiddenMaterialCode" />
+            <ext:Panel runat="server" ID="PanelNorth" Region="North" Layout="ColumnLayout">
+                <TopBar>
+                    <ext:Toolbar runat="server" ID="ToolbarNorth">
+                        <Items>
+                            <ext:Button runat="server" ID="ButtonNorthQuery" Icon="Magnifier" Text="查询">
+                                <%--<DirectEvents>
+                                    <Click OnEvent="ButtonNorthQuery_Click" Timeout="600000">
+                                        <EventMask ShowMask="true" />
+                                    </Click>
+                                </DirectEvents>--%>
+                                <Listeners>
+                                    <Click Handler="refreshChart(false); return false;" />
+                                </Listeners>
+                            </ext:Button>
+                            <ext:Button runat="server" ID="ButtonNorthExport" Icon="PageExcel" Text="导出">
+                                <DirectEvents>
+                                    <Click OnEvent="ButtonNorthExport_Click" IsUpload="true">
+                                        <ExtraParams>
+                                            <ext:Parameter Name="fields" Value="#{ModelCenter}.getFields()" Mode="Raw" />
+                                            <ext:Parameter Name="records" Value="#{StoreCenter}.getRecordsValues({ excludeId: true })"
+                                                Mode="Raw" />
+                                            <ext:Parameter Name="fieldsAVG" Value="#{ModelAvg}.getFields()" Mode="Raw" />
+                                            <ext:Parameter Name="recordsAVG" Value="#{StoreAvg}.getRecordsValues({ excludeId: true })"
+                                                Mode="Raw" />
+                                        </ExtraParams>
+                                    </Click>
+                                </DirectEvents>
+                            </ext:Button>
+                        </Items>
+                    </ext:Toolbar>
+                </TopBar>
+                <Items>
+                    <ext:Container ID="container1" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                        <Items>
+                            <ext:DateField runat="server" ID="DateFieldNorthBeginDate" FieldLabel="开始日期" 
+                                LabelAlign="Right" Editable="false" Format="yyyy-MM-dd" >
+                            </ext:DateField>
+                            <ext:DateField runat="server" ID="DateFieldNorthEndDate" FieldLabel="结束日期" 
+                                LabelAlign="Right" Editable="false" Format="yyyy-MM-dd" >
+                            </ext:DateField>
+                        </Items>
+                    </ext:Container>
+                    <ext:Container ID="container2" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                        <Items>
+                            <ext:ComboBox runat="server" ID="ComboBoxCheckItem" FieldLabel="检验项目" LabelAlign="Right" 
+                                Editable="false">
+                               <%-- <Listeners>
+                                    <Change Fn="Fuzhi"/>
+                                </Listeners>--%>
+                            </ext:ComboBox>
+                            <ext:ComboBox runat="server" ID="ComboBoxCheckType" FieldLabel="检验类型" LabelAlign="Right" 
+                                Editable="false">
+                            </ext:ComboBox>
+                        </Items>
+                    </ext:Container>
+                    <ext:Container ID="container3" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                        <Items>
+                            <ext:ComboBox runat="server" ID="ComboBoxEquip" FieldLabel="机台" LabelAlign="Right" MultiSelect="true" 
+                                Editable="false">
+                            </ext:ComboBox>
+                            <ext:TriggerField runat="server" ID="txMaterialName" FieldLabel="物料名称" LabelAlign="Right" Editable="false" >
+                                <Triggers>
+                                    <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                    <ext:FieldTrigger Icon="Search" />
+                                </Triggers>
+                                <Listeners>
+                                    <TriggerClick Fn="QueryMaterialInfo" />
+                                    <Change Fn="Fuzhi"/>
+                                </Listeners>
+                            </ext:TriggerField>
+                        </Items>
+                    </ext:Container>
+                    <ext:Container ID="container5" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                        <Items>
+                            <ext:ComboBox runat="server" ID="ComboBoxClass" FieldLabel="班组" LabelAlign="Right" 
+                                Editable="false">
+                            </ext:ComboBox>
+                        </Items>
+                    </ext:Container>
+                    <ext:Container ID="container4" runat="server" Layout="ColumnLayout" ColumnWidth=".2" Padding="5">
+                        <Items>
+                            <ext:TextField ID="txtSX" runat="server" FieldLabel="上限" LabelAlign="Right" />
+                            <ext:TextField ID="txtXX" runat="server" FieldLabel="下限" LabelAlign="Right" />
+                        </Items>
+                    </ext:Container>
+                </Items>
+            </ext:Panel>
+            <ext:Panel runat="server" ID="PanelCenter" Region="Center" Layout="FitLayout" Flex="28" Title="检验数据">
+                <Items>
+                    <ext:GridPanel runat="server" ID="GridPanelCenter" ColumnLines="true" AnchorHeight="100">
+                        <Store>
+                            <ext:Store runat="server" ID="StoreCenter">
+                                <Model>
+                                    <ext:Model runat="server" ID="ModelCenter">
+                                            <Fields>
+                                                <ext:ModelField Name="plandate" />
+                                                <ext:ModelField Name="shiftname" />
+                                                <ext:ModelField Name="equipname" />
+                                                <ext:ModelField Name="kind" />
+                                                <ext:ModelField Name="serialid" />
+                                                <ext:ModelField Name="checkvalue" />
+                                            </Fields>
+                                    </ext:Model>
+                                </Model>
+                            </ext:Store>
+                        </Store>
+                        <ColumnModel>
+                            <Columns>
+                                    <ext:Column ID="Column1" DataIndex="plandate" runat="server" Text="日期" Align="Center" Width="75" />
+                                    <ext:Column ID="Column2" DataIndex="shiftname" runat="server" Text="班次" Align="Center" Width="45"/>
+                                    <ext:Column ID="Column3" DataIndex="equipname" runat="server" Text="机台" Align="Center" Width="75" />
+                                    <ext:Column ID="Column4" DataIndex="kind" runat="server" Text="类型" Align="Center" Width="45"/>
+                                    <ext:Column ID="Column5" DataIndex="serialid" runat="server" Text="车次" Align="Center" Width="45" />
+                                    <ext:Column ID="Column6" DataIndex="checkvalue" runat="server" Text="检验值" Align="Center" Width="50"/>
+                                    
+                            </Columns>
+                        </ColumnModel>
+                    </ext:GridPanel>
+                </Items>
+            </ext:Panel>
+            <ext:Panel runat="server" ID="Panel2" Region="East" Layout="FitLayout" Flex="10" Title="平均值" Hidden="true">
+                <Items>
+                    <ext:GridPanel runat="server" ID="GridPanelAvg" ColumnLines="true" AnchorHeight="100">
+                        <Store>
+                            <ext:Store runat="server" ID="StoreAvg">
+                                <Model>
+                                    <ext:Model runat="server" ID="ModelAvg">
+                                            <Fields>
+                                                <ext:ModelField Name="plandate" />
+                                                <ext:ModelField Name="checkvalue" />
+                                            </Fields>
+                                    </ext:Model>
+                                </Model>
+                            </ext:Store>
+                        </Store>
+                        <ColumnModel>
+                            <Columns>
+                                    <ext:Column ID="Column13" DataIndex="plandate" runat="server" Text="日期" Align="Center" Width="75" />
+                                    <ext:Column ID="Column14" DataIndex="checkvalue" runat="server" Text="检验值" Align="Center" Width="50"/>
+                                    
+                            </Columns>
+                        </ColumnModel>
+                    </ext:GridPanel>
+                </Items>
+            </ext:Panel>
+            <ext:Panel ID="Panel3" runat="server" Region="East" Flex="72">
+                <LayoutConfig>
+                    <ext:VBoxLayoutConfig Align="Stretch" />
+                </LayoutConfig>
+                <Items>
+                    <ext:Panel ID="pnlLine" runat="server" Region ="North" >
+                        <Content>
+                            <div id="divLine" style="width: 750px; height: 260px;" />
+                        </Content>
+                        <Listeners>
+                            <Resize Handler="this.on('resize', divLineResize);"></Resize>
+                        </Listeners>
+                    </ext:Panel>
+                    <ext:BoxSplitter runat="server" Cls="border-bgcolor" Height="4" />
+                    <ext:Panel ID="Panel4" runat="server" Region="South" Flex="2" Layout="BorderLayout">
+                        <Items>
+                            <ext:Panel ID="Panel5" runat="server" Region="Center" Flex="3" Layout="FitLayout">
+                                <Items>
+                                    <ext:Panel ID="pnlBar" runat="server" Header="false">
+                                        <Content>
+                                            <div id="divBar" style="width: 200px; height: 260px;" />
+                                        </Content>
+                                        <Listeners>
+                                            <Resize Handler="this.on('resize', divBarResize);"></Resize>
+                                        </Listeners>
+                                    </ext:Panel>
+                                </Items>
+                            </ext:Panel>
+                            <ext:Panel ID="Panel6" runat="server" Region ="East" Layout="FitLayout" Flex="2">
+                                <Items>
+                                    <ext:GridPanel ID="gridcpk" runat="server" Region="Center" Header="false" BodyStyle="border:0;" HideHeaders="true"
+                                        ColumnLines="true" RowLines="true">
+                                        <Store>
+                                            <ext:Store runat="server" ID="storecpk">
+                                                <Model>
+                                                    <ext:Model runat="server" ID="ModelCpk">
+                                                        <Fields>
+                                                            <ext:ModelField Name="col1" />
+                                                            <ext:ModelField Name="col2" />
+                                                            <ext:ModelField Name="col3" />
+                                                            <ext:ModelField Name="col4" />
+                                                            <ext:ModelField Name="col5" />
+                                                            <ext:ModelField Name="col6" />
+                                                        </Fields>
+                                                    </ext:Model>
+                                                </Model>
+                                            </ext:Store>
+                                        </Store>
+                                        <ColumnModel TabMenuHidden="true" Sortable="false">
+                                            <Columns>
+                                                <ext:Column ID="Column7" runat="server" DataIndex="col1" Width="70" />
+                                                <ext:Column ID="Column8" runat="server" DataIndex="col2" Flex="1" />
+                                                <ext:Column ID="Column9" runat="server" DataIndex="col3" Width="70" />
+                                                <ext:Column ID="Column10" runat="server" DataIndex="col4" Flex="1" />
+                                                <ext:Column ID="Column11" runat="server" DataIndex="col5" Width="70" />
+                                                <ext:Column ID="Column12" runat="server" DataIndex="col6" Flex="1" />
+                                            </Columns>
+                                        </ColumnModel>
+                                        <View>
+                                            <ext:GridView EnableTextSelection="true" />
+                                        </View>
+                                    </ext:GridPanel>
+                                </Items>
+                            </ext:Panel>
+                        </Items>
+                    </ext:Panel>
+                </Items>
+            </ext:Panel>
+            <ext:Panel ID="Panel1" runat="server" Region="East" Layout="FitLayout"  Flex="25" Title="曲线图" Hidden="true">
+                <TopBar>
+                    <ext:Toolbar runat="server" ID="barImage">
+                        <Items>
+                            <ext:ToolbarSeparator ID="toolbarSeparator_start1" />
+                            <ext:Button runat="server" Icon="Image" Text="导出-曲线" ID="btnExportImage" >
+                                <Listeners>
+                                    <Click Fn="saveChart">
+                                    </Click>
+                                </Listeners>
+                            </ext:Button>
+                            <ext:ToolbarSeparator ID="toolbarSeparator_end1" />
+                            <ext:ToolbarSpacer runat="server" ID="toolbarSpacer1" />
+                            <ext:ToolbarFill ID="toolbarFill1" />
+                        </Items>
+                    </ext:Toolbar>
+                </TopBar>
+                <Items>
+                    <ext:Chart ID="Chart1" runat="server" StyleSpec="background:#fff;" Shadow="true"
+                        StandardTheme="Category1" Animate="true">
+                        <LegendConfig Position="Right" />
+                        <Store>
+                            <ext:Store ID="Store5" runat="server">
+                                <Model>
+                                    <ext:Model ID="Model5" runat="server">
+                                        <Fields>
+                                            <ext:ModelField Name="plandate"  Type="Date" DateFormat="yyyy-MM-dd"/>
+                                            <ext:ModelField Name="checkvalue" />
+                                        </Fields>
+                                    </ext:Model>
+                                </Model>
+                            </ext:Store>
+                        </Store>
+                        <Axes>
+                            <ext:NumericAxis Position="Left" Grid="true" Title="检验值" MinorTickSteps="1" />
+                            <%--<ext:NumericAxis Position="Right" Grid="true" Title="平均值" />--%>
+                            <ext:TimeAxis Position="Bottom" Grid="true" Title="日期" DateFormat="yyyy-MM-dd" />
+                        </Axes>
+                        <Series>
+                            <ext:LineSeries Axes="Left" ShowMarkers="true" XField="plandate" YField="checkvalue" Title="检验值" >
+                                <%--<Tips ID="Tips1" runat="server" TrackMouse="true" Width="80" Height="100">
+                                    <Renderer Handler="TipsRenderer(this,storeItem); ">
+                                    </Renderer>
+                                </Tips>--%>
+                            </ext:LineSeries>
+                            <%--<ext:LineSeries Axes="Right" ShowMarkers="true" XField="plandate" YField="checkvalue" Title="平均值">
+                            </ext:LineSeries>--%>
+                        </Series>
+                    </ext:Chart>
+                </Items>
+            </ext:Panel>
+        </Items>
+    </ext:Viewport>
+    </form>
+</body>
+    <script type="text/javascript">
+        var chartLine = echarts.init(document.getElementById('divLine'), 'light');
+        var chartBar = echarts.init(document.getElementById('divBar'), 'light');   
+
+        var DrawLine = function (data, std) {
+
+            //console.log(optionLine);
+            optionLine.title.text = "样本数据";
+            optionLine.series[0].markLine.data[0].yAxis = std.value;
+            optionLine.series[0].markLine.data[1].yAxis = std.up;
+            optionLine.series[0].markLine.data[2].yAxis = std.down;
+            optionLine.visualMap.pieces[0].lte = std.down;
+            optionLine.visualMap.pieces[1].gt = std.down;
+            optionLine.visualMap.pieces[1].lte = std.up;
+            optionLine.visualMap.pieces[2].gt = std.up;
+            optionLine.series[0].data = data;
+            optionLine.series[0].name = "";
+            optionLine.yAxis[0].max = std.max >= std.up ? Math.ceil(std.max * 1.05):Math.ceil(std.up * 1.05);
+            optionLine.yAxis[0].min = std.min <= std.down ? Math.floor(std.min * 0.95):Math.floor(std.down * 0.95);
+
+            chartLine.setOption(optionLine, true);
+            divLineResize();
+        }
+
+        var optionBar = {
+            title: {
+                text: '直方图',
+                x: 'left'
+            },
+            color: ['rgb(25, 183, 207)'],
+            grid: {
+                top: 35,
+                left: 15,
+                right: 15,
+                bottom: 15,
+                containLabel: true
+            },
+            xAxis: [{
+                type: 'value',
+                scale: false, //这个一定要设，不然barWidth和bins对应不上
+                min: 0,
+                max: 0,
+                interval: 0,
+                barWidth: 0,
+            }],
+            yAxis: [{
+                type: 'value',
+                position: 'left'
+            }
+            ,
+            {
+                type: 'value',
+                position: 'right'
+            }
+            ],
+            series: [{
+                name: 'height',
+                type: 'bar',
+                barWidth: '99.3%',
+                yAxisIndex: 0,
+                label: {
+                    normal: {
+                        show: true,
+                        position: 'insideTop',
+                        formatter: function (params) {
+                            return params.value[1];
+                        }
+                    }
+                },
+                data: []
+            }
+            ,
+            {
+                name: '正态分布',
+                type: 'line',
+                smooth: true,
+                yAxisIndex: 1,
+                data: [],
+                color: '#7CCD7C'
+            }
+            ]
+        };
+
+        var drawBar = function (bins, std) {
+
+            var yArr = [];
+
+            bins.data.forEach(function (item, index) {
+                item[0] = (bins.bins[index].x1 - 0 - bins.bins[index].x0) / 2 + bins.bins[index].x0;
+            });
+            //console.log(bins);
+
+            var maxVal = ecStat.statistics.max(bins.data.map(function (item) { return item[1] }));
+            //optionBar.series[1].markLine.data.forEach(function (item, index) { item[1].coord[1] = maxVal });
+            //optionBar.series[1].markLine.data[0].forEach(function (item, index) { item.coord[0] = std.value.toString() });
+            //optionBar.series[1].markLine.data[1].forEach(function (item, index) { item.coord[0] = std.up.toString() });
+            //optionBar.series[1].markLine.data[2].forEach(function (item, index) { item.coord[0] = std.down.toString() });
+            //optionBar.series[1].markLine.data[3].forEach(function (item, index) { item.coord[0] = std.mean.toString() });
+
+            optionBar.xAxis[0].min = bins.bins[0].x0;
+            optionBar.xAxis[0].max = bins.bins[bins.bins.length - 1].x1;
+            optionBar.xAxis[0].interval = (bins.bins[0].x1 - bins.bins[0].x0).toFixed(2) - 0;
+            optionBar.xAxis[0].barWidth = (bins.bins[0].x1 - bins.bins[0].x0).toFixed(2) - 0;
+            optionBar.series[0].data = bins.data;
+
+            for (var m = optionBar.xAxis[0].min; m <= optionBar.xAxis[0].max; m = m + optionBar.xAxis[0].interval)
+            {
+                var res = fun(m, std.mean, std.stdev).toFixed(3);
+                var arr = [];
+                arr.push(m.toFixed(2));
+                arr.push(res);
+                //yArr.push(m);
+                yArr.push(arr);
+            }
+
+            //debugger;
+            console.log("yArr:" + yArr);
+            optionBar.series[1].data = yArr;
+
+            chartBar.setOption(optionBar, true);
+            divBarResize();
+        }
+    </script>
+</html>

@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/18/2014 15:02:10" ReportInfo.Modified="04/25/2014 12:43:44" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void CTotal3_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Convert.ToDouble(CTotal1.Text == &quot;&quot; ? &quot;0&quot; : CTotal1.Text);
+      double totalUnqualitiedCount = Convert.ToDouble(CTotal2.Text == &quot;&quot; ? &quot;0&quot; : CTotal2.Text);
+      CTotal3.Text = totalSerialCount == 0 ? &quot;&quot; : Math.Round((totalSerialCount - totalUnqualitiedCount) / totalSerialCount, 4).ToString(&quot;0.00%&quot;);
+      
+    }
+
+    private void CTotal6_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Convert.ToDouble(CTotal4.Text == &quot;&quot; ? &quot;0&quot; : CTotal4.Text);
+      double totalUnqualitiedCount = Convert.ToDouble(CTotal5.Text == &quot;&quot; ? &quot;0&quot; : CTotal5.Text);
+      CTotal6.Text = totalSerialCount == 0 ? &quot;&quot; : Math.Round((totalSerialCount - totalUnqualitiedCount) / totalSerialCount, 4).ToString(&quot;0.00%&quot;);
+      
+    }
+
+    private void CTotal9_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Convert.ToDouble(CTotal7.Text == &quot;&quot; ? &quot;0&quot; : CTotal7.Text);
+      double totalUnqualitiedCount = Convert.ToDouble(CTotal8.Text == &quot;&quot; ? &quot;0&quot; : CTotal8.Text);
+      CTotal9.Text = totalSerialCount == 0 ? &quot;&quot; : Math.Round((totalSerialCount - totalUnqualitiedCount) / totalSerialCount, 4).ToString(&quot;0.00%&quot;);
+      
+    }
+
+    private void CTotal12_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Convert.ToDouble(CTotal10.Text == &quot;&quot; ? &quot;0&quot; : CTotal10.Text);
+      double totalUnqualitiedCount = Convert.ToDouble(CTotal11.Text == &quot;&quot; ? &quot;0&quot; : CTotal11.Text);
+      CTotal12.Text = totalSerialCount == 0 ? &quot;&quot; : Math.Round((totalSerialCount - totalUnqualitiedCount) / totalSerialCount, 4).ToString(&quot;0.00%&quot;);
+      
+    }
+
+    private void CTotal15_BeforePrint(object sender, EventArgs e)
+    {
+      double totalSerialCount = Convert.ToDouble(CTotal13.Text == &quot;&quot; ? &quot;0&quot; : CTotal13.Text);
+      double totalUnqualitiedCount = Convert.ToDouble(CTotal14.Text == &quot;&quot; ? &quot;0&quot; : CTotal14.Text);
+      CTotal15.Text = totalSerialCount == 0 ? &quot;&quot; : Math.Round((totalSerialCount - totalUnqualitiedCount) / totalSerialCount, 4).ToString(&quot;0.00%&quot;);
+      
+    }
+
+
+
+
+
+
+
+
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3EJ+HZeoQziWdKGovR/1L6Pg==">
+      <TableDataSource Name="Table" Alias="PmtInValidQuery" DataType="System.Int32" Enabled="true" SelectCommand="exec proc_GetCheckNotHGItemCount2 '2014-04-01','2014-04-17','2','3'">
+        <Column Name="机台" DataType="System.String"/>
+        <Column Name="胶号" DataType="System.String"/>
+        <Column Name="总车数" DataType="System.Int32" Format="Number"/>
+        <Column Name="不合格数" DataType="System.Int32" Format="Number"/>
+        <Column Name="合格率" DataType="System.String"/>
+        <Column Name="项目" DataType="System.String"/>
+        <Column Name="总项数" DataType="System.Int32" Format="Number"/>
+        <Column Name="不合格项数" DataType="System.Int32" Format="Number"/>
+        <Column Name="合格率项" DataType="System.Decimal" PropName="Column" BindableControl="Custom" Format="Percent" Calculated="true" Expression="FormatPercent(([PmtInValidQuery.总项数]-[PmtInValidQuery.不合格项数])*0.1/[PmtInValidQuery.总项数]*10,2)"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="10000" PaperHeight="10000">
+    <DataBand Name="Data1" Width="37724.4" Height="125.09">
+      <MatrixObject Name="Matrix1" Left="18.9" Top="9.45" Width="1084.29" Height="86.44" FixedRows="2" FixedColumns="5" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[PmtInValidQuery.项目]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[PmtInValidQuery.机台]"/>
+          <Header Expression="[PmtInValidQuery.胶号]" Totals="false"/>
+          <Header Expression="[PmtInValidQuery.总车数]" Totals="false"/>
+          <Header Expression="[PmtInValidQuery.不合格数]" Totals="false"/>
+          <Header Expression="[PmtInValidQuery.合格率]" Totals="false"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[PmtInValidQuery.总项数]"/>
+          <Cell Expression="[PmtInValidQuery.不合格项数]"/>
+          <Cell Expression="FormatPercent(([PmtInValidQuery.总项数]-[PmtInValidQuery.不合格项数])*0.1/[PmtInValidQuery.总项数]*10,2)"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="46.07" AutoSize="true"/>
+        <TableColumn Name="Column2" Width="46.07" AutoSize="true"/>
+        <TableColumn Name="Column3" Width="58.43" AutoSize="true"/>
+        <TableColumn Name="Column4" Width="70.79" AutoSize="true"/>
+        <TableColumn Name="Column5" Width="58.43" AutoSize="true"/>
+        <TableColumn Name="Column6" Width="58.43" AutoSize="true"/>
+        <TableColumn Name="Column7" Width="83.15" AutoSize="true"/>
+        <TableColumn Name="Column8" Width="500" AutoSize="true"/>
+        <TableColumn Name="Column9" Width="46.07" AutoSize="true"/>
+        <TableColumn Name="Column10" Width="70.78" AutoSize="true"/>
+        <TableColumn Name="Column11" Width="46.07" AutoSize="true"/>
+        <TableRow Name="Row1" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell1" Border.Lines="All" Text="机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="胶号" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="总车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="不合格数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell17" Border.Lines="All" Text="合格率" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell18" Border.Lines="All" Text="[项目]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="3"/>
+          <TableCell Name="Cell31"/>
+          <TableCell Name="Cell32"/>
+          <TableCell Name="Cell35" Border.Lines="All" Text="汇总" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="3"/>
+          <TableCell Name="Cell39"/>
+          <TableCell Name="Cell43"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell3"/>
+          <TableCell Name="Cell4"/>
+          <TableCell Name="Cell8"/>
+          <TableCell Name="Cell14"/>
+          <TableCell Name="Cell19"/>
+          <TableCell Name="Cell20" Border.Lines="All" Text="总项数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell33" Border.Lines="All" Text="不合格项数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell34" Border.Lines="All" Text="合格率" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" Text="总项数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell40" Border.Lines="All" Text="不合格项数" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell44" Border.Lines="All" Text="合格率" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="31.87" AutoSize="true">
+          <TableCell Name="Cell5" Border.Lines="All" Border.BottomLine.Style="Double" Text="[机台]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell6" Border.Lines="All" Border.BottomLine.Style="Double" Text="[胶号]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal13" Border.Lines="All" Border.BottomLine.Style="Double" Text="[总车数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal14" Border.Lines="All" Border.BottomLine.Style="Double" Text="[不合格数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal15" Border.Lines="All" Border.BottomLine.Style="Double" BeforePrintEvent="CTotal15_BeforePrint" Text="[合格率]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="cc1" Border.Lines="All" Border.BottomLine.Style="Double" Text="[总项数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="cc2" Border.Lines="All" Border.BottomLine.Style="Double" Text="[不合格项数]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="cc3" Border.Lines="All" Border.BottomLine.Style="Double" Text="[FormatPercent(([PmtInValidQuery.总项数]-[PmtInValidQuery.不合格项数])*0.1/[PmtInValidQuery.总项数]*10,2)]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal4" Border.Lines="All" Border.BottomLine.Style="Double" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal5" Border.Lines="All" Border.BottomLine.Style="Double" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal6" Border.Lines="All" Border.BottomLine.Style="Double" BeforePrintEvent="CTotal6_BeforePrint" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell10" Border.Lines="All" Text="总计" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="5"/>
+          <TableCell Name="Cell11"/>
+          <TableCell Name="CTotal1"/>
+          <TableCell Name="CTotal2"/>
+          <TableCell Name="CTotal3"/>
+          <TableCell Name="CTotal7" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal8" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal9" Border.Lines="All" BeforePrintEvent="CTotal9_BeforePrint" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal10" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal11" Border.Lines="All" HorzAlign="Right" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="CTotal12" Border.Lines="All" BeforePrintEvent="CTotal12_BeforePrint" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+  </ReportPage>
+</Report>

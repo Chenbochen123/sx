@@ -1,0 +1,501 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="ShiftSeting.aspx.cs" Inherits="Manager_ProducingPlan_ShiftSeting_ShiftSeting" %>
+
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>班次设置</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js"></script>
+    <style type="text/css">
+        .indoor-t
+        {
+            color: Blue;
+        }
+        .indoor-f
+        {
+            color: Red;
+        }
+    </style>
+    <script type="text/javascript">
+
+        //点击设定菜单初始化chuangt
+        var InitShift = function () {
+            var id = "1";
+            App.direct.InitShift({
+                success: function (result) {
+                },
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+        //点击修改按钮
+        var commandcolumn_click = function (command, record) {
+            var ShiftDT = record.data.ShiftDT;
+            var facid = record.data.facid;
+            var ProcedureID = record.data.ProcedureID;
+            var ShiftID = record.data.ShiftID;
+            App.direct.commandcolumn_direct_edit(ShiftDT, facid, ProcedureID, ShiftID, {
+                success: function (result) {
+                },
+
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+        // 改变行式样   
+        var getRowClass = function (r) {
+            var d = r.data;
+            if (d.ShiftWeek == '六') {
+                return "indoor-t";
+            }
+            else if (d.ShiftWeek == '日') {
+                return "indoor-f";
+            }
+        };
+        var shiftimeRule = function () {
+
+        }
+        //查询日期设置
+        var onKeyUp = function () {
+            var me = this,
+                v = me.getValue(),
+                field;
+
+            if (me.startDateField) {
+                field = Ext.getCmp(me.startDateField);
+                field.setMaxValue(v);
+                me.dateRangeMax = v;
+            } else if (me.endDateField) {
+                field = Ext.getCmp(me.endDateField);
+                field.setMinValue(v);
+                me.dateRangeMin = v;
+            }
+            field.validate();
+        };
+
+        //工作日历设置
+        var PptSetTime = function () {
+            var queryWindow = App.PptSetTimeWin;
+            var html = "<iframe src='PptSetTime.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>";
+            if (queryWindow.getBody()) {
+                queryWindow.getBody().update(html);
+            } else {
+                queryWindow.html = html;
+            }
+            queryWindow.show();
+        }
+        Ext.create("Ext.window.Window", {//
+            id: "PptSetTimeWin",
+            height: 380,
+            hidden: true,
+            width: 580,
+            html: "<iframe src='../../BasicInfo/CommonPage/PptSetTime.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "工序工作日历设置",
+            modal: true
+        })
+
+        //工序规律
+        var ShiftimeRule = function () {
+            var queryWindow = App.ShiftimeRuleWin;
+            var html = "<iframe src='ShiftimeRule.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>";
+            if (queryWindow.getBody()) {
+                queryWindow.getBody().update(html);
+            } else {
+                queryWindow.html = html;
+            }
+            queryWindow.show();
+        }
+        Ext.create("Ext.window.Window", {//
+            id: "ShiftimeRuleWin",
+            height: 500,
+            hidden: true,
+            width: 700,
+            html: "<iframe src='../../BasicInfo/CommonPage/ShiftimeRule.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "倒班规律设置",
+            modal: true
+        })
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <ext:ResourceManager ID="ResourceManager1" runat="server" />
+    <ext:Store ID="ShiftClassStore" runat="server">
+        <Model>
+            <ext:Model ID="Model4" runat="server">
+                <Fields>
+                    <ext:ModelField Name="ClassName" Type="String" Mapping="Text" />
+                    <ext:ModelField Name="ObjID" Type="String" Mapping="Id" />
+                </Fields>
+            </ext:Model>
+        </Model>
+    </ext:Store>
+    <ext:Viewport ID="Viewport1" runat="server" Layout="BorderLayout">
+        <Items>
+            <ext:Panel ID="Panel1" runat="server" Region="North" AutoHeight="true">
+                <TopBar>
+                    <ext:Toolbar runat="server" ID="ctl320">
+                        <Items>
+                            <ext:ToolbarSeparator ID="ctl347" />
+                            <ext:Button runat="server" Icon="BookAdd" Text="工序" ID="btnPro">
+                                <Listeners>
+                                    <Click Handler="#{AddDeptWin}.show(this);" />
+                                </Listeners>
+                                <ToolTips>
+                                    <ext:ToolTip runat="server" Html="工序信息" ID="ToolTip2" />
+                                </ToolTips>
+                            </ext:Button>
+                            <ext:Button runat="server" Icon="Time" Text="时间" ID="btnTime">
+                                <Listeners>
+                                    <Click Handler="return PptSetTime();" />
+                                </Listeners>
+                                <ToolTips>
+                                    <ext:ToolTip runat="server" Html="工作日历设置" ID="ctl350" />
+                                </ToolTips>
+                            </ext:Button>
+                            <ext:Button runat="server" Icon="Anchor" Text="规律" ID="btnRule">
+                                <Listeners>
+                                    <Click Handler="return ShiftimeRule();" />
+                                </Listeners>
+                                <ToolTips>
+                                    <ext:ToolTip runat="server" Html="倒班规律设置" ID="ToolTip1" />
+                                </ToolTips>
+                            </ext:Button>
+                            <ext:ToolbarSpacer runat="server" ID="ToolbarSpacer2" />
+                            <ext:Button runat="server" Icon="Add" Text="设定" ID="btnSeting">
+                                <Listeners>
+                                    <Click Handler="return InitShift();" />
+                                </Listeners>
+                                <ToolTips>
+                                    <ext:ToolTip runat="server" Html="按照设定的时间和倒班规律，生成班次设置" ID="ToolTip3" />
+                                </ToolTips>
+                            </ext:Button>
+                            <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                <DirectEvents>
+                                    <Click OnEvent="BtnSeacherShift_Click" />
+                                </DirectEvents>
+                                <ToolTips>
+                                    <ext:ToolTip runat="server" Html="查询" ID="ctl354" />
+                                </ToolTips>
+                            </ext:Button>
+                            <ext:ToolbarSeparator ID="ctl361" />
+                            <ext:ToolbarSpacer runat="server" ID="ctl363" />
+                            <ext:ToolbarFill ID="ctl381" />
+                        </Items>
+                    </ext:Toolbar>
+                </TopBar>
+                <Items>
+                    <ext:Panel ID="Panel2" runat="server" AutoHeight="true">
+                        <Items>
+                            <ext:Container ID="Container5" runat="server" Layout="ColumnLayout" AutoHeight="true">
+                                <Items>
+                                    <ext:Container ID="Container6" runat="server" Layout="FormLayout" ColumnWidth=".3"
+                                        Padding="5">
+                                        <Items>
+                                            <ext:ComboBox ID="cbo_dept" runat="server" AllowBlank="false" Editable="false" FieldLabel="工序"
+                                                LabelAlign="Left">
+                                                <Listeners>
+                                                    <Select Handler="this.getTrigger(0).show();" />
+                                                    <BeforeQuery Handler="this.getTrigger(0)[this.getRawValue().toString().length == 0 ? 'hide' : 'show']();" />
+                                                    <TriggerClick Handler="if (index == 0) { 
+                                           this.clearValue(); 
+                                           this.getTrigger(0).hide();
+                                       }" />
+                                                </Listeners>
+                                            </ext:ComboBox>
+                                        </Items>
+                                    </ext:Container>
+                                    <ext:Container ID="Container7" runat="server" Layout="FormLayout" ColumnWidth=".3"
+                                        Padding="5">
+                                        <Items>
+                                            <ext:DateField ID="txtStratShiftDate" runat="server" Editable="false" AllowBlank="false"
+                                                Vtype="daterange" FieldLabel="开始日期" EnableKeyEvents="true" Format="yyyy-MM-dd">
+                                                <CustomConfig>
+                                                    <ext:ConfigItem Name="endDateField" Value="txtEndShiftDate" Mode="Value" />
+                                                </CustomConfig>
+                                                <Listeners>
+                                                    <KeyUp Fn="onKeyUp" />
+                                                </Listeners>
+                                            </ext:DateField>
+                                        </Items>
+                                    </ext:Container>
+                                    <ext:Container ID="Container8" runat="server" Layout="FormLayout" ColumnWidth=".3"
+                                        Padding="5">
+                                        <Items>
+                                            <ext:DateField ID="txtEndShiftDate" runat="server" Editable="false" AllowBlank="false"
+                                                Vtype="daterange" FieldLabel="结束日期" EnableKeyEvents="true" Format="yyyy-MM-dd">
+                                                <CustomConfig>
+                                                    <ext:ConfigItem Name="startDateField" Value="txtStratShiftDate" Mode="Value" />
+                                                </CustomConfig>
+                                                <Listeners>
+                                                    <KeyUp Fn="onKeyUp" />
+                                                </Listeners>
+                                            </ext:DateField>
+                                        </Items>
+                                    </ext:Container>
+                                </Items>
+                            </ext:Container>
+                        </Items>
+                    </ext:Panel>
+                </Items>
+            </ext:Panel>
+          <ext:GridPanel ID="gpShiftQuery" runat="server" Title="班次查询" Region="Center" Layout="FitLayout">
+                <Store>
+                    <ext:Store ID="Store1" runat="server" OnReadData="MyData_Refresh" PageSize="50">
+                        <Model>
+                            <ext:Model ID="Model2" runat="server">
+                                <Fields>
+                                    <ext:ModelField Name="ProcedureName" Type="String" />
+                                    <ext:ModelField Name="ShiftDT" Type="Date" />
+                                    <ext:ModelField Name="ShiftWeek" Type="String" />
+                                    <ext:ModelField Name="ShiftName" Type="String" />
+                                    <ext:ModelField Name="ClassName" Type="String" />
+                                    <ext:ModelField Name="ShiftStart" Type="Date" />
+                                    <ext:ModelField Name="ShiftEnd" Type="Date" />
+                                    <ext:ModelField Name="ObjID" Type="Int" />
+                                    <ext:ModelField Name="facid" Type="Int" />
+                                     <ext:ModelField Name="ProcedureID" Type="Int" />
+                                     <ext:ModelField Name="ShiftID" Type="Int" />
+                                </Fields>
+                            </ext:Model>
+                        </Model>
+                    </ext:Store>
+                </Store>
+                <ColumnModel ID="ColumnModel1" runat="server">
+                    <Columns>
+                        <ext:RowNumbererColumn ID="RowNumbererColumn1" runat="server" Hidden="true" Width="35" />
+                        <ext:Column ID="Column1" runat="server" Text="工序" Flex="1" DataIndex="ProcedureName" />
+<%--                        <ext:Column ID="Column10" runat="server" Text="工序1" Flex="1" DataIndex="facid" />
+                        <ext:Column ID="Column11" runat="server" Text="工序2" Flex="1" DataIndex="ProcedureID" />
+                        <ext:Column ID="Column12" runat="server" Text="工序3" Flex="1" DataIndex="ShiftID" />--%>
+                        <ext:DateColumn ID="Column2" runat="server" Text="工作日期" Flex="1" DataIndex="ShiftDT"
+                            Format="yyyy-MM-dd">
+                        </ext:DateColumn>
+                        <ext:Column ID="Column3" runat="server" Text="星期" Flex="1" DataIndex="ShiftWeek">
+                        </ext:Column>
+                        <ext:Column ID="Column4" runat="server" Text="班次" Flex="1" DataIndex="ShiftName">
+                        </ext:Column>
+                        <ext:Column ID="Column5" runat="server" Text="班组" Flex="1" DataIndex="ClassName">
+                        </ext:Column>
+                        <ext:DateColumn ID="Column6" runat="server" Text="班次开始时间" Flex="1" DataIndex="ShiftStart"
+                            Format="yyyy-MM-dd HH:mm:ss">
+                            <%--<Renderer Fn="changePriceStyle" />--%>
+                        </ext:DateColumn>
+                        <ext:DateColumn ID="Column7" runat="server" Text="班次结束时间" Flex="1" DataIndex="ShiftEnd"
+                            Format="yyyy-MM-dd HH:mm:ss">
+                        </ext:DateColumn>
+                        <ext:CommandColumn ID="commandCol" runat="server" Width="120" Text="操作" Align="Center">
+                            <Commands>
+                                <ext:GridCommand Icon="TableEdit" CommandName="Edit" Text="修改">
+                                    <ToolTip Text="修改本条数据" />
+                                </ext:GridCommand>
+                            </Commands>
+                            <PrepareToolbar />
+                            <Listeners>
+                                <Command Handler="return commandcolumn_click(command, record);" />
+                            </Listeners>
+                        </ext:CommandColumn>
+                        <ext:Column ID="id" runat="server" Text="id" Hidden="true" DataIndex="ObjID" />
+                    </Columns>
+                </ColumnModel>
+                <SelectionModel>
+                    <ext:RowSelectionModel ID="RowSelectionModel1" runat="server" Mode="Multi" />
+                </SelectionModel>
+                <View>
+                    <ext:GridView ID="GridView1" runat="server" StripeRows="true">
+                        <GetRowClass Fn="getRowClass" />
+                    </ext:GridView>
+                </View>
+                <BottomBar>
+                    <ext:PagingToolbar ID="pageToolBar" runat="server">
+                        <Plugins>
+                            <ext:ProgressBarPager ID="ProgressBarPager" runat="server" />
+                        </Plugins>
+                    </ext:PagingToolbar>
+                </BottomBar>
+            </ext:GridPanel>
+        </Items>
+    </ext:Viewport>
+    <ext:Hidden ID="txtCustomerID" runat="server" />
+    <ext:Window ID="AddShiftWindow" runat="server" Icon="Add" Closable="true" Title="班次设定"
+        Width="320" Height="240" Resizable="false" Hidden="true" Modal="false" BodyStyle="background-color:#fff;"
+        BodyPadding="5" Layout="Form">
+        <Items>
+            <ext:FormPanel ID="FormPanel1" runat="server" Flex="1" BodyPadding="5">
+                <Items>
+                    <ext:ComboBox ID="cbo_Ppt_DeptType" runat="server" Editable="false" FieldLabel="工序"
+                        IsRemoteValidation="true" LabelAlign="Left" Height="30">
+                        <Triggers>
+                            <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                        </Triggers>
+                        <Listeners>
+                            <Select Handler="this.getTrigger(0).show();" />
+                            <BeforeQuery Handler="this.getTrigger(0)[this.getRawValue().toString().length == 0 ? 'hide' : 'show']();" />
+                            <TriggerClick Handler="if (index == 0) { 
+                                           this.clearValue(); 
+                                           this.getTrigger(0).hide();
+                                       }" />
+                        </Listeners>
+                        <SelectedItems>
+                            <ext:ListItem Value="1" />
+                        </SelectedItems>
+                        <DirectEvents>
+                            <Select OnEvent="InitShiftClassWin" />
+                        </DirectEvents>
+                    </ext:ComboBox>
+                    <ext:NumberField ID="txt_WeekNum" runat="server" MinValue="1" Text="1" FieldLabel="生成周期数"
+                       LabelAlign="Left">
+                    </ext:NumberField>
+                    <ext:DateField ID="txt_Shift_start" runat="server" FieldLabel="设定起始日期" LabelAlign="Left"
+                        Format="yyyy-MM-dd">
+                        <Listeners>
+                            <Render Handler="this.setMinValue(new Date())" />
+                        </Listeners>
+                    </ext:DateField>
+                    <ext:TextField ID="txt_Shift_number" runat="server" Disabled="true" FieldLabel="班次数量"
+                        LabelAlign="Left" />
+                    <ext:TextField ID="txt_Class_number" runat="server" Disabled="true" FieldLabel="班组数量"
+                        LabelAlign="Left" />
+                    <ext:TextField ID="txt_WeekDay" runat="server" Disabled="true" FieldLabel="周期天数"
+                        LabelAlign="Left" />
+                </Items>
+                <Listeners>
+                    <ValidityChange Handler="#{btnAddRule}.setDisabled(!valid);" />
+                </Listeners>
+            </ext:FormPanel>
+        </Items>
+        <Buttons>
+            <ext:Button ID="btnAddRule" runat="server" Text="确定" Icon="Accept">
+                <DirectEvents>
+                    <Click OnEvent="BtnAddRule_Click">
+                        <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                    </Click>
+                </DirectEvents>
+            </ext:Button>
+            <ext:Button ID="btnRuleCancel" runat="server" Text="关闭" Icon="Cancel">
+                <DirectEvents>
+                    <Click OnEvent="BtnAddShiftCancel_Click">
+                    </Click>
+                </DirectEvents>
+            </ext:Button>
+        </Buttons>
+        <Listeners>
+            <Show Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).disable(true);}" />
+            <Hide Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).enable(true);}" />
+        </Listeners>
+    </ext:Window>
+ 
+    <ext:Window ID="AddDeptWin" runat="server" Closable="false" Title="工序信息" Width="320"
+        Height="240" Resizable="false" Hidden="true" Modal="false" BodyStyle="background-color:#fff;"
+        Layout="Form">
+        <Items>
+            <ext:GridPanel ID="gpSetProcedure" runat="server" Scroll="Both">
+                <Store>
+                    <ext:Store ID="Store2" runat="server" PageSize="5">
+                        <Model>
+                            <ext:Model Name="Dept" runat="server">
+                                <Fields>
+                                    <ext:ModelField Name="ObjID" Type="Int" />
+                                    <ext:ModelField Name="ProcedureName" Type="String" />
+                                </Fields>
+                            </ext:Model>
+                        </Model>
+                    </ext:Store>
+                </Store>
+                <ColumnModel>
+                    <Columns>
+                        <ext:Column ID="Column8" runat="server" Text="工序编号" Flex="1" DataIndex="ObjID" />
+                        <ext:Column ID="Column9" runat="server" Text="工序名称" Flex="1" DataIndex="ProcedureName">
+                            <Editor>
+                                <ext:TextField ID="TextField1" runat="server" />
+                            </Editor>
+                        </ext:Column>
+                    </Columns>
+                </ColumnModel>
+            </ext:GridPanel>
+        </Items>
+        <Buttons>
+            <ext:Button ID="btnDeptCancel" runat="server" Text="关闭" Icon="Cancel">
+                <DirectEvents>
+                    <Click OnEvent="BtnDeptCancel_Click">
+                    </Click>
+                </DirectEvents>
+            </ext:Button>
+        </Buttons>
+        <Listeners>
+            <Show Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).disable(true);}" />
+            <Hide Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).enable(true);}" />
+        </Listeners>
+    </ext:Window>
+    <ext:Window ID="winModify" runat="server" Icon="MonitorEdit" Closable="true" Title="修改班次"
+        Width="300" Height="240" Hidden="true" Modal="false" BodyStyle="background-color:#fff;"
+        Layout="Form">
+        <Items>
+            <ext:FormPanel ID="pnlEdit" runat="server" Flex="1" BodyPadding="5">
+                <Items>
+                    <ext:TextField ID="modify_pptShiftTimeId" runat="server" FieldLabel="ID" LabelAlign="Left"
+                        ReadOnly="true" Hidden="true" Enabled="true" />
+                    <ext:TextField ID="modify_shiftDT" runat="server" FieldLabel="工作日期" LabelAlign="Left"
+                        ReadOnly="true" />
+                    <ext:DateField ID="modify_dfStartWook" runat="server" Editable="false" AllowBlank="false"
+                        Vtype="daterange" FieldLabel="班次开始日期" EnableKeyEvents="true" Format="yyyy-MM-dd">
+                        <CustomConfig>
+                            <ext:ConfigItem Name="endDateField" Value="modify_dfStopWook" Mode="Value" />
+                        </CustomConfig>
+                        <Listeners>
+                            <KeyUp Fn="onKeyUp" />
+                        </Listeners>
+                    </ext:DateField>
+                    <ext:TimeField ID="modify_tfStart" runat="server" FieldLabel="班次开始时间" Increment="1"
+                        Format="HH:mm:ss" InvalidText="请选择时间或输入有效格式的时间" PickerMaxHeight="100">
+                    </ext:TimeField>
+                    <ext:DateField ID="modify_dfStopWook" runat="server" Editable="false" AllowBlank="false"
+                        Vtype="daterange" FieldLabel="班次结束日期" EnableKeyEvents="true" Format="yyyy-MM-dd">
+                        <CustomConfig>
+                            <ext:ConfigItem Name="startDateField" Value="modify_dfStartWook" Mode="Value" />
+                        </CustomConfig>
+                        <Listeners>
+                            <KeyUp Fn="onKeyUp" />
+                        </Listeners>
+                    </ext:DateField>
+                    <ext:TimeField ID="modify_tfStop" runat="server" FieldLabel="班次结束时间" Increment="1"
+                        Format="HH:mm:ss" InvalidText="请选择时间或输入有效格式的时间" PickerMaxHeight="100">
+                    </ext:TimeField>
+                    <ext:ComboBox ID="modify_class" runat="server" QueryMode="Local" TriggerAction="All"
+                        Editable="false" IsRemoteValidation="true" StoreID="ShiftClassStore" FieldLabel="班组"
+                        LabelAlign="Left" ValueField="ObjID" DisplayField="ClassName">
+                    </ext:ComboBox>
+                </Items>
+                <Listeners>
+                    <ValidityChange Handler="#{btnModifySave}.setDisabled(!valid);" />
+                </Listeners>
+            </ext:FormPanel>
+        </Items>
+        <Buttons>
+            <ext:Button ID="btnModifySave" runat="server" Text="确定" Icon="Accept">
+                <DirectEvents>
+                    <Click OnEvent="BtnModifySave_Click">
+                    </Click>
+                </DirectEvents>
+            </ext:Button>
+            <ext:Button ID="btnModifyCancel" runat="server" Text="取消" Icon="Cancel">
+                <DirectEvents>
+                    <Click OnEvent="BtnCancel_Click">
+                    </Click>
+                </DirectEvents>
+            </ext:Button>
+        </Buttons>
+        <Listeners>
+            <Show Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).disable(true);}" />
+            <Hide Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).enable(true);}" />
+        </Listeners>
+    </ext:Window>
+    </form>
+</body>
+</html>

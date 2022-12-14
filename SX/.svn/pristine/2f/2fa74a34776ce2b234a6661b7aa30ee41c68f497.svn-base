@@ -1,0 +1,320 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/26/2013 08:39:47" ReportInfo.Modified="11/29/2019 16:13:06" ReportInfo.CreatorVersion="2013.3.9.0">
+  <ScriptText>
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Windows.Forms;
+    using System.Drawing;
+    using System.Data;
+    using FastReport;
+    using FastReport.Data;
+    using FastReport.Dialog;
+    using FastReport.Barcode;
+    using FastReport.Table;
+    using FastReport.Utils;
+
+    namespace FastReport
+    {
+    public class ReportScript
+    {
+    private void tb_PptLot_BeforePrint(object sender, EventArgs e)
+    {
+    DataSourceBase rowData = Report.GetDataSource(&quot;PptLotData&quot;);
+    rowData.Init();
+    while (rowData.HasMoreRows)
+    {
+    txtTitle.Text = &quot;车报表详细信息『&quot; + rowData.Report.GetColumnValue(&quot;PptLotData.BarCode&quot;).ToString().Trim()+ &quot;』&quot;;
+    Cell2.Text = rowData.Report.GetColumnValue(&quot;PptLotData.ClassName&quot;).ToString();
+    Cell4.Text = rowData.Report.GetColumnValue(&quot;PptLotData.ShiftName&quot;).ToString();
+    Cell26.Text = rowData.Report.GetColumnValue(&quot;PptLotData.MaterName&quot;).ToString();
+    Cell36.Text = rowData.Report.GetColumnValue(&quot;PptLotData.MaterCode&quot;).ToString();
+    Cell7.Text = rowData.Report.GetColumnValue(&quot;PptLotData.EquipName&quot;).ToString();
+    Cell9.Text = rowData.Report.GetColumnValue(&quot;PptLotData.SerialID&quot;).ToString()
+    + &quot;/&quot; + rowData.Report.GetColumnValue(&quot;PptLotData.PlanNum&quot;).ToString();
+    Cell27.Text = rowData.Report.GetColumnValue(&quot;PptLotData.PolyDisTime&quot;).ToString();
+    Cell37.Text = rowData.Report.GetColumnValue(&quot;PptLotData.MixStatus&quot;).ToString() == &quot;0&quot;?&quot;本控&quot;:&quot;遥控&quot;;
+    Cell12.Text = rowData.Report.GetColumnValue(&quot;PptLotData.DoneRtime&quot;).ToString();
+    Cell14.Text = rowData.Report.GetColumnValue(&quot;PptLotData.BwbTime&quot;).ToString();
+    Cell28.Text = rowData.Report.GetColumnValue(&quot;PptLotData.DoneAllRTime&quot;).ToString();
+    Cell38.Text = Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptLotData.PjTemp&quot;)).ToString();
+    Cell17.Text = Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptLotData.LotEnergy&quot;)).ToString();
+    Cell19.Text = Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptLotData.PjPower&quot;)).ToString();
+    Cell39.Text = rowData.Report.GetColumnValue(&quot;PptLotData.StartDatetime&quot;).ToString();
+    Cell22.Text = rowData.Report.GetColumnValue(&quot;PptLotData.MemNote&quot;).ToString();
+	  Cell40.Text = rowData.Report.GetColumnValue(&quot;PptLotData.PowderDisTime&quot;).ToString();
+	  rowData.Next();
+	  }
+	  }
+
+	  private void tb_PptWeight_ManualBuild(object sender, EventArgs e)
+	  {
+	  // get the data source by its name
+	  DataSourceBase rowData = Report.GetDataSource(&quot;PptWeighData&quot;);
+    // init the data source
+    rowData.Init();
+    tb_PptWeight.PrintRow(0);
+    tb_PptWeight.PrintColumns();
+    decimal sumValue = 0;
+    // now enumerate the data source and print the table body
+    while (rowData.HasMoreRows)
+    {
+    sumValue += (decimal)rowData.Report.GetColumnValue(&quot;PptWeighData.SetWeight&quot;);
+    Cell61.Text = rowData.Report.GetColumnValue(&quot;PptWeighData.WeighType&quot;).ToString();
+    Cell62.Text = rowData.Report.GetColumnValue(&quot;PptWeighData.MaterName&quot;).ToString();
+    Cell63.Text = rowData.Report.GetColumnValue(&quot;PptWeighData.MaterCode&quot;).ToString();
+    Cell64.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptWeighData.SetWeight&quot;)).ToString();
+    Cell75.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptWeighData.RealWeight&quot;)).ToString();
+    Cell70.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptWeighData.ErrorAllow&quot;)).ToString();
+  
+    
+    Cell65.Text = rowData.Report.GetColumnValue(&quot;PptWeighData.WeighState&quot;).ToString() == &quot;0&quot; ? &quot;手动&quot;:&quot;自动&quot;;
+    tb_PptWeight.PrintRow(1);
+    tb_PptWeight.PrintColumns();
+    rowData.Next();
+    }
+    Text5.Text = Convert.ToDouble(sumValue).ToString();
+    }
+
+    private void tb_PptMixData_ManualBuild(object sender, EventArgs e)
+    {
+        // get the data source by its name
+        DataSourceBase rowData = Report.GetDataSource(&quot;PptMixingData&quot;);               
+        // init the data source
+        rowData.Init();
+        tb_PptMixData.PrintRow(0);
+        tb_PptMixData.PrintColumns();   
+        // now enumerate the data source and print the table body
+        while (rowData.HasMoreRows)
+        {
+            //混炼实际信息 yuany
+            Cell96.Text = rowData.Report.GetColumnValue(&quot;PptMixingData.MixID&quot;).ToString();
+            Cell97.Text = rowData.Report.GetColumnValue(&quot;PptMixingData.TermCode&quot;).ToString();
+            Cell98.Text = rowData.Report.GetColumnValue(&quot;PptMixingData.SetTime&quot;).ToString();
+            Cell99.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.SeTemp&quot;)).ToString();
+            Cell100.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.SetPower&quot;)).ToString();
+            Cell105.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.SetEner&quot;)).ToString();
+            Cell110.Text = rowData.Report.GetColumnValue(&quot;PptMixingData.ActCode&quot;).ToString();
+            Cell115.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.SetRota&quot;)).ToString();
+            Cell120.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.SetPres&quot;)).ToString();
+            Cell122.Text =  Convert.ToDouble(rowData.Report.GetColumnValue(&quot;PptMixingData.step_time&quot;)).ToString();
+            //混炼信息设定值 yuany                                   
+
+
+
+            tb_PptMixData.PrintRow(1);
+            tb_PptMixData.PrintColumns();
+            rowData.Next();       
+        }                       
+    }
+
+
+   
+
+    private void MSChart1_BeforePrint(object sender, EventArgs e)
+    {
+    DataSourceBase rowData = Report.GetDataSource(&quot;PptCurve&quot;);
+    rowData.Init();
+    int count = 1;
+    while (rowData.HasMoreRows)
+    {
+    string temp = rowData.Report.GetColumnValue(&quot;PptCurve.MixingTemp&quot;).ToString();
+    string time = rowData.Report.GetColumnValue(&quot;PptCurve.SecondSpan&quot;).ToString();
+    string power = rowData.Report.GetColumnValue(&quot;PptCurve.MixingPower&quot;).ToString();
+    string energy = rowData.Report.GetColumnValue(&quot;PptCurve.MixingEnergy&quot;).ToString();
+    string press = rowData.Report.GetColumnValue(&quot;PptCurve.MixingPress&quot;).ToString();
+    string speed = rowData.Report.GetColumnValue(&quot;PptCurve.MixingSpeed&quot;).ToString(); 
+    string position = rowData.Report.GetColumnValue(&quot;PptCurve.MixingPosition&quot;).ToString();
+    Series1.AddValue(time,temp);
+    Series2.AddValue(time,power);
+    Series3.AddValue(time,press);
+    Series4.AddValue(time,energy);
+    Series5.AddValue(time,speed); 
+    Series6.AddValue(time,position);
+    rowData.Next();
+    }
+    }
+
+  
+
+    
+    
+    
+    
+
+  
+    
+    
+    
+
+   
+    
+    }
+    }
+  </ScriptText>
+  <Dictionary/>
+  <ReportPage Name="Page1" PaperWidth="300" FirstPageSource="1" OtherPagesSource="1" Guides="708.75,708.75,708.75,708.75">
+    <ReportTitleBand Name="ReportTitle1" Width="1058.4" Height="255.15">
+      <TextObject Name="txtTitle" Left="9.45" Width="699.3" Height="28.35" Text="每车数据信息报表" HorzAlign="Center" VertAlign="Center" Font="宋体, 14pt, style=Bold"/>
+      <TableObject Name="tb_PptLot" Left="10.19" Top="47.25" Width="859.26" Height="94.5" Border.Lines="All" BeforePrintEvent="tb_PptLot_BeforePrint">
+        <TableColumn Name="Column1" Width="106.27"/>
+        <TableColumn Name="Column2" Width="92.61"/>
+        <TableColumn Name="Column3" Width="96.82"/>
+        <TableColumn Name="Column4" Width="110.05"/>
+        <TableColumn Name="Column5" Width="96.82"/>
+        <TableColumn Name="Column6" Width="119.5"/>
+        <TableColumn Name="Column7" Width="105.58"/>
+        <TableColumn Name="Column8" Width="131.61"/>
+        <TableRow Name="Row1">
+          <TableCell Name="Cell1" Border.Lines="All" Text="生产班组" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="生产班次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="配方名称" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell26" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell31" Border.Lines="All" Text="配方代码" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell36" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell6" Border.Lines="All" Text="生产机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="当前车次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="加胶时间(s)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell27" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="工作方式" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell37" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3">
+          <TableCell Name="Cell11" Border.Lines="All" Text="炼胶时间(s)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="间隔时间(s)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell14" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" Text="配方时间(s)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell28" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell33" Border.Lines="All" Text="排胶温度(C°)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell38" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4">
+          <TableCell Name="Cell16" Border.Lines="All" Text="累积能量(KWH)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell17" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" Text="排胶功率(KW)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell19" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell20" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell29" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell34" Border.Lines="All" Text="开始时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell39" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row5">
+          <TableCell Name="Cell21" Border.Lines="All" Text="其他车次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell22" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="5"/>
+          <TableCell Name="Cell23" Font="宋体, 9pt"/>
+          <TableCell Name="Cell24" Font="宋体, 9pt"/>
+          <TableCell Name="Cell25" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Font="宋体, 9pt"/>
+          <TableCell Name="Cell35" Border.Lines="All" Text="补偿温度" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell40" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+      <TextObject Name="Text1" Left="9.45" Top="160.65" Width="66.15" Height="18.9" Text="称量部分" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TextObject Name="Text2" Left="85.05" Top="160.65" Width="56.7" Height="18.9" Text="车重：" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <TableObject Name="tb_PptWeight" Left="9.45" Top="198.45" Width="935.55" Height="56.7" ManualBuildEvent="tb_PptWeight_ManualBuild">
+        <TableColumn Name="Column9"/>
+        <TableColumn Name="Column10" Width="141.75"/>
+        <TableColumn Name="Column11" Width="141.75"/>
+        <TableColumn Name="Column12" Width="85.05"/>
+        <TableColumn Name="Column15" Width="75.6"/>
+        <TableColumn Name="Column14" Width="85.05"/>
+        <TableColumn Name="Column60" Width="85.05"/>
+        <TableColumn Name="Column61" Width="75.6"/>
+        <TableColumn Name="Column62" Width="85.05"/>
+        <TableColumn Name="Column13" Width="94.5"/>
+        <TableRow Name="Row6" Height="37.8">
+          <TableCell Name="Cell41" Border.Lines="All" Text="称量类别" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell42" Border.Lines="All" Text="物料名称" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell43" Border.Lines="All" Text="物料编码" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell44" Border.Lines="All" Text="设定重量&#13;&#10;(kg)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell71" Border.Lines="All" Text="实际称量&#13;&#10;(kg)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell66" Border.Lines="All" Text="设定误差&#13;&#10;(kg)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell45" Border.Lines="All" Text="生产方式" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell/>
+          <TableCell/>
+          <TableCell/>
+        </TableRow>
+        <TableRow Name="Row10">
+          <TableCell Name="Cell61" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell62" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell63" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell64" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell75" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell70" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell65" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell/>
+          <TableCell/>
+          <TableCell/>
+        </TableRow>
+      </TableObject>
+      <TextObject Name="Text5" Left="141.75" Top="160.65" Width="103.95" Height="18.9" VertAlign="Center" Font="宋体, 9pt"/>
+    </ReportTitleBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="259.15" Width="1058.4" Height="113.4">
+      <TableObject Name="tb_PptMixData" Left="9.45" Top="56.7" Width="713.25" Height="56.7" Border.Lines="All" ManualBuildEvent="tb_PptMixData_ManualBuild">
+        <TableColumn Name="Column16" Width="46.57"/>
+        <TableColumn Name="Column17" Width="112.72"/>
+        <TableColumn Name="Column18" Width="44.67"/>
+        <TableColumn Name="Column27" Width="65.47"/>
+        <TableColumn Name="Column19" Width="44.67"/>
+        <TableColumn Name="Column28" Width="65.47"/>
+        <TableColumn Name="Column20" Width="158.07"/>
+        <TableColumn Name="Column29" Width="56.02"/>
+        <TableColumn Name="Column21" Width="44.67"/>
+        <TableColumn Name="Column22" Width="74.92"/>
+        <TableRow Name="Row11" Height="37.8">
+          <TableCell Name="Cell76" Border.Lines="All" Text="序号" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell77" Border.Lines="All" Text="条件" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell78" Border.Lines="All" Text="时间&#13;&#10;(s)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell79" Border.Lines="All" Text="温度&#13;&#10;(C°)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell80" Border.Lines="All" Text="功率&#13;&#10;(KW)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell101" Border.Lines="All" Text="能量&#13;&#10;(KWH)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell106" Border.Lines="All" Text="动作" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell111" Border.Lines="All" Text="转速&#13;&#10;(RPM)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell116" Border.Lines="All" Text="压力&#13;&#10;(bar)" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell121" Border.Lines="All" Text="单步时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row15">
+          <TableCell Name="Cell96" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell97" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell98" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell99" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell100" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell105" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell110" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell115" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell120" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell122" Border.Lines="All" HorzAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+      <TextObject Name="Text3" Left="9.45" Top="18.9" Width="66.15" Height="18.9" Text="混炼部分" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+      <ChildBand Name="Child1" Top="376.55" Width="1058.4" Height="94.5">
+        <ChildBand Name="Child2" Top="475.05" Width="1058.4" Height="122.85">
+          <TextObject Name="Text9" Left="170.1" Top="18.9" Width="103.95" Height="18.9" VertAlign="Center" Font="宋体, 9pt"/>
+          <ChildBand Name="Child3" Top="601.9" Width="1058.4" Height="160.65">
+            <ChildBand Name="Child4" Top="766.55" Width="1058.4" Height="349.65">
+              <MSChartObject Name="MSChart1" Left="9.45" Top="28.35" Width="699.3" Height="321.3" AfterDataEvent="MSChart1_BeforePrint" ChartData="PENoYXJ0IEJhY2tDb2xvcj0iMjExLCAyMjMsIDI0MCIgU2l6ZT0iMjg4LCAyMzIiIEJhY2tHcmFkaWVudFN0eWxlPSJUb3BCb3R0b20iIEJvcmRlcmxpbmVDb2xvcj0iMjYsIDU5LCAxMDUiIEJvcmRlcmxpbmVXaWR0aD0iMiIgQm9yZGVybGluZURhc2hTdHlsZT0iU29saWQiPg0KICA8U2VyaWVzPg0KICAgIDxTZXJpZXMgTmFtZT0i5rip5bqmIiBMZWdlbmQ9IkRlZmF1bHQiIFhWYWx1ZVR5cGU9IlN0cmluZyIgWVZhbHVlVHlwZT0iRG91YmxlIiBDaGFydFR5cGU9IkxpbmUiIENoYXJ0QXJlYT0iRGVmYXVsdCI+DQogICAgICA8UG9pbnRzPg0KICAgICAgICA8RGF0YVBvaW50IFlWYWx1ZXM9IjEiIEF4aXNMYWJlbD0iQSIgLz4NCiAgICAgICAgPERhdGFQb2ludCBZVmFsdWVzPSIyIiBBeGlzTGFiZWw9IkIiIC8+DQogICAgICA8L1BvaW50cz4NCiAgICA8L1Nlcmllcz4NCiAgICA8U2VyaWVzIE5hbWU9IuWKn+eOhyIgTGVnZW5kPSJEZWZhdWx0IiBYVmFsdWVUeXBlPSJTdHJpbmciIFlWYWx1ZVR5cGU9IkRvdWJsZSIgWUF4aXNUeXBlPSJTZWNvbmRhcnkiIENoYXJ0VHlwZT0iTGluZSIgQ2hhcnRBcmVhPSJEZWZhdWx0IiBDb2xvcj0iWWVsbG93R3JlZW4iPg0KICAgICAgPFBvaW50cz4NCiAgICAgICAgPERhdGFQb2ludCBZVmFsdWVzPSIxIiBBeGlzTGFiZWw9IkEiIC8+DQogICAgICAgIDxEYXRhUG9pbnQgWVZhbHVlcz0iMiIgQXhpc0xhYmVsPSJCIiAvPg0KICAgICAgPC9Qb2ludHM+DQogICAgPC9TZXJpZXM+DQogICAgPFNlcmllcyBOYW1lPSLljovlipsiIExlZ2VuZD0iRGVmYXVsdCIgWFZhbHVlVHlwZT0iU3RyaW5nIiBZVmFsdWVUeXBlPSJEb3VibGUiIENoYXJ0VHlwZT0iTGluZSIgQ2hhcnRBcmVhPSJEZWZhdWx0Ij4NCiAgICAgIDxQb2ludHM+DQogICAgICAgIDxEYXRhUG9pbnQgWVZhbHVlcz0iMSIgQXhpc0xhYmVsPSJBIiAvPg0KICAgICAgICA8RGF0YVBvaW50IFlWYWx1ZXM9IjIiIEF4aXNMYWJlbD0iQiIgLz4NCiAgICAgIDwvUG9pbnRzPg0KICAgIDwvU2VyaWVzPg0KICAgIDxTZXJpZXMgTmFtZT0i6IO96YePIiBMZWdlbmQ9IkRlZmF1bHQiIFhWYWx1ZVR5cGU9IlN0cmluZyIgWVZhbHVlVHlwZT0iRG91YmxlIiBDaGFydFR5cGU9IkxpbmUiIENoYXJ0QXJlYT0iRGVmYXVsdCIgQ29sb3I9IlJlZCIgTWFya2VyQ29sb3I9IlRyYW5zcGFyZW50IiBMYWJlbEJvcmRlckNvbG9yPSJUcmFuc3BhcmVudCI+DQogICAgICA8UG9pbnRzPg0KICAgICAgICA8RGF0YVBvaW50IFlWYWx1ZXM9IjEiIEF4aXNMYWJlbD0iQSIgLz4NCiAgICAgICAgPERhdGFQb2ludCBZVmFsdWVzPSIyIiBBeGlzTGFiZWw9IkIiIC8+DQogICAgICA8L1BvaW50cz4NCiAgICA8L1Nlcmllcz4NCiAgICA8U2VyaWVzIE5hbWU9Iui9rOmAnyIgTGVnZW5kPSJEZWZhdWx0IiBYVmFsdWVUeXBlPSJTdHJpbmciIFlWYWx1ZVR5cGU9IkRvdWJsZSIgQ2hhcnRUeXBlPSJMaW5lIiBDaGFydEFyZWE9IkRlZmF1bHQiIENvbG9yPSJZZWxsb3ciPg0KICAgICAgPFBvaW50cz4NCiAgICAgICAgPERhdGFQb2ludCBZVmFsdWVzPSIxIiBBeGlzTGFiZWw9IkEiIC8+DQogICAgICAgIDxEYXRhUG9pbnQgWVZhbHVlcz0iMiIgQXhpc0xhYmVsPSJCIiAvPg0KICAgICAgPC9Qb2ludHM+DQogICAgPC9TZXJpZXM+DQogICAgPFNlcmllcyBOYW1lPSLkuIrpobbmoJMiIExlZ2VuZD0iRGVmYXVsdCIgWFZhbHVlVHlwZT0iU3RyaW5nIiBZVmFsdWVUeXBlPSJEb3VibGUiIENoYXJ0VHlwZT0iTGluZSIgQ2hhcnRBcmVhPSJEZWZhdWx0IiBDb2xvcj0iRGFya1Zpb2xldCI+DQogICAgICA8UG9pbnRzPg0KICAgICAgICA8RGF0YVBvaW50IFlWYWx1ZXM9IjEiIEF4aXNMYWJlbD0iQSIgLz4NCiAgICAgICAgPERhdGFQb2ludCBZVmFsdWVzPSIyIiBBeGlzTGFiZWw9IkIiIC8+DQogICAgICA8L1BvaW50cz4NCiAgICA8L1Nlcmllcz4NCiAgPC9TZXJpZXM+DQogIDxMZWdlbmRzPg0KICAgIDxMZWdlbmQgTmFtZT0iRGVmYXVsdCIgQmFja0NvbG9yPSJUcmFuc3BhcmVudCI+DQogICAgPC9MZWdlbmQ+DQogIDwvTGVnZW5kcz4NCiAgPFRpdGxlcz4NCiAgICA8VGl0bGUgTmFtZT0iVGl0bGUxIiBWaXNpYmxlPSJGYWxzZSI+DQogICAgPC9UaXRsZT4NCiAgPC9UaXRsZXM+DQogIDxDaGFydEFyZWFzPg0KICAgIDxDaGFydEFyZWEgTmFtZT0iRGVmYXVsdCIgQmFja0NvbG9yPSI2NCwgMTY1LCAxOTEsIDIyOCIgQmFja0dyYWRpZW50U3R5bGU9IlRvcEJvdHRvbSIgQmFja1NlY29uZGFyeUNvbG9yPSJUcmFuc3BhcmVudCIgU2hhZG93Q29sb3I9IlRyYW5zcGFyZW50IiBCb3JkZXJDb2xvcj0iNjQsIDY0LCA2NCwgNjQiIEJvcmRlckRhc2hTdHlsZT0iU29saWQiPg0KICAgICAgPEF4aXNZIElzTGFiZWxBdXRvRml0PSJGYWxzZSIgVGl0bGU9Iua4qeW6pijluqYpIOiDvemHjyhLV0gpIOWOi+WKmyhiYXIpIOi9rOmAnyhSUE0pIiBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0Ij4NCiAgICAgICAgPE1ham9yR3JpZCBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0IiAvPg0KICAgICAgICA8TGFiZWxTdHlsZSBGb250PSJUYWhvbWEsIDhwdCIgLz4NCiAgICAgIDwvQXhpc1k+DQogICAgICA8QXhpc1ggSXNMYWJlbEF1dG9GaXQ9IkZhbHNlIiBUaXRsZT0i5pe26Ze0KHMpIiBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0Ij4NCiAgICAgICAgPE1ham9yR3JpZCBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0IiAvPg0KICAgICAgICA8TGFiZWxTdHlsZSBGb250PSJUYWhvbWEsIDhwdCIgLz4NCiAgICAgIDwvQXhpc1g+DQogICAgICA8QXhpc1gyIElzTGFiZWxBdXRvRml0PSJGYWxzZSI+DQogICAgICA8L0F4aXNYMj4NCiAgICAgIDxBeGlzWTIgSXNMYWJlbEF1dG9GaXQ9IkZhbHNlIiBUaXRsZT0i5Yqf546HIiBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0Ij4NCiAgICAgICAgPE1ham9yR3JpZCBMaW5lQ29sb3I9IjY0LCA2NCwgNjQsIDY0IiAvPg0KICAgICAgICA8TGFiZWxTdHlsZSBGb250PSJUYWhvbWEsIDhwdCIgLz4NCiAgICAgIDwvQXhpc1kyPg0KICAgIDwvQ2hhcnRBcmVhPg0KICA8L0NoYXJ0QXJlYXM+DQogIDxCb3JkZXJTa2luIFNraW5TdHlsZT0iRW1ib3NzIiAvPg0KPC9DaGFydD4=">
+                <MSChartSeries Name="Series1"/>
+                <MSChartSeries Name="Series2"/>
+                <MSChartSeries Name="Series3"/>
+                <MSChartSeries Name="Series4"/>
+                <MSChartSeries Name="Series5"/>
+                <MSChartSeries Name="Series6"/>
+              </MSChartObject>
+            </ChildBand>
+          </ChildBand>
+        </ChildBand>
+      </ChildBand>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="1120.2" Width="1058.4" Height="37.8">
+      <TextObject Name="Text6" Left="614.25" Top="9.45" Width="94.5" Height="18.9" Text="第 [Page] 页" VertAlign="Center" Font="宋体, 9pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

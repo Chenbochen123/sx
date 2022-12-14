@@ -1,0 +1,413 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Web.UI.HtmlControls;
+using Ext.Net;
+using Mesnac.Business.Interface;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using System.Text;
+
+public partial class Manager_RubberQuality_Manage_CheckRubberQualityPointCurve : System.Web.UI.Page
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "ButtonNorthQuery" };
+            导出 = new SysPageAction() { ActionID = 2, ActionName = "ButtonNorthExport" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 导出 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    /// <summary>
+    /// 页面加载
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            #region 加载CSS样式
+            //HtmlGenericControl cssLink = new HtmlGenericControl("link");
+            //cssLink.Attributes.Add("type", "text/css");
+            //cssLink.Attributes.Add("href", this.ResolveUrl("~/resources/css/main.css"));
+            //this.Page.Header.Controls.Add(cssLink);
+
+            //cssLink = new System.Web.UI.HtmlControls.HtmlGenericControl("link");
+            //cssLink.Attributes.Add("type", "text/css");
+            //cssLink.Attributes.Add("rel", "stylesheet");
+            //cssLink.Attributes.Add("href", this.ResolveUrl("~/resources/css/ext-chinese-font.css"));
+            //this.Page.Header.Controls.Add(cssLink);
+            #endregion 加载CSS样式
+
+            InitControls();
+
+            DateFieldNorthBeginDate.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+            DateFieldNorthEndDate.SetValue(DateTime.Today.ToString("yyyy-MM-dd"));
+            if (ComboBoxCheckType.Items.Count > 0)
+            {
+                ComboBoxCheckType.Select(0);
+            }
+            if (ComboBoxCheckItem.Items.Count > 0)
+            {
+                ComboBoxCheckItem.Select(0);
+            }
+            if (ComboBoxEquip.Items.Count > 0)
+            {
+                ComboBoxEquip.Select(0);
+            }
+        }
+    }
+
+    private void InitControls()
+    {
+        IBasWorkShopManager bBasWorkShopManager = new BasWorkShopManager();
+
+        string sql = " select item_Cd,showname from Qmt_Checkitemcd where spc=1 order by item_Cd ";
+        DataSet ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            ComboBoxCheckItem.Items.Add(new Ext.Net.ListItem { Text = dr[1].ToString(), Value = dr[0].ToString() });
+        }
+
+        sql = " select equip_Code,equip_name from pmt_equip where equip_Class='01' ";
+        ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            ComboBoxEquip.Items.Add(new Ext.Net.ListItem { Text = dr[1].ToString(), Value = dr[0].ToString() });
+        }
+
+        sql = " select * from pmt_recipetype ";
+        ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+        foreach (DataRow dr in ds.Tables[0].Rows)
+        {
+            ComboBoxCheckType.Items.Add(new Ext.Net.ListItem { Text = dr[1].ToString(), Value = dr[0].ToString() });
+        }
+    }
+
+    [DirectMethod]
+    public string chartMainBindData()
+    {
+        if (string.IsNullOrEmpty(hiddenMaterialCode.Value.ToString()))
+        {
+            X.Msg.Alert("提示", "必须选择物料！").Show();
+            return "";
+        }
+
+        if (string.IsNullOrEmpty(txtSX.Text))
+        {
+            X.Msg.Alert("提示", "请输入上限！").Show();
+            return "";
+        }
+        if (string.IsNullOrEmpty(txtXX.Text))
+        {
+            X.Msg.Alert("提示", "请输入下限！").Show();
+            return "";
+        }
+        IQmtRubberLBEquipDataReportParams paras = new QmtRubberLBEquipDataReportParams();
+        DataSet ds = GetCheckRubberLBEquipDataReportByParas(paras);
+
+        if (ds == null || ds.Tables[0].Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "未查找到数据！").Show();
+            return "";
+        }
+        ModelCenter.Fields.Clear();
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            ModelCenter.Fields.Add(new ModelField { Name = dc.ColumnName });
+        }
+
+        GridPanelCenter.ColumnModel.Columns.Clear();
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            Ext.Net.Column cs = new Ext.Net.Column { DataIndex = dc.ColumnName, Text = dc.ColumnName };
+            //cs.Renderer = new Renderer { Fn = "change" };
+            cs.Flex = 1;
+            GridPanelCenter.ColumnModel.Columns.Add(cs);
+        }
+
+        ModelAvg.Fields.Clear();
+        foreach (DataColumn dc in ds.Tables[1].Columns)
+        {
+            ModelAvg.Fields.Add(new ModelField { Name = dc.ColumnName });
+        }
+
+        GridPanelAvg.ColumnModel.Columns.Clear();
+        foreach (DataColumn dc in ds.Tables[1].Columns)
+        {
+            Ext.Net.Column cs = new Ext.Net.Column { DataIndex = dc.ColumnName, Text = dc.ColumnName };
+            cs.Flex = 1;
+            GridPanelAvg.ColumnModel.Columns.Add(cs);
+        }
+
+        //StoreCenter.DataSource = ds.Tables[0];
+        //StoreCenter.DataBind();
+        //GridPanelCenter.Render();
+
+        //StoreAvg.DataSource = ds.Tables[1];
+        //StoreAvg.DataBind();
+        //GridPanelAvg.Render();
+
+        Store store = this.Chart1.GetStore();
+        store.DataSource = ds.Tables[0];
+        store.DataBind();
+
+        string strCheckData = DataTableJson(ds.Tables[0]);
+
+        string strAvgData = DataTableJson(ds.Tables[1]);
+
+        return strCheckData + "@" + strAvgData + "@" + txtSX.Text.Trim() + "@" + txtXX.Text.Trim()
+            + "@" + ((string.IsNullOrEmpty(txtSX.Text.Trim()) ? 0 : Convert.ToDecimal(txtSX.Text.Trim())) + (string.IsNullOrEmpty(txtXX.Text.Trim()) ? 0 : Convert.ToDecimal(txtXX.Text.Trim()))) / 2;
+    }
+
+    private string DataTable2Json(DataTable dt)
+    {
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.Append("[");
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            jsonBuilder.Append("{");
+            for (int j = 0; j < dt.Columns.Count; j++)
+            {
+                jsonBuilder.Append("\"");
+                jsonBuilder.Append(dt.Columns[j].ColumnName);
+                jsonBuilder.Append("\":\"");
+                jsonBuilder.Append(dt.Rows[i][j].ToString());
+                jsonBuilder.Append("\",");
+            }
+            jsonBuilder.Remove(jsonBuilder.Length - 1, 1);
+            jsonBuilder.Append("},");
+        }
+        jsonBuilder.Remove(jsonBuilder.Length - 1, 1);
+        jsonBuilder.Append("]");
+        return jsonBuilder.ToString();
+    }
+
+    private string DataTableJson(DataTable dt)
+    {
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.Append("[");
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            //DateTime dtime = Convert.ToDateTime(dt.Rows[i]["plandate"]);
+            jsonBuilder.Append("[");
+            jsonBuilder.Append("\"");
+            jsonBuilder.Append(dt.Rows[i]["plandate"].ToString());
+            jsonBuilder.Append("\"");
+            jsonBuilder.Append(",");
+            jsonBuilder.Append(dt.Rows[i]["checkvalue"].ToString());
+            jsonBuilder.Append("]");
+            jsonBuilder.Append(",");
+        }
+        jsonBuilder.Remove(jsonBuilder.Length - 1, 1);
+        jsonBuilder.Append("]");
+        return jsonBuilder.ToString();
+    }
+
+    /// <summary>
+    /// 查询
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void ButtonNorthQuery_Click(object sender, DirectEventArgs e)
+    {
+        string beginPlanDate = DateFieldNorthBeginDate.RawText;
+
+        HiddenBeginDate.SetValue(beginPlanDate);
+
+        if (string.IsNullOrEmpty(hiddenMaterialCode.Value.ToString()))
+        {
+            X.Msg.Alert("提示", "必须选择物料！").Show();
+            return;
+        }
+
+        IQmtRubberLBEquipDataReportParams paras = new QmtRubberLBEquipDataReportParams();
+        IQmtCheckMasterManager bQmtCheckMasterManager = new QmtCheckMasterManager();
+        DataSet ds = GetCheckRubberLBEquipDataReportByParas(paras);
+
+        ModelCenter.Fields.Clear();
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            ModelCenter.Fields.Add(new ModelField { Name = dc.ColumnName });
+        }
+
+        GridPanelCenter.ColumnModel.Columns.Clear();
+        foreach (DataColumn dc in ds.Tables[0].Columns)
+        {
+            Ext.Net.Column cs = new Ext.Net.Column { DataIndex = dc.ColumnName, Text = dc.ColumnName };
+            //cs.Renderer = new Renderer { Fn = "change" };
+            GridPanelCenter.ColumnModel.Columns.Add(cs);
+        }
+
+        ModelAvg.Fields.Clear();
+        foreach (DataColumn dc in ds.Tables[1].Columns)
+        {
+            ModelAvg.Fields.Add(new ModelField { Name = dc.ColumnName });
+        }
+
+        GridPanelAvg.ColumnModel.Columns.Clear();
+        foreach (DataColumn dc in ds.Tables[1].Columns)
+        {
+            Ext.Net.Column cs = new Ext.Net.Column { DataIndex = dc.ColumnName, Text = dc.ColumnName };
+            GridPanelAvg.ColumnModel.Columns.Add(cs);
+        }
+
+        //StoreCenter.DataSource = ds.Tables[0];
+        //StoreCenter.DataBind();
+        //GridPanelCenter.Render();
+
+        //StoreAvg.DataSource = ds.Tables[1];
+        //StoreAvg.DataBind();
+        //GridPanelAvg.Render();
+
+        Store store = this.Chart1.GetStore();
+        store.DataSource = ds.Tables[0];
+        store.DataBind();
+    }
+    public DataSet GetCheckRubberLBEquipDataReportByParas(IQmtRubberLBEquipDataReportParams paras)
+    {
+        IBasWorkShopManager bBasWorkShopManager = new BasWorkShopManager();
+        Dictionary<string, object> dict = new Dictionary<string, object>();
+
+        var selectEquip = "";
+        foreach (Ext.Net.ListItem a in this.ComboBoxEquip.SelectedItems)
+        {
+            if (selectEquip == "")
+            {
+                selectEquip = a.Value;
+            }
+            else
+            {
+                selectEquip = selectEquip + "," + a.Value;
+            }
+        }
+
+        //测试用参数
+        //dict.Add("@sdt", "2019-11-02");
+        //dict.Add("@edt", "2019-12-19");
+        //dict.Add("@matercode", "5012180204018");
+        //dict.Add("@equipcode", "01001,01006,01010");
+        //dict.Add("@checkType", "试制");
+        //dict.Add("@checkItemCd", "323");
+
+        dict.Add("@sdt", DateFieldNorthBeginDate.RawText);
+        dict.Add("@edt", DateFieldNorthEndDate.RawText);
+        dict.Add("@matercode", hiddenMaterialCode.Value.ToString());
+        dict.Add("@equipcode", selectEquip);
+        dict.Add("@checkType", ComboBoxCheckType.SelectedItem.Text);
+        dict.Add("@checkItemCd", ComboBoxCheckItem.Value.ToString());
+
+
+        DataSet ds = bBasWorkShopManager.GetDataSetByStoreProcedure("proc_GetSpc", dict);
+
+        StoreCenter.DataSource = ds.Tables[0];
+        StoreCenter.DataBind();
+        GridPanelCenter.Render();
+
+        StoreAvg.DataSource = ds.Tables[1];
+        StoreAvg.DataBind();
+        GridPanelAvg.Render();
+
+        return bBasWorkShopManager.GetDataSetByStoreProcedure("proc_GetSpc", dict);
+    }
+    /// <summary>
+    /// 导出
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void ButtonNorthExport_Click(object sender, DirectEventArgs e)
+    {
+        string fields = e.ExtraParams["fields"];
+        string records = e.ExtraParams["records"];
+        string fieldsAVG = e.ExtraParams["fieldsAVG"];
+        string recordsAVG = e.ExtraParams["recordsAVG"];
+        Newtonsoft.Json.JavaScriptArray jsArrayFields = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(fields) as Newtonsoft.Json.JavaScriptArray;
+        Newtonsoft.Json.JavaScriptArray jsArrayRecords = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(records) as Newtonsoft.Json.JavaScriptArray;
+
+        Newtonsoft.Json.JavaScriptArray jsArrayFieldsAVG = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(fieldsAVG) as Newtonsoft.Json.JavaScriptArray;
+        Newtonsoft.Json.JavaScriptArray jsArrayRecordsAVG = Newtonsoft.Json.JavaScriptConvert.DeserializeObject(recordsAVG) as Newtonsoft.Json.JavaScriptArray;
+
+        DataSet ds = new DataSet();
+        DataTable dt = new DataTable();
+        DataTable dtAVG = new DataTable();
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectField in jsArrayFields)
+        {
+            if (jsObjectField["name"].ToString().ToLower() != "id")
+            {
+                dt.Columns.Add(new DataColumn(jsObjectField["name"].ToString(), typeof(string)));
+            }
+        }
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectRecord in jsArrayRecords)
+        {
+            DataRow dr = dt.NewRow();
+            foreach (DataColumn dc in dt.Columns)
+            {
+                dr[dc.ColumnName] = jsObjectRecord[dc.ColumnName];
+            }
+            dt.Rows.Add(dr);
+        }
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectField in jsArrayFieldsAVG)
+        {
+            if (jsObjectField["name"].ToString().ToLower() != "id")
+            {
+                dtAVG.Columns.Add(new DataColumn(jsObjectField["name"].ToString(), typeof(string)));
+            }
+        }
+
+        foreach (Newtonsoft.Json.JavaScriptObject jsObjectRecord in jsArrayRecordsAVG)
+        {
+            DataRow dr = dtAVG.NewRow();
+            foreach (DataColumn dc in dtAVG.Columns)
+            {
+                dr[dc.ColumnName] = jsObjectRecord[dc.ColumnName];
+            }
+            dtAVG.Rows.Add(dr);
+        }
+
+        if (dt.Rows.Count == 0)
+        {
+            X.Msg.Alert("提示", "没有找到符合条件的记录").Show();
+            return;
+        }
+        dt.TableName = "检测值";
+        dtAVG.TableName = "平均值";
+        ds.Tables.Add(dt);
+        ds.Tables.Add(dtAVG);
+
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "检验数据");
+    }
+    [DirectMethod]
+    public void ChangeFuzhi()
+    {
+        string matercode = "";
+        string itemCode = "";
+        string standcode = "";
+        matercode = hiddenMaterialCode.Value.ToString();
+        itemCode = ComboBoxCheckItem.Value.ToString();
+        if (ComboBoxCheckType.SelectedItem.Text != "试制")
+        { standcode = "1"; }
+        else
+        { standcode = "2"; }
+        IBasWorkShopManager bBasWorkShopManager = new BasWorkShopManager();
+
+        string sql = @"select * from Qmt_QuaStandMaster a join Qmt_QuaStandDetail b on a.stand_id=b.stand_id and b.Judge_result=1
+where a.mater_Code='" + matercode + "'and b.item_Cd='" + itemCode + "'  and a.stand_Code='" + standcode + "'";
+        DataSet ds = bBasWorkShopManager.GetBySql(sql).ToDataSet();
+        string Perm_min = ds.Tables[0].Rows[0]["Perm_min"].ToString();
+        string Perm_max = ds.Tables[0].Rows[0]["Perm_max"].ToString();
+        txtSX.Text = Perm_max;
+        txtXX.Text = Perm_min;
+    }
+}

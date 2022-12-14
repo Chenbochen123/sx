@@ -1,0 +1,338 @@
+﻿using System;
+using System.Collections.Generic;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using Mesnac.Data.Components;
+using System.Data;
+using Newtonsoft.Json;
+
+/// <summary>
+/// Manager_Technology_Manage_Search 实现类
+/// 孙本强 @ 2013-04-03 13:07:15
+/// </summary>
+/// <remarks></remarks>
+public partial class Manager_Technology_Manage_Search : Mesnac.Web.UI.Page
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btnSearch" };
+            导出 = new SysPageAction() { ActionID = 2, ActionName = "btnExport" };
+            修改配方状态 = new SysPageAction() { ActionID = 3, ActionName = "btnChangeState,txtRecipeStateEdit" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 导出 { get; private set; } //必须为 public
+        public SysPageAction 修改配方状态 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    #region 属性注入
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:16
+    /// </summary>
+    private ISysCodeManager sysCodeManager = new SysCodeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:16
+    /// </summary>
+    private IPmtRecipeManager pmtRecipeManager = new PmtRecipeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:16
+    /// </summary>
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+    #endregion
+
+
+    #region 页面初始化
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:07:16
+    /// </summary>
+    private const string constSelectAllText = "---请选择---";
+    /// <summary>
+    /// Inis the combo box.
+    /// 孙本强 @ 2013-04-03 13:07:16
+    /// </summary>
+    /// <param name="cb">The cb.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniComboBox(ComboBox cb, EntityArrayList<SysCode> lst)
+    {
+        Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+        cb.Items.Clear();
+        cb.Items.Add(allitem);
+        foreach (SysCode m in lst)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(m.ItemName, m.ItemCode.ToString());
+            cb.Items.Add(item);
+        }
+        if (cb.Items.Count > 0)
+        {
+            cb.Text = (cb.Items[0].Value);
+        }
+    }
+    /// <summary>
+    /// Handles the Load event of the Page control.
+    /// 孙本强 @ 2013-04-03 13:07:17
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        //txtBeginTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        //txtEndTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        WhereClip where = new WhereClip();
+        OrderByClip order = new OrderByClip();
+        #region 配方类型
+        where = new WhereClip();
+        order = new OrderByClip();
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtType.ToString());
+        EntityArrayList<SysCode> lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniComboBox(txtPmtRecipeType, lst);
+        #endregion
+
+        #region 配方状态
+        where = new WhereClip();
+        order = new OrderByClip();
+        where.And(SysCode._.TypeID == SysCodeManager.SysCodeType.PmtState.ToString());
+        lst = sysCodeManager.GetListByWhereAndOrder(where, order);
+        IniComboBox(txtPmtRecipeState, lst);
+        IniComboBox(txtRecipeStateEdit, lst);
+        txtRecipeStateEdit.Items.RemoveAt(0);
+        #endregion
+
+        Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+
+        txtPmtRecipeAudit.Items.Clear();
+        txtPmtRecipeAudit.Items.Add(allitem);
+        txtPmtRecipeAudit.Items.Add(new Ext.Net.ListItem("未审核", "0"));
+        txtPmtRecipeAudit.Items.Add(new Ext.Net.ListItem("已审核", "1"));
+        txtPmtRecipeAudit.Text = (constSelectAllText);
+    }
+    /// <summary>
+    /// Reds the HTML.
+    /// 孙本强 @ 2013-04-03 13:07:17
+    /// </summary>
+    /// <param name="ss">The ss.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string RedHtml(string ss)
+    {
+        return "<font color='red'>" + ss + "</font>";
+    }
+    /// <summary>
+    /// Defaults the HTML.
+    /// 孙本强 @ 2013-04-03 13:07:17
+    /// </summary>
+    /// <param name="ss">The ss.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string DefaultHtml(string ss)
+    {
+        return ss;
+    }
+    #endregion
+
+
+    #region 查询显示右侧
+    /// <summary>
+    /// Grids the panel bind data.
+    /// 孙本强 @ 2013-04-03 13:07:18
+    /// </summary>
+    /// <param name="action">The action.</param>
+    /// <param name="extraParams">The extra params.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        if (this._.查询.SeqIdx == 0)
+        {
+             return null;
+        }
+        DataTable data = new DataTable();
+        int total = 0;
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PmtRecipeManager.QueryParams queryParams = new PmtRecipeManager.QueryParams();
+        queryParams.PageParams.PageIndex = prms.Page;
+        queryParams.PageParams.PageSize = prms.Limit;
+        queryParams.PageParams.Orderfld = "RecipeEquipCode";
+        try
+        {
+            queryParams.BeginTime = Convert.ToDateTime(txtBeginTime.Text) == DateTime.MinValue ? "" : Convert.ToDateTime(txtBeginTime.Text).AddDays(0).ToString();
+            queryParams.EndTime = Convert.ToDateTime(txtEndTime.Text) == DateTime.MinValue ? "" : Convert.ToDateTime(txtEndTime.Text).AddDays(1).ToString();
+        }
+        catch { }
+        queryParams.RubCode = hiddenRubberCode.Text;
+        queryParams.MaterialCode = hiddenMaterialCode.Text;
+        queryParams.RecipeEquipCode = hiddenRecipeEquipCode.Text;
+        queryParams.RecipeVersionID = txtRecipeVersionID.Text;
+        queryParams.RecipeState = txtPmtRecipeState.Text.Replace(constSelectAllText, "");
+        queryParams.RecipeType = txtPmtRecipeType.Text.Replace(constSelectAllText, "");
+        queryParams.AuditFlag = txtPmtRecipeAudit.Text.Replace(constSelectAllText, "");
+        PageResult<PmtRecipe> lst = pmtRecipeManager.GetTablePageDataBySql(queryParams);
+        data = lst.DataSet.Tables[0];
+
+        total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+    /// <summary>
+    /// Saves the recipe info.
+    /// 孙本强 @ 2013-04-03 13:07:18
+    /// </summary>
+    /// <param name="recipe">The recipe.</param>
+    /// <param name="state">The state.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public string SaveRecipeInfo(string recipe, string state)
+    {
+        string Result = string.Empty;
+        PmtRecipe p = pmtRecipeManager.GetById(recipe);
+        EntityArrayList<PmtRecipe> lst = pmtRecipeManager.GetListByWhere(PmtRecipe._.RecipeMaterialCode == p.RecipeMaterialCode
+            && PmtRecipe._.RecipeEquipCode == p.RecipeEquipCode);
+        foreach (PmtRecipe m in lst)
+        {
+            if ((m.RecipeState.Trim() == "1") &&
+                (state.Trim() == "1") &&
+                (p.ObjID != m.ObjID))
+            {
+                return "此方案已经存在正用配方！";
+            }
+        }
+        p.RecipeState = state.Trim();
+        p.AuditUser = string.Empty;
+        p.AuditDateTime = null;
+        p.AuditFlag = "0";
+        p.RecipeModifyTime = DateTime.Now;
+        pmtRecipeManager.Update(p);
+        return Result;
+    }
+    /// <summary>
+    /// Exports the data set.
+    /// 孙本强 @ 2013-04-03 13:07:18
+    /// </summary>
+    /// <param name="data">The data.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private DataSet ExportDataSet(DataSet data)
+    {
+        DataTable dt = new DataTable();
+        DataSet ds = new DataSet();
+        dt = data.Tables[0].Copy();
+        foreach (DataRow dr in dt.Rows)
+        {
+            if (dr["IsUseAreaTemp"].ToString().Trim() == "0")
+            {
+                dr["IsUseAreaTemp"] ="否";
+            }
+            else
+            {
+                dr["IsUseAreaTemp"] = "是";
+            }
+            if (dr["CarbonRecycleType"].ToString().Trim() == "0")
+            {
+                dr["CarbonRecycleType"] = "否";
+            }
+            else
+            {
+                dr["CarbonRecycleType"] = "是";
+            }
+        }
+        foreach (DataColumn dc in dt.Columns)
+        {
+            if (dc.ColumnName.ToString() == "RecipeStateName") { dc.ColumnName = "字段配方状态"; }
+            if (dc.ColumnName.ToString() == "EquipName") { dc.ColumnName = "字段机台"; }
+            if (dc.ColumnName.ToString() == "MaterialName") { dc.ColumnName = "字段物料名称"; }
+            if (dc.ColumnName.ToString() == "RecipeTypeName") { dc.ColumnName = "字段配方类型"; }
+            if (dc.ColumnName.ToString() == "AuditFlagName") { dc.ColumnName = "字段审核标志"; }
+            if (dc.ColumnName.ToString() == "RecipeName") { dc.ColumnName = "字段配方编码"; }
+            if (dc.ColumnName.ToString() == "RecipeVersionID") { dc.ColumnName = "字段版本号"; }
+            if (dc.ColumnName.ToString() == "RecipeDefineDate") { dc.ColumnName = "字段配方创建时间"; }
+            if (dc.ColumnName.ToString() == "RecipeMaterialCode") { dc.ColumnName = "字段物料编号"; }
+            if (dc.ColumnName.ToString() == "RecipeModifyTime") { dc.ColumnName = "字段最后一次修改时间"; }
+            if (dc.ColumnName.ToString() == "LotDoneTime") { dc.ColumnName = "字段每车时间"; }
+            if (dc.ColumnName.ToString() == "ShelfLotCount") { dc.ColumnName = "字段每架车数"; }
+            if (dc.ColumnName.ToString() == "LotTotalWeight") { dc.ColumnName = "字段配方总重"; }
+            if (dc.ColumnName.ToString() == "OverTempMinTime") { dc.ColumnName = "字段超温排胶最短时间"; }
+            if (dc.ColumnName.ToString() == "OverTimeSetTime") { dc.ColumnName = "字段超时排胶时间"; }
+            if (dc.ColumnName.ToString() == "OverTempSetTemp") { dc.ColumnName = "字段超温排胶温度"; }
+            if (dc.ColumnName.ToString() == "InPolyMaxTemp") { dc.ColumnName = "字段最高进料温度"; }
+            if (dc.ColumnName.ToString() == "IsUseAreaTemp") { dc.ColumnName = "字段是否使用三区温度"; }
+            if (dc.ColumnName.ToString() == "SideTemp") { dc.ColumnName = "字段侧壁温度"; }
+            if (dc.ColumnName.ToString() == "RollTemp") { dc.ColumnName = "字段转子温度"; }
+            if (dc.ColumnName.ToString() == "DdoorTemp") { dc.ColumnName = "字段卸料门温度"; }
+            if (dc.ColumnName.ToString() == "CarbonRecycleType") { dc.ColumnName = "字段是否回收炭黑"; }
+            if (dc.ColumnName.ToString() == "CarbonRecycleTime") { dc.ColumnName = "字段炭黑回收时间"; }
+            if (dc.ColumnName.ToString() == "ObjID") { dc.ColumnName = "字段配方唯一标示"; }
+            if (dc.ColumnName.ToString() == "Remark") { dc.ColumnName = "字段备注"; }
+        }
+        for (int i = 0; i < dt.Columns.Count; i++)
+        {
+            if (!dt.Columns[i].ColumnName.ToString().StartsWith("字段"))
+            {
+                dt.Columns.RemoveAt(i);
+                i--;
+            }
+        }
+        foreach (DataColumn dc in dt.Columns)
+        {
+            dc.ColumnName = dc.ColumnName.Substring(2, dc.ColumnName.Length - 2);
+        }
+        ds.Tables.Add(dt);
+        return ds;
+    }
+    /// <summary>
+    /// Handles the Click event of the btnExportSubmit control.
+    /// 孙本强 @ 2013-04-03 13:07:18
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        if (this._.导出.SeqIdx == 0)
+        {
+            X.Msg.Alert("提示", "您没有进行导出的权限！").Show();
+            return;
+        }
+        DataSet data = new DataSet();
+        PmtRecipeManager.QueryParams queryParams = new PmtRecipeManager.QueryParams();
+        queryParams.PageParams.PageSize = -100;
+        queryParams.PageParams.Orderfld = "RecipeEquipCode";
+        try
+        {
+            queryParams.BeginTime = string.IsNullOrWhiteSpace(txtBeginTime.Text) ? "" : Convert.ToDateTime(txtBeginTime.Text).AddDays(0).ToString();
+            queryParams.EndTime = string.IsNullOrWhiteSpace(txtEndTime.Text) ? "" : Convert.ToDateTime(txtEndTime.Text).AddDays(1).ToString();
+        }
+        catch { }
+        queryParams.RubCode = hiddenRubberCode.Text;
+        queryParams.MaterialCode = hiddenMaterialCode.Text;
+        queryParams.RecipeEquipCode = hiddenRecipeEquipCode.Text;
+        queryParams.RecipeVersionID = txtRecipeVersionID.Text;
+        queryParams.RecipeState = txtPmtRecipeState.Text.Replace(constSelectAllText, "");
+        queryParams.RecipeType = txtPmtRecipeType.Text.Replace(constSelectAllText, "");
+        queryParams.AuditFlag = txtPmtRecipeAudit.Text.Replace(constSelectAllText, "");
+        PageResult<PmtRecipe> lst = pmtRecipeManager.GetTablePageDataBySql(queryParams);
+        if (lst.DataSet.Tables.Count > 0)
+        {
+            data = ExportDataSet(lst.DataSet);
+        }
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(data, "工艺配方");
+    }
+}

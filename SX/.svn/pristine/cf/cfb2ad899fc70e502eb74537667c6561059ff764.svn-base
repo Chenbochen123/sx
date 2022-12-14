@@ -1,0 +1,97 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using FastReport;
+using FastReport.Utils;
+using FastReport.Web;
+using System.IO;
+using FastReport.Data;
+using System.Data;
+using Mesnac.Entity;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using System.Configuration;
+using System.Data.SqlClient;
+using NBear.Common;
+using Ext.Net;
+
+public partial class Manager_ReportCenter_RptPmtLotInfo_RptPmtLotInfo : Mesnac.Web.UI.Page
+{
+    private string barCode = "";
+    private IPptCurveDataManager curveManager = new PptCurveDataManager("Curve");
+    private IPptOpenMixDataManager openMixManager = new PptOpenMixDataManager();
+    private IPptLotDataManager lotManager = new PptLotDataManager();
+    private IPptMixingDataManager mixDataManager = new PptMixingDataManager();
+    private IPptWeighDataManager weighManager = new PptWeighDataManager();
+    private IPptAlarmDataManager alramManager = new PptAlarmDataManager();
+    private IPmtRecipeManager recipeManager = new PmtRecipeManager();
+    private IPmtRecipeMixingManager recipeMixManager = new PmtRecipeMixingManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        try
+        {
+            barCode = Request.QueryString["BarCode"].ToString().Trim();
+        }
+        catch (Exception)
+        {
+            barCode = "";
+        }
+    }
+
+    protected void WebReport1_StartReport(object sender, EventArgs e)
+    {
+        //加载模板
+        FastReport.Report report = this.WebReport1.Report;
+       
+        //绑定车报表信息
+        DataSet PptLot = lotManager.GetLotInfoByBarcode(barCode);
+        //X.Js.Alert(PptLot.Tables[0].Rows[0]["EquipName"].ToString());
+        //return; 
+
+       report.Load(Server.MapPath("RptPmtLotInfo.frx")); 
+        //report.Load(Server.MapPath("RptPmtLotInfo2.frx"));
+        report.RegisterData(PptLot.Tables[0], "PptLotData");
+        //绑定混炼信息
+        DataSet mixData = mixDataManager.GetMixDataByBarCode(barCode);
+        report.RegisterData(mixData.Tables[0], "PptMixingData");
+    
+        //绑定称重信息
+        EntityArrayList<PptWeighData> weighList = weighManager.GetListByWhere(PptWeighData._.Barcode == barCode );
+
+      
+
+
+
+            report.RegisterData(weighList, "PptWeighData");
+        //绑定预分散信息
+//            EntityArrayList<PptWeighData> advanceSeparateList = weighManager.GetListByWhere(PptWeighData._.Barcode == barCode && PptWeighData._.WeighType == "预分散");
+//            report.RegisterData(advanceSeparateList, "PptAdvanceSeparate");
+////        //绑定开炼信息
+
+//            string sqlopen = @"SELECT		m.mixBarcode as Barcode,klequipid , m.id as OpenMixId, m.step_name as OpenActionCode,
+// m.stepMixTime as MixTime , m.stepmixcoolspeed as CoolMixSpeed, 
+//			                                    m.stepOpenMixSpeed as OpenMixSpeed, m.steprollor as MixRollor, m.stepWaterTemp as WaterTemp, m.stepRubTemp as RubberTemp, 
+//			                                    m.steppower
+//                                    FROM	    PptMixDataOne m     
+//                                    where         m.mixBarcode='" + barCode + @"'
+//                                    order by klequipid,OpenMixId";
+//            DataSet openMixData = mixDataManager.GetBySql(sqlopen).ToDataSet();
+//            report.RegisterData(openMixData.Tables[0], "PptOpenMixingData");
+ 
+////        //绑定报警信息
+//            EntityArrayList<PptAlarmData> alarmList = alramManager.GetListByWhere(PptAlarmData._.Barcode == barCode);
+//            report.RegisterData(alarmList, "PptAlarmData");
+        //硫化曲线图
+            EntityArrayList<PptCurveData> curveArrayList = curveManager.GetTopNListWhereOrder(1, PptCurveData._.Barcode == barCode, PptCurveData._.Barcode.Asc);
+            List<PptCurve> curveList = new List<PptCurve>();
+            if (curveArrayList.Count > 0)
+            {
+                curveList = curveManager.IniPptCurveList(curveArrayList[0]);
+            }
+            report.RegisterData(curveList, "PptCurve");
+    }
+}

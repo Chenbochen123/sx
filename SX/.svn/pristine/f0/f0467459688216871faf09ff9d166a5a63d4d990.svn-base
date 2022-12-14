@@ -1,0 +1,65 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Business.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Data.Interface;
+    using Mesnac.Data.Implements;
+    using Mesnac.Business.Interface;
+    using NBear.Common;
+    /// <summary>
+    /// PmtRecipeMixingManager 实现类
+    /// 孙本强 @ 2013-04-03 12:46:09
+    /// </summary>
+    /// <remarks></remarks>
+    public class PmtRecipeMixingManager : BaseManager<PmtRecipeMixing>, IPmtRecipeMixingManager
+    {
+		#region 属性注入与构造方法
+
+        /// <summary>
+        /// 
+        /// 孙本强 @ 2013-04-03 12:46:10
+        /// </summary>
+        private IPmtRecipeMixingService service;
+
+        /// <summary>
+        /// 类 PmtRecipeMixingManager 构造函数
+        /// 孙本强 @ 2013-04-03 12:46:10
+        /// </summary>
+        /// <remarks></remarks>
+        public PmtRecipeMixingManager()
+        {
+            this.service = new PmtRecipeMixingService();
+            base.BaseService = this.service;
+        }
+
+        /// <summary>
+        /// 类 PmtRecipeMixingManager 构造函数
+        /// 孙本强 @ 2013-04-03 12:46:10
+        /// </summary>
+        /// <param name="connectStringKey">The connect string key.</param>
+        /// <remarks></remarks>
+		public PmtRecipeMixingManager(string connectStringKey)
+        {
+			this.service = new PmtRecipeMixingService(connectStringKey);
+            base.BaseService = this.service;
+        }
+
+        /// <summary>
+        /// 类 PmtRecipeMixingManager 构造函数
+        /// 孙本强 @ 2013-04-03 12:46:10
+        /// </summary>
+        /// <param name="way">The way.</param>
+        /// <remarks></remarks>
+        public PmtRecipeMixingManager(NBear.Data.Gateway way)
+        {
+			this.service = new PmtRecipeMixingService(way);
+            base.BaseService = this.service;
+        }
+
+        #endregion
+    }
+}

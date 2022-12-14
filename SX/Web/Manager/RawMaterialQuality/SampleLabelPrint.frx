@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="07/27/2013 15:44:17" ReportInfo.Modified="04/23/2014 13:01:26" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqAFHGp6KQj27H4qUwAIR20hSnyrpNtgmeY+I5zyTmYE0HuZfX1hs9fAqnt4DRtzHmabOsETFu8uBcY3tAnpVWBTTAdBw7JTBCtzSX8xSQMNVNNe0oRSMlmPwJJUBb3zDgZKPcDdrCWsDxM9qWsy6hliWiTerGcgzrd2bOfloaDI1EwopUO2pjLHOt1mWOL50f">
+      <TableDataSource Name="Table" Alias="SampleLabelPrint" DataType="System.Int32" Enabled="true" SelectCommand="select '原材料名称' SampleName, '原材料编号' SampleCode">
+        <Column Name="SampleName" DataType="System.String"/>
+        <Column Name="SampleCode" DataType="System.String"/>
+        <Column Name="Frequency" DataType="System.String"/>
+        <Column Name="ReceiveDate" DataType="System.String"/>
+        <Column Name="Barcode" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="150" RawPaperSize="11" LeftMargin="0" TopMargin="0" RightMargin="0" BottomMargin="0">
+    <DataBand Name="Data1" Width="800" Height="1050" DataSource="Table">
+      <TableObject Name="Table1" Left="100" Top="100" Width="440" Height="240">
+        <TableColumn Name="Column0" Width="190"/>
+        <TableColumn Name="Column1" Width="250"/>
+        <TableRow Name="Row1" Height="60" >
+          <TableCell Name="LabelCell1" Border.Lines="Left, Top" Text="样品名称：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell1" Border.Lines="Right, Top" Text="[SampleLabelPrint.SampleName]" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="60">
+          <TableCell Name="LabelCell2" Border.Lines="Left" Text="样品编号：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="Right" Text="[SampleLabelPrint.SampleCode]" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="60">
+          <TableCell Name="LabelCell2" Border.Lines="Left" Text="条码号：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="Right" Text="[SampleLabelPrint.Barcode]" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="60">
+          <TableCell Name="LabelCell3" Border.Lines="Left" Text="样品序号：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell3" Border.Lines="Right" Text="[SampleLabelPrint.Frequency]" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="60">
+          <TableCell Name="LabelCell4" Border.Lines="Left, Bottom" Text="接收日期：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell4" Border.Lines="Right, Bottom" Text="[SampleLabelPrint.ReceiveDate]" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="60">
+          <TableCell Name="LabelCell4" Border.Lines="Left, Bottom" Text="取样人：" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell4" Border.Lines="Right, Bottom"  HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row7" Height="60">
+          <TableCell Name="LabelCell4" Border.Lines="Left, Bottom" Text="待试□实验中□" HorzAlign="Center" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+          <TableCell Name="Cell4" Border.Lines="Right, Bottom" Text="实验完毕□ " HorzAlign="Left" VertAlign="Center" Font="微软雅黑, 22pt, style=Bold"/>
+
+              </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

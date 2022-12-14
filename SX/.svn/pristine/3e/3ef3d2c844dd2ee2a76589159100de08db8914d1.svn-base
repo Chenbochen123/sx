@@ -1,0 +1,81 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.EntityDesign", "Mesnac.EntityDesign\Mesnac.EntityDesign.csproj", "{7CFC4D9B-3AD3-40BE-AA26-EF3995CDFE08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.Entity", "Mesnac.Entity\Mesnac.Entity.csproj", "{C06E061F-F9D2-4B34-B18A-513685CB874C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.Data", "Mesnac.Data\Mesnac.Data.csproj", "{4D4DEE77-212A-43CE-B4FA-831C542BE989}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.Business", "Mesnac.Business\Mesnac.Business.csproj", "{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}"
+EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Web", "Web", "{2198CFB5-16F4-4614-A63C-B3B09BC58350}"
+	ProjectSection(WebsiteProperties) = preProject
+		SccProjectName = ""
+		SccAuxPath = ""
+		SccLocalPath = ""
+		SccProvider = ""
+		Frontpage = "false"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		ProjectReferences = "{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}|Mesnac.Business.dll;{4D4DEE77-212A-43CE-B4FA-831C542BE989}|Mesnac.Data.dll;{C06E061F-F9D2-4B34-B18A-513685CB874C}|Mesnac.Entity.dll;{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}|Mesnac.Util.dll;"
+		Debug.AspNetCompiler.VirtualPath = "/Web"
+		Debug.AspNetCompiler.PhysicalPath = "Web\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\Web\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/Web"
+		Release.AspNetCompiler.PhysicalPath = "Web\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\Web\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "4044"
+		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.Util", "Mesnac.Util\Mesnac.Util.csproj", "{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mesnac.Util.Tests", "UnitTesting\Mesnac.Util.Tests\Mesnac.Util.Tests.csproj", "{D5BCD43A-AA0F-4683-B814-B1BCCCAEC7AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CFC4D9B-3AD3-40BE-AA26-EF3995CDFE08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CFC4D9B-3AD3-40BE-AA26-EF3995CDFE08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CFC4D9B-3AD3-40BE-AA26-EF3995CDFE08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CFC4D9B-3AD3-40BE-AA26-EF3995CDFE08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C06E061F-F9D2-4B34-B18A-513685CB874C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C06E061F-F9D2-4B34-B18A-513685CB874C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C06E061F-F9D2-4B34-B18A-513685CB874C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C06E061F-F9D2-4B34-B18A-513685CB874C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D4DEE77-212A-43CE-B4FA-831C542BE989}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D4DEE77-212A-43CE-B4FA-831C542BE989}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D4DEE77-212A-43CE-B4FA-831C542BE989}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D4DEE77-212A-43CE-B4FA-831C542BE989}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2198CFB5-16F4-4614-A63C-B3B09BC58350}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2198CFB5-16F4-4614-A63C-B3B09BC58350}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2198CFB5-16F4-4614-A63C-B3B09BC58350}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{2198CFB5-16F4-4614-A63C-B3B09BC58350}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5BCD43A-AA0F-4683-B814-B1BCCCAEC7AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5BCD43A-AA0F-4683-B814-B1BCCCAEC7AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5BCD43A-AA0F-4683-B814-B1BCCCAEC7AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5BCD43A-AA0F-4683-B814-B1BCCCAEC7AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

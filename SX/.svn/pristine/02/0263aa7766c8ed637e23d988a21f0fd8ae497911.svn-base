@@ -1,0 +1,1 @@
+﻿<%@ page language="C#" autoeventwireup="true" inherits="Manager_Authentication_Logout, App_Web_axoucqdm" %>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="07/26/2016 14:10:22" ReportInfo.Modified="07/27/2016 15:37:37" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <Parameter Name="Barcode" DataType="System.String"/>
+    <Parameter Name="MatName" DataType="System.String"/>
+    <Parameter Name="ProductNo" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="50" PaperHeight="30" LeftMargin="0" TopMargin="0" RightMargin="0" BottomMargin="0" FirstPageSource="15" OtherPagesSource="15">
+    <ReportTitleBand Name="ReportTitle1" Width="189" Height="113.4">
+      <BarcodeObject Name="Barcode1" Left="15.12" Top="37.8" Width="151.2" Height="47.25" AutoSize="false" Expression="[Barcode]" Text="123456789012345678901" ShowText="false" Barcode="Code128" Barcode.AutoEncode="true"/>
+      <TextObject Name="Text1" Left="9.45" Top="9.45" Width="94.5" Height="28.35" Text="[MatName]" Font="宋体, 9pt"/>
+      <TextObject Name="Text2" Left="103.95" Top="9.45" Width="94.5" Height="18.9" Text="[ProductNo]" Font="宋体, 9pt"/>
+      <TextObject Name="Text3" Left="9.45" Top="85.05" Width="170.1" Height="28.35" Text="[Barcode]" HorzAlign="Center" VertAlign="Center" Font="宋体, 10pt"/>
+    </ReportTitleBand>
+  </ReportPage>
+</Report>

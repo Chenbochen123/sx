@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/31/2014 20:38:21" ReportInfo.Modified="04/01/2014 15:32:11" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;RubberYieldDetailReport&quot;);
+      rowData.Init();
+      
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      Table1.PrintRow(1);
+      Table1.PrintColumns();
+      
+      while (rowData.HasMoreRows)
+      {
+        Table1.PrintRow(2);
+        Table1.PrintColumns();
+        
+        rowData.Next();
+      }
+      
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3EN4Kh6Ca9mzG7cAQMh0EEQg==">
+      <TableDataSource Name="Table" Alias="RubberYieldDetailReport" DataType="System.Int32" Enabled="true" SelectCommand="exec ProcPpmGetEquipYieldDetailReport '2', '', '2014-03', '', ''">
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="RecipeName" DataType="System.String"/>
+        <Column Name="RubName" DataType="System.String"/>
+        <Column Name="TotalNum" DataType="System.Int32"/>
+        <Column Name="TotalWeight" DataType="System.Int32"/>
+        <Column Name="UserName" DataType="System.String"/>
+        <Column Name="ShiftName" DataType="System.String"/>
+        <Column Name="RealNum" DataType="System.Int32"/>
+        <Column Name="RealWeight" DataType="System.Decimal"/>
+        <Column Name="SelfNOHGNum" DataType="System.Int32"/>
+        <Column Name="SelfNHGWeight" DataType="System.Decimal"/>
+        <Column Name="CheckHGNUM" DataType="System.Int32"/>
+        <Column Name="CheckHGWeight" DataType="System.Decimal"/>
+        <Column Name="CheckNHGNum" DataType="System.Int32"/>
+        <Column Name="CheckNHGWeight" DataType="System.Decimal"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="500" PaperHeight="100000" LeftMargin="0" TopMargin="0" RightMargin="0" BottomMargin="0" FirstPageSource="1" OtherPagesSource="1">
+    <DataBand Name="Data1" Width="1890" Height="113.4">
+      <TableObject Name="Table1" Left="9.45" Top="9.45" Width="1638.12" Height="85.05" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column18" Width="96.36"/>
+        <TableColumn Name="Column19" Width="96.36"/>
+        <TableColumn Name="Column20" Width="96.36"/>
+        <TableColumn Name="Column24" Width="96.36"/>
+        <TableColumn Name="Column23" Width="96.36"/>
+        <TableColumn Name="Column26" Width="96.36"/>
+        <TableColumn Name="Column27" Width="96.36"/>
+        <TableColumn Name="Column28" Width="96.36"/>
+        <TableColumn Name="Column29" Width="96.36"/>
+        <TableColumn Name="Column30" Width="96.36"/>
+        <TableColumn Name="Column31" Width="96.36"/>
+        <TableColumn Name="Column32" Width="96.36"/>
+        <TableColumn Name="Column33" Width="96.36"/>
+        <TableColumn Name="Column34" Width="96.36"/>
+        <TableColumn Name="Column25" Width="96.36"/>
+        <TableColumn Name="Column21" Width="96.36"/>
+        <TableColumn Name="Column22" Width="96.36"/>
+        <TableRow Name="Row6">
+          <TableCell Name="Cell117" Border.Lines="All" Text="计划日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell118" Border.Lines="All" Text="班次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell119" Border.Lines="All" Text="机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell120" Border.Lines="All" Text="主机手" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell121" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell122" Border.Lines="All" Text="配方分类" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell123" Border.Lines="All" Text="胶号" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" RowSpan="2"/>
+          <TableCell Name="Cell124" Border.Lines="All" Text="生产" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell125" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell126" Border.Lines="All" Text="下车" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell127" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell128" Border.Lines="All" Text="自测不合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell129" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell130" Border.Lines="All" Text="质检合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell131" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell132" Border.Lines="All" Text="质检不合格" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt" ColSpan="2"/>
+          <TableCell Name="Cell133" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4">
+          <TableCell Name="Cell83" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell84" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell85" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell95" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell93" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell99" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell101" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell103" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell105" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell107" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell109" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell111" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell113" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell115" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell97" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell86" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell87" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="47.25" AutoSize="true">
+          <TableCell Name="Cell88" Border.Lines="All" Text="[RubberYieldDetailReport.PlanDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell89" Border.Lines="All" Text="[RubberYieldDetailReport.ShiftName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell90" Border.Lines="All" Text="[RubberYieldDetailReport.EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell96" Border.Lines="All" Text="[RubberYieldDetailReport.UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell94" Border.Lines="All" Text="[RubberYieldDetailReport.MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell100" Border.Lines="All" Text="[RubberYieldDetailReport.RecipeName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell102" Border.Lines="All" Text="[RubberYieldDetailReport.RubName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell104" Border.Lines="All" Text="[RubberYieldDetailReport.TotalNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell106" Border.Lines="All" Text="[RubberYieldDetailReport.TotalWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell108" Border.Lines="All" Text="[RubberYieldDetailReport.RealNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell110" Border.Lines="All" Text="[RubberYieldDetailReport.RealWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell112" Border.Lines="All" Text="[RubberYieldDetailReport.SelfNOHGNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell114" Border.Lines="All" Text="[RubberYieldDetailReport.SelfNHGWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell116" Border.Lines="All" Text="[RubberYieldDetailReport.CheckHGNUM]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell98" Border.Lines="All" Text="[RubberYieldDetailReport.CheckHGWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell91" Border.Lines="All" Text="[RubberYieldDetailReport.CheckNHGNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell92" Border.Lines="All" Text="[RubberYieldDetailReport.CheckNHGWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+  </ReportPage>
+</Report>

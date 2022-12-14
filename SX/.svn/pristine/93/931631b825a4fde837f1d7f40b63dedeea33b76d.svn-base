@@ -1,0 +1,356 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberReturn : Mesnac.Web.UI.Page
+{
+    protected PpmRubberStoreinManager manager = new PpmRubberStoreinManager();
+    protected PpmRubberStoreinDetailManager detailManager = new PpmRubberStoreinDetailManager();
+    protected PpmRubberChkManager chkManager = new PpmRubberChkManager();
+    protected PpmRubberChkDetailManager chkdetailManager = new PpmRubberChkDetailManager();
+    protected BasMaterialManager materManager = new BasMaterialManager();
+    protected BasUserManager userManager = new BasUserManager();
+    protected BasStorageManager storageManager = new BasStorageManager();
+    protected PpmStorageManager PpmStorageManager = new PpmStorageManager();
+    protected PpmStorageDetailManager PpmStorageDetailManager = new PpmStorageDetailManager();
+    protected PpmRubberReturnManager returnManager = new PpmRubberReturnManager();
+    protected PpmRubberReturnDetailManager returnDetailManager = new PpmRubberReturnDetailManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNO"]))
+            {
+                string billNo = Request.QueryString["BillNO"].ToString();
+                string barcode = Request.QueryString["Barcode"].ToString();
+                string orderID = Request.QueryString["OrderID"].ToString();
+
+                txtBillNo.Text = billNo;
+                this.storeDetail.DataSource = returnDetailManager.GetByOtherBillNo(billNo, barcode, orderID);
+                this.storeDetail.DataBind();
+            }
+            else
+            {
+                txtBeginTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+                txtEndTime.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            }
+        }
+    }
+
+    #region 分页相关方法
+    private PageResult<PpmRubberReturn> GetPageResultData(PageResult<PpmRubberReturn> pageParams)
+    {
+        PpmRubberReturnManager.QueryParams queryParams = new PpmRubberReturnManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = txtBillNo.Text;
+        queryParams.factoryID = hiddenFactoryID.Text;
+        queryParams.beginDate = Convert.ToDateTime(txtBeginTime.Text);
+        queryParams.endDate = Convert.ToDateTime(txtEndTime.Value);
+        queryParams.deleteFlag = "0";
+
+        return returnManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberReturn> pageParams = new PageResult<PpmRubberReturn>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "BillNo DESC";
+
+        PageResult<PpmRubberReturn> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    private PageResult<PpmRubberChk> GetPageResultData1(PageResult<PpmRubberChk> pageParams)
+    {
+        PpmRubberChkManager.QueryParams queryParams = new PpmRubberChkManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.stockInFlag = "0";
+        queryParams.sendChkFlag = "1";
+        queryParams.deleteFlag = "0";
+        queryParams.chkResultFlag = "1";
+
+        return chkManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindData1(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberChk> pageParams = new PageResult<PpmRubberChk>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "BillNo ASC";
+
+        PageResult<PpmRubberChk> lst = GetPageResultData1(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    protected void RowSelect(object sender, StoreReadDataEventArgs e)
+    {
+        string billNo = e.Parameters["BillNo"];
+
+        this.storeDetail.DataSource = returnDetailManager.GetByBillNo(billNo);
+        this.storeDetail.DataBind();
+    }
+    #endregion
+
+    #region 增删改查按钮激发的事件
+    protected void btnModify_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            PpmRubberStorein store = manager.GetById(txtBillNo1.Text);
+
+            store.InputDate = Convert.ToDateTime(txtInputDate1.Text);
+            store.Remark = txtRemark1.Text;
+
+            manager.Update(store);
+
+            detailManager.UpdateStorage(txtBillNo1.Text, hiddenStorageID.Text, hiddenStoragePlaceID.Text);
+
+            pageToolBar.DoRefresh();
+            this.winModify.Close();
+            X.MessageBox.Alert("操作", "更新成功").Show();
+        }
+        catch (Exception ex)
+        {
+            X.MessageBox.Alert("操作", "更新失败：" + ex).Show();
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string billNo)
+    {
+        try
+        {
+            PpmRubberReturn returnInfo = returnManager.GetById(billNo);
+            returnInfo.DeleteFlag = "1";
+
+            returnManager.Update(returnInfo);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnBatchChk_Click()
+    {
+        try
+        {
+            string strBillNo = string.Empty;
+            foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+            {
+                strBillNo += "'" + row.RecordID + "', ";
+                EntityArrayList<PpmRubberReturn> chk = returnManager.GetListByWhere(PpmRubberReturn._.BillNo == row.RecordID);
+                if (chk[0].ChkResultFlag == "1")
+                    return "该单据已经审核退货";
+                //判断是否在库房期间内
+                DataSet ds = storageManager.GetDuration(chk[0].StorageID);
+                if (chk[0].ReturnDate < Convert.ToDateTime(ds.Tables[0].Rows[0][5].ToString()))
+                {
+                    return "false1";
+                }
+
+                EntityArrayList<PpmRubberReturnDetail> returnDetails = returnDetailManager.GetListByWhere(PpmRubberReturnDetail._.BillNo == row.RecordID);
+                for (int i = 0; i < returnDetails.Count; i++)
+                {
+
+                    PpmStorage storage = PpmStorageManager.GetListByWhere(PpmStorage._.Barcode == returnDetails[0].Barcode && PpmStorage._.StorageID == chk[0].StorageID && PpmStorage._.StoragePlaceID == returnDetails[0].StoragePlaceID)[0];
+                    if (storage.Num < returnDetails[i].ReturnNum)
+                    {
+                        return "false";
+                    }
+                }
+
+                PpmRubberReturn returnInfo = returnManager.GetListByWhere(PpmRubberReturn._.BillNo == row.RecordID)[0];
+
+                returnInfo.ChkDate = DateTime.Now;
+                returnInfo.ChkPerson = this.UserID;
+                returnInfo.ChkResultFlag = "1";
+
+                returnManager.Update(returnInfo);
+
+                //修改库存主信息
+                for (int i = 0; i < returnDetails.Count; i++)
+                {
+                    PpmStorage storage = PpmStorageManager.getPpmStorage(returnDetails[i].Barcode, chk[0].StorageID, returnDetails[i].StoragePlaceID, returnDetails[i].MaterCode);
+                    storage.Num -= returnDetails[i].ReturnNum;
+                    storage.RealWeight -= returnDetails[i].ReturnWeight;
+                    if (storage.Num != 0)
+                        storage.PieceWeight = Convert.ToDecimal(String.Format("{0:N3}", storage.RealWeight / storage.Num));
+                    else
+                        storage.PieceWeight = 0;
+
+                    PpmStorageManager.Update(storage);
+
+                    //插入明细数据
+                    PpmStorageDetail storeDetail = new PpmStorageDetail();
+                    storeDetail.Barcode = returnDetails[i].Barcode;
+                    if (storage != null)
+                        storeDetail.OrderID = PpmStorageDetailManager.GetOrderID(storeDetail.Barcode) + 1;
+                    else
+                        storeDetail.OrderID = 1;
+                    storeDetail.StorageID = chk[0].StorageID;
+                    storeDetail.StoragePlaceID = returnDetails[i].StoragePlaceID;
+                    storeDetail.StoreInOut = "O";
+                    storeDetail.RecordDate = DateTime.Now;
+                    storeDetail.Num = returnDetails[i].ReturnNum;
+                    storeDetail.PieceWeight = returnDetails[i].PieceWeight;
+                    storeDetail.Weight = returnDetails[i].ReturnWeight;
+                    //if (Convert.ToDateTime(ds.Tables[0].Rows[0][5].ToString()).Day == 1)
+                    storeDetail.InaccountDuration = string.Format("{0:yyyyMM}", chk[0].ReturnDate);
+                    storeDetail.InaccountDate = chk[0].ReturnDate;
+                    storeDetail.BillType = "1004";
+                    storeDetail.SourceBillNo = returnDetails[i].BillNo;
+                    storeDetail.SourceOrderID = returnDetails[i].OrderID;
+
+                    PpmStorageDetailManager.Insert(storeDetail);
+                }
+            }
+
+            pageToolBar.DoRefresh();
+            return "审核成功！";
+        }
+        catch
+        {
+            return "审核失败！";
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnCancelChk_Click()
+    {
+        try
+        {
+            string strBillNo = string.Empty;
+            foreach (SelectedRow row in this.rowSelectMuti.SelectedRows)
+            {
+                strBillNo += "'" + row.RecordID + "', ";
+                EntityArrayList<PpmRubberReturn> chk = returnManager.GetListByWhere(PpmRubberReturn._.BillNo == row.RecordID);
+                if (chk[0].ChkResultFlag == "0")
+                    return "该单据未审核，不能撤销！";
+                //判断是否在库房期间内
+                DataSet ds = storageManager.GetDuration(chk[0].StorageID);
+                if (chk[0].ReturnDate < Convert.ToDateTime(ds.Tables[0].Rows[0][5].ToString()))
+                {
+                    return "false1";
+                }
+
+                EntityArrayList<PpmRubberReturnDetail> returnDetails = returnDetailManager.GetListByWhere(PpmRubberReturnDetail._.BillNo == row.RecordID);
+                PpmRubberReturn returnInfo = returnManager.GetListByWhere(PpmRubberReturn._.BillNo == row.RecordID)[0];
+
+                //returnInfo.ChkDate = DateTime.Now;
+                returnInfo.ChkPerson = this.UserID;
+                returnInfo.ChkResultFlag = "0";
+
+                returnManager.Update(returnInfo);
+
+                //修改库存主信息
+                for (int i = 0; i < returnDetails.Count; i++)
+                {
+                    PpmStorage storage = PpmStorageManager.getPpmStorage(returnDetails[i].Barcode, chk[0].StorageID, returnDetails[i].StoragePlaceID, returnDetails[i].MaterCode);
+                    storage.Num += returnDetails[i].ReturnNum;
+                    storage.RealWeight += returnDetails[i].ReturnWeight;
+                    if (storage.Num != 0)
+                        storage.PieceWeight = Convert.ToDecimal(String.Format("{0:N3}", storage.RealWeight / storage.Num));
+                    else
+                        storage.PieceWeight = 0;
+
+                    PpmStorageManager.Update(storage);
+
+                    //删除明细数据
+                    PpmStorageDetail storeDetail = PpmStorageDetailManager.GetListByWhere(PpmStorageDetail._.Barcode == returnDetails[i].Barcode && PpmStorageDetail._.StorageID == chk[0].StorageID && PpmStorageDetail._.StoragePlaceID == returnDetails[i].StoragePlaceID && PpmStorageDetail._.SourceBillNo == returnDetails[i].BillNo && PpmStorageDetail._.SourceOrderID == returnDetails[i].OrderID)[0];
+                    PpmStorageDetailManager.Delete(storeDetail);
+                }
+            }
+
+            pageToolBar.DoRefresh();
+            return "撤销成功！";
+        }
+        catch
+        {
+            return "撤销失败！";
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_filed(string billNo)
+    {
+        try
+        {
+            
+        }
+        catch (Exception e)
+        {
+            return "操作失败：" + e;
+        }
+        return "已归档";
+    }
+
+    public void btnCancel_Click(object sender, DirectEventArgs e)
+    {
+        //this.winAdd.Close();
+        this.winModify.Close();
+    }
+
+    #endregion
+
+    #region 校验方法
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+
+    protected void CheckCombo(object sender, RemoteValidationEventArgs e)
+    {
+        ComboBox combo = (ComboBox)sender;
+
+        if (combo.SelectedItem.Value != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须选择！";
+        }
+    }
+    #endregion
+}

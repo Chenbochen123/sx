@@ -1,0 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Business.Interface
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Business.Implements;
+    public interface ITblRecipeManager : IBaseManager<TblRecipe>
+    {
+        PageResult<TblRecipe> GetTablePageDataBySql(Mesnac.Data.Implements.TblRecipeService.QueryParams queryParams);
+        string GetNextRubInfoCode();
+    }
+}

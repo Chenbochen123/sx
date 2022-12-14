@@ -1,0 +1,211 @@
+﻿using System;
+using System.Data;
+using System.Xml;
+using System.Xml.Xsl;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Interface;
+using Mesnac.Data.Implements;
+using Mesnac.Entity;
+using NBear.Common;
+using System.Collections.Generic;
+using System.Text;
+using Mesnac.Entity;
+
+
+public partial class Manager_Equipment_SparePart_Eqm_dian : Mesnac.Web.UI.Page
+{
+    protected Eqm_DianManager Manager = new Eqm_DianManager();
+    protected PptShiftManager shiftManager = new PptShiftManager();
+    protected Pmt_equipManager equipManager = new Pmt_equipManager();
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if ( !X.IsAjaxRequest&&!Page.IsPostBack )
+        {
+            startdate.Text = DateTime.Now.AddDays(1 - DateTime.Now.Day).Date.ToString("yyyy-MM-dd");
+            enddate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            dateadd.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            shift();
+            equip();
+            PageInit();
+        }
+    }
+
+    #region 初始化下拉列表
+    private void PageInit()
+    {
+        this.winSave.Hidden = true;
+        bindList();
+    }
+    private void shift()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<PptShift> list = shiftManager.GetListByWhere(PptShift._.UseFlag==1);
+        foreach (PptShift main in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(main.ShiftName, main.ObjID);
+            cbxshift.Items.Add(item);
+            cbxshift1.Items.Add(item);
+        }
+    }
+    private void equip()
+    {
+        WhereClip where = new WhereClip();
+        EntityArrayList<Pmt_equip> list = equipManager.GetListByWhere(Pmt_equip._.Equip_class=="01");
+        foreach (Pmt_equip main in list)
+        {
+            Ext.Net.ListItem item = new Ext.Net.ListItem(main.Equip_name, main.Equip_code);
+            cbxequip.Items.Add(item);
+            cbxequip1.Items.Add(item);
+        }
+    }
+
+
+    private DataSet getList()
+    {
+        return GetDataByParas();
+    }
+
+    public System.Data.DataSet GetDataByParas()
+    {
+        StringBuilder sb = new StringBuilder();
+        #region
+        sb.AppendLine(@"select a.*,b.Equip_name,c.ShiftName from eqm_dian a
+left join Pmt_equip b on b.Equip_code=a.equip_code
+left join PptShift c on c.ObjID=a.shift_id where ");
+        sb.AppendLine("plan_date >= '" + startdate.SelectedDate.ToString("yyyy-MM-dd") + "' and plan_date<='" + enddate.SelectedDate.ToString("yyyy-MM-dd") + "' ");
+        if (!string.IsNullOrEmpty(cbxequip1.SelectedItem.Value))
+        { sb.AppendLine(" and a.equip_Code='" + cbxequip1.SelectedItem.Value + "'"); }
+        if (!string.IsNullOrEmpty(cbxshift1.SelectedItem.Value))
+        { sb.AppendLine(" and a.shift_id='" + cbxshift1.SelectedItem.Value + "'"); }
+        #endregion
+
+        NBear.Data.CustomSqlSection css = Manager.GetBySql(sb.ToString());
+        return css.ToDataSet();
+    }
+    private void bindList()
+    {
+        this.store.DataSource = getList();
+        this.store.DataBind();
+    }
+    #endregion
+
+
+
+    #region 按钮事件响应
+    protected void btnSearch_Click( object sender , EventArgs e )
+    {
+        bindList();
+    }
+   
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        this.hideMode.Text = "Add";
+        cbxshift.Text = "";
+        cbxequip.Text = "";
+        txtdian.Text = "";
+        txtprice.Text = "";
+        this.winSave.Hidden = false;
+    }
+    //添加计划确定
+    protected void btnSave_Click(object sender, EventArgs e)
+    {
+        if (this.hideMode.Text == "Add")//添加
+        {
+            Eqm_Dian record = new Eqm_Dian();
+            record.Plan_date = dateadd.SelectedDate.ToString("yyyy-MM-dd");
+            record.Shift_id = Convert.ToInt32(cbxshift.SelectedItem.Value);
+            record.Equip_Code = cbxequip.SelectedItem.Value;
+            record.Dian = Convert.ToDecimal(txtdian.Text);
+            record.Dian_price = Convert.ToDecimal(txtprice.Text);
+
+            if (Manager.Insert(record) >= 0)
+            {
+                winSave.Hidden = true;
+                bindList();
+                X.Msg.Alert("提示", "添加完成！").Show();
+            }
+            else
+            {
+                X.Msg.Alert("提示", "添加失败！").Show();
+            }
+        }
+        else//修改
+        {
+            Eqm_Dian record = Manager.GetById(hideObjID.Text);
+
+            if (record != null)
+            {
+                record.Plan_date = dateadd.SelectedDate.ToString("yyyy-MM-dd");
+                record.Shift_id = Convert.ToInt32(cbxshift.SelectedItem.Value);
+                record.Equip_Code = cbxequip.SelectedItem.Value;
+                record.Dian = Convert.ToDecimal(txtdian.Text);
+                record.Dian_price = Convert.ToDecimal(txtprice.Text);
+
+                if (Manager.Update(record) >= 0)
+                {
+                    winSave.Hidden = true;
+                    bindList();
+                    X.Msg.Alert("提示", "修改完成！").Show();
+                }
+                else
+                {
+                    X.Msg.Alert("提示", "修改失败！").Show();
+                }
+            }
+        }
+    }
+    protected void btnCancel_Click(object sender, EventArgs e)
+    {
+        winSave.Hidden = true;
+    }
+    #endregion
+
+    #region 信息列表事件响应
+    [DirectMethod]
+    public void pnlList_Edit(string ObjID)
+    {
+        EntityArrayList<Eqm_Dian> list = Manager.GetListByWhere(Eqm_Dian._.Serialid == ObjID);
+        if(list.Count>0)
+        {
+            Eqm_Dian record = list[0];
+
+            if (record != null)
+            {
+                dateadd.Text = record.Plan_date;
+                cbxshift.Value = record.Shift_id;
+                txtdian.Text = record.Dian.ToString();
+                cbxequip.Value = record.Equip_Code;
+                txtprice.Text = record.Dian_price.ToString();
+                hideObjID.Text = ObjID;
+                this.hideMode.Text = "Edit";
+
+                this.winSave.Hidden = false;
+            }
+            else
+            {
+                bindList();
+                X.Msg.Alert("提示", "此条记录已经不存在！").Show();
+            }
+        }
+    }
+    [DirectMethod]
+    public void pnlList_Delete(string ObjID)
+    {
+        Eqm_Dian record = Manager.GetById(ObjID);
+        if(record != null)
+        {
+            Manager.Delete(ObjID);
+            bindList();
+            X.Msg.Alert("提示", "删除成功！").Show();
+        }
+        else
+        {
+            X.Msg.Alert("提示", "该记录已经不存在！").Show();
+            return;
+        }
+    }
+    #endregion
+
+
+}

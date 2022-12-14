@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2014 19:33:14" ReportInfo.Modified="04/20/2014 22:07:28" ReportInfo.CreatorVersion="1.9.9.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqHwzMSgwTFaHpjtG3vsOj8TUweK6CCuovGHuSG/xXD6nOcgJfafcJhsO8CG/poCQ5Xv37IEaBVdO4vB+yHR3BU0loiI+tOXPLnGywnF4OieullTrma1UjjRAPLwiCb5n0zszLHp3uJXBpV2mtxQrufaNPSrdMJsfm22h4dR4fm1s+uJCgy8xdSjHhhSdZKo3EQGxxcVlgr1mV1Z39bDE8nQ==">
+      <TableDataSource Name="Table" Alias="ShopBarcodePrint" DataType="System.Int32" Enabled="true" SelectCommand="select '班组' ClassName, '物料名称' MaterialName, '1010000011403041005500001' Barcode, 'weight' Weight, SUBSTRING(CONVERT(varchar(10), GETDATE(), 120), 6, 2) + '月' + SUBSTRING(CONVERT(varchar(10), GETDATE(), 120), 9, 2) + '日' DateDay, SUBSTRING(CONVERT(varchar(20), GETDATE(), 120), 12, 2) + '时' + SUBSTRING(CONVERT(varchar(20), GETDATE(), 120), 15, 2) + '分' DateMinute, ' 月 日' DateDay1, ' 时 分' DateMinute1, 'HouseNo' HouseNo, 'Other' Mark, '1' Num,'2013-01批' ProductNo">
+        <Column Name="ClassName" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="Barcode" DataType="System.String"/>
+        <Column Name="Weight" DataType="System.String"/>
+        <Column Name="DateDay" DataType="System.String"/>
+        <Column Name="DateMinute" DataType="System.String"/>
+        <Column Name="DateDay1" DataType="System.String"/>
+        <Column Name="DateMinute1" DataType="System.String"/>
+        <Column Name="HouseNo" DataType="System.String"/>
+        <Column Name="Mark" DataType="System.String"/>
+        <Column Name="Num" DataType="System.String"/>
+        <Column Name="ProductNo" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" LeftMargin="0" TopMargin="5" RightMargin="0" BottomMargin="20" FirstPageSource="4" OtherPagesSource="4" Duplex="Horizontal">
+    <DataBand Name="Data1" Width="793.8" Height="481.95" DataSource="Table">
+      <TextObject Name="Text1" Left="198.45" Width="113.4" Height="28.35" Text="烘胶卡片" Font="宋体, 15pt, style=Bold"/>
+      <BarcodeObject Name="Barcode1" Left="113.4" Top="359.1" Width="284.35" Height="85.05" AutoSize="false" DataColumn="ShopBarcodePrint.Barcode" Text="1010000011403041005500001" Barcode="Code128" Barcode.AutoEncode="true"/>
+      <BarcodeObject Name="Barcode2" Left="415.8" Top="56.7" Width="54.65" Height="272" Angle="270" AutoSize="false" DataColumn="ShopBarcodePrint.Barcode" Text="1010000011403041005500001" ShowText="false" Barcode="Code128" Barcode.AutoEncode="true"/>
+      <TableObject Name="Table1" Left="113.4" Top="28.35" Width="292.9" Height="321.2">
+        <TableColumn Name="Column1" Width="127.55"/>
+        <TableColumn Name="Column2" Width="165.35"/>
+        <TableRow Name="Row1" Height="32.12">
+          <TableCell Name="Cell1" Border.Lines="All" Text="班组/人员" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="[ShopBarcodePrint.ClassName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="32.12">
+          <TableCell Name="Cell6" Border.Lines="All" Text="天然胶型号" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[ShopBarcodePrint.MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row6" Height="32.12">
+          <TableCell Name="Cell23" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell24" Border.Lines="All" Text="[ShopBarcodePrint.Weight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row7" Height="32.12">
+          <TableCell Name="Cell25" Border.Lines="All" Text="批次" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell26" Border.Lines="All" Text="[ShopBarcodePrint.ProductNo]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row8" Height="32.12">
+          <TableCell Name="Cell27" Border.Lines="All" Text="入胶时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" RowSpan="2"/>
+          <TableCell Name="Cell28" Border.Lines="All" Text="[ShopBarcodePrint.DateDay]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row9" Height="32.12">
+          <TableCell Name="Cell29" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell30" Border.Lines="All" Text="[ShopBarcodePrint.DateMinute]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row10" Height="32.12">
+          <TableCell Name="Cell31" Border.Lines="All" Text="应出胶时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" RowSpan="2"/>
+          <TableCell Name="Cell32" Border.Lines="All" Text="[ShopBarcodePrint.DateDay1]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="32.12">
+          <TableCell Name="Cell11" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="[ShopBarcodePrint.DateMinute1]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="32.12">
+          <TableCell Name="Cell16" Border.Lines="All" Text="烘房号" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell17" Border.Lines="All" Text="[ShopBarcodePrint.HouseNo]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+        <TableRow Name="Row5" Height="32.12">
+          <TableCell Name="Cell21" Border.Lines="All" Text="其它" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell22" Border.Lines="All" Text="[ShopBarcodePrint.Mark]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+        </TableRow>
+      </TableObject>
+      <TextObject Name="Text2" Left="368.55" Top="9.45" Width="85.05" Height="9.45" Text="[ShopBarcodePrint.Num]" Font="宋体, 9pt"/>
+    </DataBand>
+  </ReportPage>
+</Report>

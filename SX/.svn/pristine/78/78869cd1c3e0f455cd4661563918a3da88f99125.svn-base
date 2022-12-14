@@ -1,0 +1,44 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Data.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Data.Interface;
+    /// <summary>
+    /// PmtRecipeMixingService 实现类
+    /// 孙本强 @ 2013-04-03 13:02:34
+    /// </summary>
+    /// <remarks></remarks>
+    public class PmtRecipeMixingService : BaseService<PmtRecipeMixing>, IPmtRecipeMixingService
+    {
+		#region 构造方法
+
+        /// <summary>
+        /// 类 PmtRecipeMixingService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:35
+        /// </summary>
+        /// <remarks></remarks>
+        public PmtRecipeMixingService() : base(){ }
+
+        /// <summary>
+        /// 类 PmtRecipeMixingService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:35
+        /// </summary>
+        /// <param name="connectStringKey">The connect string key.</param>
+        /// <remarks></remarks>
+        public PmtRecipeMixingService(string connectStringKey) : base(connectStringKey){ }
+
+        /// <summary>
+        /// 类 PmtRecipeMixingService 构造函数
+        /// 孙本强 @ 2013-04-03 13:02:35
+        /// </summary>
+        /// <param name="way">The way.</param>
+        /// <remarks></remarks>
+        public PmtRecipeMixingService(NBear.Data.Gateway way) : base(way){ }
+
+        #endregion 构造方法
+    }
+}

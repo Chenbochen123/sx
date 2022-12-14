@@ -1,0 +1,457 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="DailyMaintenance.aspx.cs" Inherits="Manager_Equipment_SparePart_DailyMaintenance" %>
+
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>日常检修记录</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js"></script>
+    <style type="text/css">
+        .x-grid-row-collapsed .x-grid-cell {
+            background-color: #CCFF66 !important;
+        }
+    </style>
+    <script type="text/javascript">
+        //点击修改按钮
+        var cmdcol_click = function (command, record) {
+            if (command == "Edit") {
+                App.direct.pnlList_Edit(record.data.MainDaily_ID, {
+                    success: function () { },
+                    failure: function () { }
+                });
+            }
+            else if (command == "Delete") {
+                Ext.Msg.confirm("提示", '您确定需要删除此信息？删除后将不能恢复！', function (btn) { deleteStopRecord(btn, record) });
+            }
+        }
+
+        var deleteStopRecord = function (btn, record) {
+            if (btn != "yes") {
+                return;
+            }
+            var MainDaily_ID = record.data.MainDaily_ID;
+            App.direct.pnlList_Delete(MainDaily_ID, {
+                success: function () { },
+                failure: function () { }
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <asp:Button ID="btnExportSubmit" runat="server" Text="Button" OnClick="btnExportSubmit_Click" Style="display: none" />
+        <ext:ResourceManager ID="ResourceManager1" runat="server" />
+        <ext:Hidden ID="hidden_stop_type" runat="server" />
+        <ext:Hidden ID="hidden_stop_fault" runat="server" />
+        <ext:Hidden ID="hidden_fault_reason" runat="server" />
+        <ext:Viewport ID="vwUnit" runat="server" Layout="border">
+            <Items>
+                <ext:Panel ID="pnlStopType" runat="server" Region="North" AutoHeight="true">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="barStopType">
+                            <Items>
+                                <ext:Button runat="server" Icon="Add" Text="添加" ID="btnAdd">
+                                    <ToolTips>
+                                        <ext:ToolTip ID="ttAdd" runat="server" Html="点击进行添加" />
+                                    </ToolTips>
+                                    <DirectEvents>
+                                        <Click OnEvent="btnAdd_Click" />
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                    <ToolTips>
+                                        <ext:ToolTip ID="ttSearch" runat="server" Html="点击进行查询" />
+                                    </ToolTips>
+                                    <DirectEvents>
+                                        <Click OnEvent="btnSearch_Click">
+                                            <EventMask ShowMask="true" Target="Page"></EventMask>
+                                        </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                
+                               <ext:Button runat="server" Icon="PageSave" Text="组长确认" ID="btnConfirm">
+                                    <ToolTips><ext:ToolTip ID="ToolTip4" runat="server" Html="是否确认" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnConfirm_Click"/></DirectEvents>
+                                </ext:Button>
+                                <ext:Button runat="server" Icon="PageWhiteExcel" Text="导出" ID="btnExcel">
+                                    <ToolTips>
+                                        <ext:ToolTip ID="ToolTip1" runat="server" Html="点击进行结果导出" />
+                                    </ToolTips>
+                                    <Listeners>
+                                        <Click Handler="$('#btnExportSubmit').click();"></Click>
+                                    </Listeners>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:FormPanel ID="container_top" runat="server" Layout="ColumnLayout" AutoHeight="true" BodyPadding="5">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Container ID="container2" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:DateField ID="DateBeginTime" runat="server" FieldLabel="开始时间"   />
+                                        <ext:DateField ID="DateEndTime" runat="server" FieldLabel="结束时间"  />
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container1" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items> 
+                                         <ext:ComboBox ID="cbxmp_type" runat="server" FieldLabel="维修类型" LabelAlign="left" Width="400" 
+                                                    Editable="false">
+                                                    <Items>
+                                                        <ext:ListItem Text="检修" Value="检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="故障检修" Value="故障检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="计划检修" Value="计划检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="巡检" Value="巡检">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="大修" Value="大修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="外委" Value="外委">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="技措" Value="技措">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="其他" Value="其他">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="问题清单" Value="问题清单">
+                                                        </ext:ListItem>
+                                                    </Items>
+                                                    <Triggers>
+                                                        <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                        </ext:FieldTrigger>
+                                                    </Triggers>
+                                                    <Listeners>
+                                                        <TriggerClick Handler="this.setValue('');" />
+                                                    </Listeners>
+                                                </ext:ComboBox>
+                                         <ext:ComboBox ID="cbxworkshop" runat="server" Disabled="false" Width="400" AnchorHorizontal="100%" FieldLabel="车间"  />
+                                    </Items>
+                                </ext:Container>
+                                <ext:Container ID="container3" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:ComboBox ID="cbxequipname" runat="server" Disabled="false" Width="400" AnchorHorizontal="100%" FieldLabel="维修机台" />
+                                        <ext:ComboBox ID="cbxshiftname" runat="server" Disabled="false" Width="400" AnchorHorizontal="100%" FieldLabel="生产班次"  />
+                                    </Items>
+                                </ext:Container>
+
+                            </Items>
+                        </ext:FormPanel>
+                    </Items>
+                </ext:Panel>
+                <ext:GridPanel ID="pnlList" runat="server" Region="Center">
+                    <Store>
+                        <ext:Store ID="store" runat="server" PageSize="15">
+                            <Model>
+                                <ext:Model ID="model" runat="server"  IDProperty="MainDaily_ID">
+                                    <Fields>
+                                        <ext:ModelField Name="MainDaily_ID" />
+                                        <ext:ModelField Name="Mp_Date" />
+                                        <ext:ModelField Name="ShiftName" />
+                                        <ext:ModelField Name="WorkShop_Name" />
+                                        <ext:ModelField Name="Equip_name" />
+                                        <ext:ModelField Name="Mp_name" />
+                                        <ext:ModelField Name="MP_Type" />
+                                        <ext:ModelField Name="Mp_StartTime" />
+                                        <ext:ModelField Name="MP_EndTime" />
+                                        <ext:ModelField Name="Mp_time" />
+                                        <ext:ModelField Name="handle_name" />
+                                        <ext:ModelField Name="MP_cuoshi" />
+                                        <ext:ModelField Name="Mp_reason" />
+                                        <ext:ModelField Name="Mp_result" />
+                                        <ext:ModelField Name="mem_BJ" />
+                                        <ext:ModelField Name="real_name" />
+                                        <ext:ModelField Name="In_Date" />
+                                        <ext:ModelField Name="isBaiBan" />
+                                        <ext:ModelField Name="ConfirmUser" />
+                                        <ext:ModelField Name="Remark" />
+                                        <ext:ModelField Name="YuSuanFY" />
+                                        <ext:ModelField Name="ShiJiFY" />
+                                    </Fields>
+                                </ext:Model>
+                            </Model>
+                        </ext:Store>
+                    </Store>
+                    <ColumnModel ID="colModel" runat="server">
+                        <Columns>
+                            <ext:Column ID="MainDaily_ID" runat="server" Text="MainDaily_ID" DataIndex="MainDaily_ID" Width="40" Hidden="true" />
+                            <ext:Column ID="clEquip" runat="server" Text="维修日期" DataIndex="Mp_Date" Width="100" />
+                            <ext:Column ID="clShiftName" runat="server" Text="班次" DataIndex="ShiftName" Width="70" />
+                            <ext:Column ID="clClassName" runat="server" Text="车间" DataIndex="WorkShop_Name" Width="100" />
+                            <ext:Column ID="clStartTime" runat="server" Text="机台" DataIndex="Equip_name" Width="135" />
+                            <ext:Column ID="clEndTime" runat="server" Text="部件名称" DataIndex="Mp_name" Width="135" />
+                            <ext:Column ID="Column1" runat="server" Text="维修类型" DataIndex="MP_Type" Width="65" />
+                            <ext:DateColumn ID="Column20" runat="server" Text="维修开始时间" DataIndex="Mp_StartTime" Width="80" format="yyyy-MM-dd HH:mm:ss" />
+                            <ext:DateColumn ID="Column6" runat="server" Text="维修结束时间" DataIndex="MP_EndTime" Width="80"  format="yyyy-MM-dd HH:mm:ss" />
+                            <ext:Column ID="Column7" runat="server" Text="维修工时" DataIndex="Mp_time" Width="120" />
+                            <ext:Column ID="Column8" runat="server" Text="维修人员" DataIndex="handle_name" Width="120" />
+                            <ext:Column ID="Column4" runat="server" Text="处理措施" DataIndex="MP_cuoshi" Width="120" />
+                            <ext:Column ID="Column9" runat="server" Text="故障描述" DataIndex="Mp_reason" Width="120" />
+                            <ext:Column ID="Column2" runat="server" Text="维修结果" DataIndex="Mp_result" Width="120" />
+                            <ext:Column ID="Column13" runat="server" Text="备件使用情况" DataIndex="mem_BJ" Width="120" />
+                            <ext:Column ID="Column14" runat="server" Text="录入人" DataIndex="real_name" />
+                            <ext:DateColumn ID="DateColumn1" runat="server" Text="录入时间" DataIndex="In_Date" Format="yyyy-MM-dd" Width="120" />
+                            <ext:Column ID="Column15" runat="server" Text="是否白班" DataIndex="isBaiBan" />
+                            <ext:Column ID="Column16" runat="server" Text="确认人" DataIndex="ConfirmUser" Width="120" />
+                            <ext:Column ID="Column17" runat="server" Text="备注" DataIndex="Remark" />
+                            <ext:Column ID="Column18" runat="server" Text="预算费用（万元）" DataIndex="YuSuanFY" Width="120" />
+                            <ext:Column ID="Column19" runat="server" Text="实际费用" DataIndex="ShiJiFY" Width="120" />
+                            <ext:CommandColumn ID="cmdCol" runat="server" Align="Center" Text="操作" Width="185">
+                                <Commands>
+                                    <ext:GridCommand Icon="TableEdit" CommandName="Edit" Text="修改" />
+                                    <ext:GridCommand Icon="TableDelete" CommandName="Delete" Text="删除" />
+                                </Commands>
+                                <Listeners>
+                                    <Command Handler="cmdcol_click(command, record);" />
+                                </Listeners>
+                            </ext:CommandColumn>
+                        </Columns>
+                    </ColumnModel>
+                    <SelectionModel>
+                        <ext:RowSelectionModel ID="rowSelectMuti" runat="server" Mode="Single">
+                            <Listeners>
+                                <Select Handler="#{detailStore}.reload();" Buffer="250" />
+                            </Listeners>
+                        </ext:RowSelectionModel>
+                    </SelectionModel>
+                    <%--<View>
+                        <ext:GridView ID="gvRows" runat="server">
+                            <GetRowClass Fn="SetRowClass" />
+                        </ext:GridView>
+                    </View>--%>
+                    <BottomBar>
+                        <ext:PagingToolbar ID="pageToolBar" runat="server">
+                            <Plugins>
+                                <ext:ProgressBarPager ID="ProgressBarPager" runat="server" />
+                            </Plugins>
+                        </ext:PagingToolbar>
+                    </BottomBar>
+                </ext:GridPanel>
+                <ext:Window ID="winSave" runat="server" Icon="MonitorAdd" Closable="false" Title="日常检修记录维护" Width="550" Height="500" Resizable="false" Modal="true" BodyStyle="background-color:#fff;" BodyPadding="5" Layout="FormLayout">
+                    <Items>
+                        <ext:FormPanel ID="pnlAdd" runat="server" BodyPadding="5" Layout="FormLayout">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="LabelWidth" Value="70" Mode="Raw" />
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                <ext:Hidden runat="server" ID="hideObjID" />
+                                <ext:FieldSet ID="FieldSet1" runat="server" Title="日常检修记录维护">
+                                    <Items>
+                                        <ext:FieldContainer ID="FieldContainer12" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:DateField ID="Dateweixiu" runat="server" FieldLabel="维修日期" Width="208" Editable="false" AllowBlank="false" />
+                                                <ext:ComboBox ID="cbxleixing" runat="server" FieldLabel="维修类型" LabelAlign="left" Width="208" 
+                                                    Editable="false" AllowBlank="false">
+                                                    <Items>
+                                                        <ext:ListItem Text="检修" Value="检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="故障检修" Value="故障检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="计划检修" Value="计划检修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="巡检" Value="巡检">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="大修" Value="大修">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="外委" Value="外委">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="技措" Value="技措">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="其他" Value="其他">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="问题清单" Value="问题清单">
+                                                        </ext:ListItem>
+                                                    </Items>
+                                                    <Triggers>
+                                                        <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                        </ext:FieldTrigger>
+                                                    </Triggers>
+                                                    <Listeners>
+                                                        <TriggerClick Handler="this.setValue('');" />
+                                                    </Listeners>
+                                                </ext:ComboBox>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer16" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                               <ext:ComboBox ID="cbxjitai" runat="server" Disabled="false" Width="208" FieldLabel="维修机台" AllowBlank="false"/>
+                                                <ext:ComboBox ID="cbxshift" runat="server" Disabled="false" Width="208" FieldLabel="生产班次" AllowBlank="false"/>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer2" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                               <ext:ComboBox ID="cbxbujian" runat="server" Disabled="false" Width="208" FieldLabel="维修部件" AllowBlank="false"/>
+                                                <ext:ComboBox ID="cbxchangbaiban" runat="server" FieldLabel="长白班" LabelAlign="left" Width="208" allowblank="false"
+                                                    Editable="false" >
+                                                    <Items>
+                                                        <ext:ListItem Text="是" Value="1">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="否" Value="0">
+                                                        </ext:ListItem>
+                                                    </Items>
+                                                    <Triggers>
+                                                        <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                        </ext:FieldTrigger>
+                                                    </Triggers>
+                                                    <Listeners>
+                                                        <TriggerClick Handler="this.setValue('');" />
+                                                    </Listeners>
+                                                </ext:ComboBox>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer1" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                               <ext:DateField ID="DateStart" runat="server" FieldLabel="维修开始时间" Width="208" Editable="false" AllowBlank="false" />
+                                              <ext:TimeField ID="DateStartTime" runat="server" Width="100"/>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer34" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:DateField ID="DateEnd1" runat="server" FieldLabel="维修结束时间" Width="208" Editable="false" AllowBlank="false" />
+                                               <ext:TimeField ID="DateEndTime1" runat="server" Width="100"/>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer8" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:FieldContainer ID="FieldContainer10" runat="server" FieldLabel="维修人员">
+                                                    <Items>
+                                                        <ext:TextField ID="txtuser" runat="server" Width="100" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                                 <ext:ComboBox ID="cbxfinish" runat="server" FieldLabel="完成" LabelAlign="left" Width="208" AllowBlank="false"
+                                                    Editable="false">
+                                                    <Items>
+                                                        <ext:ListItem Text="是" Value="1">
+                                                        </ext:ListItem>
+                                                        <ext:ListItem Text="否" Value="0">
+                                                        </ext:ListItem>
+                                                    </Items>
+                                                    <Triggers>
+                                                        <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                        </ext:FieldTrigger>
+                                                    </Triggers>
+                                                    <Listeners>
+                                                        <TriggerClick Handler="this.setValue('');" />
+                                                    </Listeners>
+                                                </ext:ComboBox>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer112" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:FieldContainer ID="FieldContainer3" runat="server" FieldLabel="故障描述">
+                                                    <Items>
+                                                        <ext:TextField ID="txtguzhang" runat="server" Width="350" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer21" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:FieldContainer ID="FieldContainer4" runat="server" FieldLabel="处理措施">
+                                                    <Items>
+                                                        <ext:TextField ID="txtcuoshi" runat="server" Width="350" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer24" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                
+                                               <ext:FieldContainer ID="FieldContainer11" runat="server" FieldLabel="处理结果">
+                                                    <Items>
+                                                        <ext:TextField ID="txtjieguo" runat="server" Width="350" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer27" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                               <ext:FieldContainer ID="FieldContainer5" runat="server" FieldLabel="备件使用">
+                                                    <Items>
+                                                        <ext:TextField ID="txtshiyong" runat="server" Width="350" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+
+                                        <ext:FieldContainer ID="FieldContainer30" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:FieldContainer ID="FieldContainer6" runat="server" FieldLabel="备注">
+                                                    <Items>
+                                                        <ext:TextField ID="txtremark" runat="server" Width="350" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:FieldContainer ID="FieldContainer35" runat="server" Layout="HBoxLayout" AnchorHorizontal="100%">
+                                            <Items>
+                                                <ext:FieldContainer ID="FieldContainer7" runat="server" FieldLabel="预算费用（万元）">
+                                                    <Items>
+                                                        <ext:TextField ID="txtyusuan" runat="server" Width="100" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                                <ext:FieldContainer ID="FieldContainer9" runat="server" FieldLabel="实际费用（万元）">
+                                                    <Items>
+                                                        <ext:TextField ID="txtshiji" runat="server" Width="100" />
+                                                    </Items>
+                                                </ext:FieldContainer>
+                                            </Items>
+                                        </ext:FieldContainer>
+                                        <ext:Hidden runat="server" ID="hideMode" Text="Add" />
+                                    </Items>
+                                </ext:FieldSet>
+                            </Items>
+                            <Listeners>
+                                <ValidityChange Handler="#{btnSave}.setDisabled(!valid);" />
+                            </Listeners>
+                        </ext:FormPanel>
+                    </Items>
+                    <Buttons>
+                        <ext:Button ID="btnSave" runat="server" Text="确定" Icon="Accept" Disabled="true">
+                            <DirectEvents>
+                                <Click OnEvent="btnSave_Click">
+                                    <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                                </Click>
+                            </DirectEvents>
+                        </ext:Button>
+                        <ext:Button ID="btnCancel" runat="server" Text="取消" Icon="Cancel">
+                            <DirectEvents>
+                                <Click OnEvent="btnCancel_Click" />
+                            </DirectEvents>
+                        </ext:Button>
+                    </Buttons>
+                </ext:Window>
+                
+                <ext:Hidden ID="hidden_equip_code" runat="server">
+                </ext:Hidden>
+                <ext:Hidden ID="hidden_type" runat="server">
+                </ext:Hidden>
+            </Items>
+        </ext:Viewport>
+    </form>
+</body>
+</html>

@@ -1,0 +1,26 @@
+﻿配方导入功能介绍：
+
+Technology工艺模块
+	|
+	|-----RecipeInfolead(工艺配方导入)
+	|				|
+	|				|-----canAuditUser.aspx（弹出审核人选择页面）
+	|				
+	|				
+	|				
+	|-----RubWeightSetting(胶料称锁定设置)
+	|				|
+	|				|-----RubWeightSetting.aspx（胶料称锁定设置页面）
+	|				|-----RubWeightScanBarcodeLog.aspx（胶料称扫描日志查询页面）
+	|		
+	|
+	|
+	|-----QueryRecipe(工艺配方查询)
+	|				|
+	|				|-----QueryRecipeSimple.aspx（工艺配方查询页面）
+	|		
+	|
+	|-----CuringCurveComparison(硫化曲线对比页面)
+	|				|
+	|				|-----CuringCurveComparison.aspx（硫化曲线对比页面）
+	|		

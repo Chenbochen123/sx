@@ -1,0 +1,1198 @@
+﻿using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using Newtonsoft.Json;
+using System;
+using NBear.Common;
+using System.Collections.Generic;
+using System.Data;
+using Mesnac.Data.Implements;
+
+
+/// <summary>
+/// Manager_Technology_Manage_MaterialRecipeDetail_Default 实现类
+/// 孙本强 @ 2013-04-03 13:06:14
+/// </summary>
+/// <remarks></remarks>
+public partial class Manager_Technology_Manage_MaterialRecipeDetail_Default : Mesnac.Web.UI.Page
+{
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            配方审核 = new SysPageAction() { ActionID = 1, ActionName = "btnAuditPmtRecipePass" };
+            编辑 = new SysPageAction() { ActionID = 3, ActionName = "btnSave,btnCanSave" };
+            调整塑解剂 = new SysPageAction() { ActionID = 4, ActionName = "btnEditSuJieJiWeight" };
+            编辑工艺 = new SysPageAction() { ActionID = 5, ActionName = "btnSave,btnCanSaveNew" };
+        }
+        public SysPageAction 配方审核 { get; private set; } //必须为 public
+        public SysPageAction 编辑 { get; private set; } //必须为 public
+        public SysPageAction 调整塑解剂 { get; private set; } //必须为 public
+        public SysPageAction 编辑工艺 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    #region 属性注入
+
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:43
+    /// </summary>
+    private IPmtConfigManager pmtConfigManager = new PmtConfigManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:14
+    /// </summary>
+    private ISysCodeManager sysCodeManager = new SysCodeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:15
+    /// </summary>
+    private IPmtRecipeManager pmtRecipeManager = new PmtRecipeManager();
+    /// <summary>
+    /// 
+    /// 孙本强 @ 2013-04-03 13:06:15
+    /// </summary>
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+
+    private IPmtRecipeWeightManager pmtRecipeWeightManager = new PmtRecipeWeightManager();
+
+    private IPmtNonAuditMaterialManager pmtNonAuditMaterialManager = new PmtNonAuditMaterialManager();
+
+    private ISysTaskRemindManager taskManager = new SysTaskRemindManager();
+
+    private IBasEquipManager equipManager = new BasEquipManager();
+    #endregion
+
+    /// <summary>
+    /// Gets the request.
+    /// 孙本强 @ 2013-04-03 13:06:15
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string GetRequest(string key)
+    {
+        if (this.Request[key] != null)
+        {
+            return this.Request[key].ToString();
+        }
+        return string.Empty;
+    }
+    /// <summary>
+    /// Handles the Load event of the Page control.
+    /// 孙本强 @ 2013-04-03 13:06:15
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+       
+        if ((IsPostBack) || (X.IsAjaxRequest))
+        {
+            return;
+        }
+        hiddenRecipeObjID.Text = GetRequest("Recipe");
+        string command = GetRequest("Command");
+        hiddenCommandID.Text = command;
+        string material = GetRequest("Material");
+        hiddenMaterialID.Text = material;
+        if (command.ToLower().Contains("add"))
+        {
+            btnAuditPmtRecipePass.Hidden = true;
+            btnSave.Disabled = false;
+            btnCanSave.Text = "取消";
+            toolbarSeparator1.Hidden = true;
+        }
+     
+        if (!string.IsNullOrEmpty(GetRequest("Recipe")))
+        {
+          
+            PmtRecipe recipe = pmtRecipeManager.GetById(GetRequest("Recipe"));
+
+            if (recipe.RecipeMaterialCode.Substring(0, 1) != "2")
+            {
+                txtPackWeight.Hidden = true;
+            }
+            if (recipe != null)
+            {
+                EntityArrayList<BasEquip> equiplist = equipManager.GetListByWhere(BasEquip._.EquipCode == recipe.RecipeEquipCode);
+                if (equiplist.Count > 0)
+                {
+                    Panel1.CloseTab(pnlAdvanceSeparateWeight, CloseAction.Hide);
+                    Panel1.CloseTab(pnlOpenMixing, CloseAction.Hide);
+                    Panel1.CloseTab(pnlQDrug, CloseAction.Hide);
+                    Panel1.CloseTab(pnlMILL, CloseAction.Hide);
+
+                }
+            }
+        }
+        else
+        {
+            Panel1.CloseTab(pnlAdvanceSeparateWeight, CloseAction.Hide);
+            Panel1.CloseTab(pnlOpenMixing, CloseAction.Hide);
+            Panel1.CloseTab(pnlQDrug, CloseAction.Hide);
+            Panel1.CloseTab(pnlMILL, CloseAction.Hide);
+        }
+        IniTab();
+     
+        X.Js.Call("pnlMainOnShow");
+    }
+
+    #region 添加
+    /// <summary>
+    /// Inis the tab.
+    /// 孙本强 @ 2013-04-03 13:06:15
+    /// </summary>
+    /// <remarks></remarks>
+    private void IniTab()
+    {
+        string recipe = GetRequest("Recipe");
+        string material = GetRequest("Material");
+        bool isMixing = true;
+        if (!string.IsNullOrWhiteSpace(material))
+        {
+            EntityArrayList<BasMaterial> lst = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == material);
+            if (lst.Count > 0)
+            {
+                BasMaterial m = lst[0];
+                if (m.MajorTypeID.ToString().Trim() == "2")
+                {
+                    isMixing = false;
+                }
+            }
+        }
+        pnlMixing.Hidden = !isMixing;
+    }
+    /// <summary>
+    /// Inis the PMT recipe.
+    /// 孙本强 @ 2013-04-03 13:06:16
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <param name="m">The m.</param>
+    /// <remarks></remarks>
+    private void IniPmtRecipe(JavaScriptObject record, ref PmtRecipe m)
+    {
+        if (record == null)
+        {
+            return;
+        }
+        string recipe = GetRequest("Recipe");
+        if (GetRequest("Command").ToLower().Contains("add"))
+        {
+            recipe = string.Empty;
+        }
+        if (!string.IsNullOrWhiteSpace(recipe))
+        {
+            try
+            {
+                m = pmtRecipeManager.GetListByWhere(PmtRecipe._.ObjID == recipe)[0];
+            }
+            catch
+            { }
+        }
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        m.RecipeName = converter.ToString(record["RecipeName"]);  //配方编号
+        m.RecipeMaterialCode = converter.ToString(record["RecipeMaterialCode"]);  //物料名称
+        m.RecipeEquipCode = converter.ToString(record["RecipeEquipCode"]);  //机台名称
+        m.RecipeType = converter.ToInt(record["RecipeType"]);  //配方类型
+        m.RecipeState = converter.ToString(record["RecipeState"]);  //配方状态
+        int? iNull = converter.ToInt(record["RecipeVersionID"]);  //版本号
+        if (iNull != null)
+        {
+            m.RecipeVersionID = (int)iNull;
+        }
+        m.LotDoneTime = converter.ToInt(record["LotDoneTime"]);  //每车标准时间
+        m.LotTotalWeight = converter.ToDecimal(record["LotTotalWeight"]);  //配方总重
+        m.ShelfLotCount = converter.ToInt(record["ShelfLotCount"]);  //每架车数
+        m.OverTimeSetTime = converter.ToInt(record["OverTimeSetTime"]);  //超时排胶时间
+        m.OverTempSetTemp = converter.ToInt(record["OverTempSetTemp"]);  //紧急排胶温度
+        m.OverTempMinTime = converter.ToInt(record["OverTempMinTime"]);  //超温排胶最短时间
+        m.InPolyMaxTemp = converter.ToInt(record["InPolyMaxTemp"]);  //最高进胶温度
+        m.InPolyMinTemp = converter.ToInt(record["InPolyMinTemp"]);  //最低进胶温度
+        m.MakeUpTemp = converter.ToInt(record["MakeUpTemp"]);  //补偿温度
+        m.CarbonRecycleType = converter.ToString(record["CarbonRecycleType"]);  //炭黑是否回收
+
+        //if (record["CarbonRecycleType"] == "否")
+        //{ m.CarbonRecycleType = "0"; }
+        //else
+        //{ m.CarbonRecycleType = "1"; }
+        //m.FactoryCode = converter.ToString(record["FactoryCode"]);  //供应商代码
+        //m.CloseCC = converter.ToString(record["CloseCC"]);  //供应商代码
+        //m.JieDuan = converter.ToString(record["JieDuan"]);  //供应商代码
+        //m.HFFlag ="";  //同步hf标志
+        m.CarbonRecycleTime = converter.ToInt(record["CarbonRecycleTime"]);  //炭黑回收时间
+        m.IsUseAreaTemp = converter.ToString(record["IsUseAreaTemp"]).ToLower() == "true" ? "1" : "0";  //使用三区温度
+        m.SideTemp = converter.ToInt(record["SideTemp"]);  //侧壁温度
+        m.RollTemp = converter.ToInt(record["RollTemp"]);  //转子温度
+        //m.RollTempDiff = converter.ToInt(record["RollTempDiff"]);  //转子温差
+        m.DdoorTemp = converter.ToInt(record["DdoorTemp"]);  //卸料门温度
+        m.CanAuditUser = converter.ToString(record["CanAuditUser"]);  //审核人
+        m.SAPVersionID = converter.ToString(record["SAPVersionID"]);  //SAP版本号
+        m.RearchCode = converter.ToString(record["RearchCode"]);  //工艺版本号
+        m.UseredtCode = converter.ToString(record["UseredtCode"]);  //工艺版本号
+        string[] auditUserArr = m.CanAuditUser.Split('|');
+        foreach (string auditUser in auditUserArr)
+        {
+            taskManager.AppTaskRemindSetting(m.RecipeMaterialName + "配方审核提醒", "配方名称：" + m.RecipeName, this.UserID, auditUser , DateTime.Now , DateTime.Now);
+        }
+        m.RecipeModifyUser = this.UserID; //用户名
+    }
+    /// <summary>
+    /// Inis the PMT recipe weight.
+    /// 孙本强 @ 2013-04-03 13:06:16
+    /// </summary>
+    /// <param name="arry">The arry.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniPmtRecipeWeight(JavaScriptArray arry, ref EntityArrayList<PmtRecipeWeight> lst)
+    {
+        if (arry == null)
+        {
+            return;
+        }
+        int WeightID = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        for (int i = 0; i < arry.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry[i];
+            PmtRecipeWeight m = new PmtRecipeWeight();
+            m.MaterialCode = converter.ToString(record["MaterialCode"]);
+            m.WeightID = WeightID++;
+            m.WeightType = converter.ToString(record["WeightType"]);
+            string pagetypename = "Page@";
+            if (m.WeightType.ToLower().StartsWith(pagetypename.ToLower()))
+            {
+                m.WeightType = m.WeightType.Substring(pagetypename.Length).Trim();
+            }
+
+            if (m.WeightType == "22")
+            {
+                continue;
+            }
+            m.ActCode = converter.ToString(record["ActCode"]);
+            try
+            {
+                m.Into_type = converter.ToString(record["Into_type"]);
+            }
+            catch (Exception e2) { }
+            if (m.Into_type == "空") m.Into_type = "";
+            m.SetWeight = converter.ToDecimal(record["SetWeight"]);
+            //m.OldSetWeight = converter.ToDecimal(record["OldSetWeight"]);
+            //m.OldSetWeight = (m.OldSetWeight == 0 ? m.SetWeight : m.OldSetWeight);//塑解剂新增的初始化值 2014年3月23日
+            m.OldSetWeight = m.SetWeight;
+            m.ErrorAllow = converter.ToDecimal(record["ErrorAllow"]);
+
+
+     
+
+            try
+            {
+                m.Supply_code = converter.ToString(record["Supply_code"]);
+            }
+            catch(Exception ee)
+            {}
+          
+          
+
+
+
+
+            lst.Add(m);
+        }
+
+        for (int i = 0; i < arry.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry[i];
+            var weightType = converter.ToString(record["WeightType"]);
+            string pagetypename = "Page@";
+            if (weightType.ToLower().StartsWith(pagetypename.ToLower()))
+            {
+                weightType = weightType.Substring(pagetypename.Length).Trim();
+            }
+            if (weightType != "22")
+            {
+                continue;
+            }
+            var matCode = converter.ToString(record["MaterialCode"]);
+            foreach (var m in lst)
+            {
+                if (m.MaterialCode != matCode)
+                {
+                    continue;
+                }
+
+                if (String.IsNullOrEmpty(m.MaterialCode))
+                {
+                    continue;
+                }
+
+
+                if (m.MaterialCode.Substring(0, 1) == "2")
+                {
+                    m.CheckWeight = converter.ToDecimal(record["SetWeight"]);
+                    m.CheckError = converter.ToDecimal(record["ErrorAllow"]);
+                }
+                else
+                {
+                    m.CheckWeight = converter.ToDecimal(record["SetWeight"]);
+                    m.CheckError = converter.ToDecimal(record["ErrorAllow"]);
+                   
+                }
+            }
+            
+        }
+    }
+    /// <summary>
+    /// Inis the PMT recipe mixing.
+    /// 孙本强 @ 2013-04-03 13:06:16
+    /// </summary>
+    /// <param name="arry">The arry.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniPmtRecipeMixing(JavaScriptArray arry, ref  EntityArrayList<PmtRecipeMixing> lst)
+    {
+        if (arry == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        for (int i = 0; i < arry.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry[i];
+            PmtRecipeMixing m = new PmtRecipeMixing();
+            m.ActionCode = converter.ToString(record["ActionCode"]);
+            m.MixingStep = MixingStep++;
+            int? intNull = converter.ToInt(record["RecipeObjID"]);
+            if (intNull != null)
+            {
+                m.RecipeObjID = (int)intNull;
+            }
+            m.RecipeEquipCode = converter.ToString(record["RecipeEquipCode"]);
+            m.RecipeMaterialCode = converter.ToString(record["RecipeMaterialCode"]);
+            intNull = converter.ToInt(record["RecipeVersionID"]);
+            if (intNull != null)
+            {
+                m.RecipeVersionID = (int)intNull;
+            }
+            m.TermCode = converter.ToString(record["TermCode"]);
+            m.CondCode = converter.ToString(record["TermCode"]); 
+            m.MixingTime = converter.ToInt(record["MixingTime"]);
+            m.MixingTemp = converter.ToDecimal(record["MixingTemp"]);
+            m.MixingEnergy = converter.ToDecimal(record["MixingEnergy"]);
+            m.MixingPower = converter.ToDecimal(record["MixingPower"]);
+            m.MixingPress = converter.ToDecimal(record["MixingPress"]);
+            m.MixingSpeed = converter.ToInt(record["MixingSpeed"]);
+            m.ActionCode = converter.ToString(record["ActionCode"]);
+            m.Time_diff = converter.ToInt(record["Time_diff"]);
+            m.Temp_diff = converter.ToInt(record["Temp_diff"]);
+            m.Ener_diff = converter.ToDecimal(record["Ener_diff"]);
+            lst.Add(m);
+        }
+    }
+    private void IniPmtRecipeWeightMid(JavaScriptArray arry, JavaScriptArray arry2, ref  EntityArrayList<PmtRecipeWeightMid> lst)
+    {
+        if (arry == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        for (int i = 0; i < arry.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry[i];
+            PmtRecipeWeightMid m = new PmtRecipeWeightMid();
+          
+            m.WeightID = converter.ToInt(record["WeightID"]);
+            m.SetWeight = converter.ToDecimal(record["SetWeight"]);
+            m.ErrorAllow = converter.ToDecimal(record["ErrorAllow"]);
+            m.ErrorAllowMove = converter.ToDecimal(record["ErrorAllowMove"]);
+          
+            m.MaterialName = converter.ToString(record["MaterialName"]);
+            m.MaterialCode = converter.ToString(record["MaterialCode"]);
+            //if (String.IsNullOrEmpty(m.MaterialName)) m.MaterialCode = "";
+            //else
+            //{
+
+            //    m.MaterialCode = basMaterialManager.GetDataSetByWhere("MaterialName = '" + m.MaterialName + "'").Tables[0].Rows[0]["MaterialCode"].ToString();
+            //    //converter.ToString(record["MaterialCode"]);
+            //}
+            m.UpdateDate = System.DateTime.Now;
+            m.CreateDate = System.DateTime.Now;
+            lst.Add(m);
+        }
+
+        for (int i = 0; i < arry2.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry2[i];
+            PmtRecipeWeightMid m = new PmtRecipeWeightMid();
+
+            m.WeightID = converter.ToInt(record["WeightID"]);
+            m.SetWeight = converter.ToDecimal(record["SetWeight"]);
+            m.ErrorAllow = converter.ToDecimal(record["ErrorAllow"]);
+            m.ErrorAllowMove = converter.ToDecimal(record["ErrorAllowMove"]);
+
+            m.MaterialName = converter.ToString(record["MaterialName"]);
+            m.MaterialCode = converter.ToString(record["MaterialCode"]);
+       
+            m.UpdateDate = System.DateTime.Now;
+            m.CreateDate = System.DateTime.Now;
+            lst.Add(m);
+        }
+    }
+    private void IniPmtPMILLMain(JavaScriptObject record, ref  EntityArrayList<PmtPMILLMain> lst)
+    {
+        if (record == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+       
+          
+            PmtPMILLMain m = new PmtPMILLMain();
+            m.Step1SetTime = converter.ToInt(record["Step1SetTime"]);
+            m.Step2SetTime = converter.ToInt(record["Step2SetTime"]);
+            m.Step3SetTime = converter.ToInt(record["Step3SetTime"]);
+            m.Step4SetTime = converter.ToInt(record["Step4SetTime"]);
+            m.Step5SetTime = converter.ToInt(record["Step5SetTime"]);
+            m.Step6SetTime = converter.ToInt(record["Step6SetTime"]);
+            m.Step7SetTime = converter.ToInt(record["Step7SetTime"]);
+            m.Step8SetTime = converter.ToInt(record["Step8SetTime"]);
+            m.Step1SetRollerSpace = converter.ToDecimal(record["Step1SetRollerSpace"]);
+            m.Step2SetRollerSpace = converter.ToDecimal(record["Step2SetRollerSpace"]);
+            m.Step3SetRollerSpace = converter.ToDecimal(record["Step3SetRollerSpace"]);
+            m.Step4SetRollerSpace = converter.ToDecimal(record["Step4SetRollerSpace"]);
+            m.Step5SetRollerSpace = converter.ToDecimal(record["Step5SetRollerSpace"]);
+            m.Step6SetRollerSpace = converter.ToDecimal(record["Step6SetRollerSpace"]);
+            m.Step7SetRollerSpace = converter.ToDecimal(record["Step7SetRollerSpace"]);
+            m.Step8SetRollerSpace = converter.ToDecimal(record["Step8SetRollerSpace"]);
+            m.PInitalTime = converter.ToInt(record["PInitalTime"]);
+            m.PEndTime = converter.ToInt(record["PEndTime"]);
+            m.PMixTime = converter.ToInt(record["PMixTime"]);
+            m.PRatioCoef = converter.ToDecimal(record["PRatioCoef"]);
+            m.PIsInject = converter.ToInt(record["PIsInject"]);
+            m.PStartSpeed = converter.ToInt(record["PStartSpeed"]);
+
+            m.PStartV = converter.ToDecimal(record["PStartV"]);
+            m.PEndV = converter.ToDecimal(record["PEndV"]);
+            m.PMixTemp = converter.ToDecimal(record["PMixTemp"]);
+            m.PJDUSE = converter.ToInt(record["PJDUSE"]);
+      
+            m.UpdateDate = System.DateTime.Now;
+            m.CreateDate = System.DateTime.Now;
+            lst.Add(m);
+        
+    }
+    private void IniPmtSMILLMain(JavaScriptObject record, ref  EntityArrayList<PmtSMILLMain> lst)
+    {
+        if (record == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+
+
+        PmtSMILLMain m = new PmtSMILLMain();
+        m.Step1SetTime = converter.ToInt(record["SStep1SetTime"]);
+        m.Step2SetTime = converter.ToInt(record["SStep2SetTime"]);
+        m.Step3SetTime = converter.ToInt(record["SStep3SetTime"]);
+        m.Step4SetTime = converter.ToInt(record["SStep4SetTime"]);
+        m.Step5SetTime = converter.ToInt(record["SStep5SetTime"]);
+        m.Step6SetTime = converter.ToInt(record["SStep6SetTime"]);
+        m.Step7SetTime = converter.ToInt(record["SStep7SetTime"]);
+        m.Step8SetTime = converter.ToInt(record["SStep8SetTime"]);
+        m.Step1SetRollerSpace = converter.ToDecimal(record["SStep1SetRollerSpace"]);
+        m.Step2SetRollerSpace = converter.ToDecimal(record["SStep2SetRollerSpace"]);
+        m.Step3SetRollerSpace = converter.ToDecimal(record["SStep3SetRollerSpace"]);
+        m.Step4SetRollerSpace = converter.ToDecimal(record["SStep4SetRollerSpace"]);
+        m.Step5SetRollerSpace = converter.ToDecimal(record["SStep5SetRollerSpace"]);
+        m.Step6SetRollerSpace = converter.ToDecimal(record["SStep6SetRollerSpace"]);
+        m.Step7SetRollerSpace = converter.ToDecimal(record["SStep7SetRollerSpace"]);
+        m.Step8SetRollerSpace = converter.ToDecimal(record["SStep8SetRollerSpace"]);
+        m.Step1SetVelocity = converter.ToDecimal(record["SStep1SetVelocity"]);
+        m.Step2SetVelocity = converter.ToDecimal(record["SStep2SetVelocity"]);
+        m.Step3SetVelocity = converter.ToDecimal(record["SStep3SetVelocity"]);
+        m.Step4SetVelocity = converter.ToDecimal(record["SStep4SetVelocity"]);
+        m.Step5SetVelocity = converter.ToDecimal(record["SStep5SetVelocity"]);
+        m.Step6SetVelocity = converter.ToDecimal(record["SStep6SetVelocity"]);
+        m.Step7SetVelocity = converter.ToDecimal(record["SStep7SetVelocity"]);
+        m.Step8SetVelocity = converter.ToDecimal(record["SStep8SetVelocity"]);
+
+        m.SIsInject = converter.ToInt(record["SIsInject"]);
+        m.SBeforeFOpen = converter.ToInt(record["SBeforeFOpen"]);
+        m.SIsPutInto = converter.ToInt(record["SIsPutInto"]);
+        m.SJDUSE = converter.ToInt(record["SJDUSE"]);
+        //m.SJDUSE = 6;
+        m.SMixTime = converter.ToInt(record["SMixTime"]);
+        m.SInStartTime = converter.ToInt(record["SInStartTime"]);
+        m.SAfterFOpen = converter.ToInt(record["SAfterFOpen"]);
+        m.SInTimeLen = converter.ToInt(record["SInTimeLen"]);
+        m.SMixTemp = converter.ToDecimal(record["SMixTemp"]);
+        m.SFUse = converter.ToInt(record["SFUse"]);
+        m.SFUseTime = converter.ToInt(record["SFUseTime"]);
+        m.UpdateDate = System.DateTime.Now;
+        m.CreateDate = System.DateTime.Now;
+        lst.Add(m);
+
+    }
+    private void IniPmtCoolMILLMain(JavaScriptObject record, ref  EntityArrayList<PmtCoolMILLMain> lst)
+    {
+        if (record == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+
+
+        PmtCoolMILLMain m = new PmtCoolMILLMain();
+   
+        m.ErroeAllow = converter.ToDecimal(record["ErroeAllow"]);
+        m.ErroeAllowMove = converter.ToDecimal(record["ErroeAllowMove"]);
+        m.RubErroeAllow = converter.ToDecimal(record["RubErroeAllow"]);
+        m.TotalWeigh = converter.ToDecimal(record["TotalWeigh"]);
+        m.CTabletSpeed = converter.ToDecimal(record["CTabletSpeed"]);
+        m.CTabletThick = converter.ToDecimal(record["CTabletThick"]);
+        m.CTabletTemp = converter.ToDecimal(record["CTabletTemp"]);
+        m.CTabletWeigh = converter.ToDecimal(record["CTabletWeigh"]);
+        
+
+        m.CIsUseCode = converter.ToInt(record["CIsUseCode"]);
+        m.CIsUseCutter = converter.ToInt(record["CIsUseCutter"]);
+        m.CCutterNum = converter.ToInt(record["CCutterNum"]);
+        m.BatchWeigh = converter.ToDecimal(record["BatchWeigh"]);
+        m.DrugNum = converter.ToInt(record["DrugNum"]);
+        m.DrugTime = converter.ToDecimal(record["DrugTime"]);
+
+        m.UpdateDate = System.DateTime.Now;
+        m.CreateDate = System.DateTime.Now;
+        lst.Add(m);
+
+    }
+    /// <summary>
+    /// Inis the PMT recipe mixing.
+    /// 袁洋 @ 2014-10-13 16:08:13
+    /// </summary>
+    /// <param name="arry">The arry.</param>
+    /// <param name="lst">The LST.</param>
+    /// <remarks></remarks>
+    private void IniPmtRecipeOpenMixing(JavaScriptArray arry, ref  EntityArrayList<PmtRecipeOpenMixing> lst)
+    {
+        if (arry == null)
+        {
+            return;
+        }
+
+        int MixingStep = 1;
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        for (int i = 0; i < arry.Count; i++)
+        {
+            JavaScriptObject record = (JavaScriptObject)arry[i];
+            PmtRecipeOpenMixing m = new PmtRecipeOpenMixing();
+            m.OpenActionCode = converter.ToString(record["OpenActionCode"]);
+            m.MixingStep = MixingStep++;
+            int? intNull = converter.ToInt(record["RecipeObjID"]);
+            if (intNull != null)
+            {
+                m.RecipeObjID = (int)intNull;
+            }
+            m.RecipeEquipCode = converter.ToString(record["RecipeEquipCode"]);
+            m.RecipeMaterialCode = converter.ToString(record["RecipeMaterialCode"]);
+            intNull = converter.ToInt(record["RecipeVersionID"]);
+            if (intNull != null)
+            {
+                m.RecipeVersionID = (int)intNull;
+            }
+            m.OpenMixingNo = converter.ToString(record["OpenMixingNo"]);
+            m.MixTime = converter.ToInt(record["MixTime"]);
+            m.CoolMixSpeed = converter.ToDecimal(record["CoolMixSpeed"]);
+            m.OpenMixSpeed = converter.ToDecimal(record["OpenMixSpeed"]);
+            m.MixRollor = converter.ToDecimal(record["MixRollor"]);
+            m.WaterTemp = converter.ToDecimal(record["WaterTemp"]);
+            m.RubberTemp = converter.ToDecimal(record["RubberTemp"]);
+            m.CarSpeed = converter.ToDecimal(record["CarSpeed"]);
+            if (m.OpenMixingNo == "0")
+                m.SpeedDiff = converter.ToDecimal(record["SpeedDiff"]);
+            lst.Add(m);
+        }
+    }
+
+    /// <summary>
+    /// Unescapes the specified ss.
+    /// 孙本强 @ 2013-04-03 13:06:16
+    /// </summary>
+    /// <param name="ss">The ss.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    private string Unescape(string ss)
+    {
+        return System.Text.RegularExpressions.Regex.Unescape(ss);
+    }
+    private enum PmtState
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        用完 = 0,
+        /// <summary>
+        /// 
+        /// </summary>
+        正用 = 1,
+        /// <summary>
+        /// 
+        /// </summary>
+        作废 = 2,
+    }
+    /// <summary>
+    /// Saves the json info.
+    /// 孙本强 @ 2013-04-03 13:06:17
+    /// </summary>
+    /// <param name="main">The main.</param>
+    /// <param name="mixing">The mixing.</param>
+    /// <param name="weight">The weight.</param>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public string SaveJsonInfo(string main, string mixing, string weight , string advance , string mix0 ,
+        string mix1, string mix2, string mix3, string mix4, string mix5, string mix6, string QDrug, String MILL, string QDrug2, string CMILL,int Flag)
+    {
+        if (Flag == 1)
+        {
+            if (this._.编辑.SeqIdx == 0)
+            {
+                return "您没有进行编辑保存的权限！";
+            }
+        }
+        else
+        {
+            if (this._.编辑工艺.SeqIdx == 0)
+            {
+                return "您没有进行编辑工艺保存的权限！";
+            }
+        }
+        
+        main = Unescape(main).Replace("　", "").Replace("<br>", "");
+        mixing = Unescape(mixing).Replace("　", "").Replace("<br>", "");
+        weight = Unescape(weight).Replace("　", "").Replace("<br>", "");
+        advance = Unescape(advance).Replace("　", "").Replace("<br>", "");
+        QDrug = Unescape(QDrug).Replace("　", "").Replace("<br>", "");
+        QDrug2 = Unescape(QDrug2).Replace("　", "").Replace("<br>", "");
+        CMILL = Unescape(CMILL).Replace("　", "").Replace("<br>", "");
+        MILL = Unescape(MILL).Replace("　", "").Replace("<br>", "");
+        mix0 = Unescape(mix0).Replace("　", "").Replace("<br>", "");
+        mix1 = Unescape(mix1).Replace("　", "").Replace("<br>", "");
+        mix2 = Unescape(mix2).Replace("　", "").Replace("<br>", "");
+        mix3 = Unescape(mix3).Replace("　", "").Replace("<br>", "");
+        mix4 = Unescape(mix4).Replace("　", "").Replace("<br>", "");
+        mix5 = Unescape(mix5).Replace("　", "").Replace("<br>", "");
+        mix6 = Unescape(mix6).Replace("　", "").Replace("<br>", "");
+        string Result = string.Empty;
+        JavaScriptArray arry = new JavaScriptArray();
+        #region 基本信息
+        PmtRecipe recipe = new PmtRecipe();
+        IniPmtRecipe((JavaScriptObject)JavaScriptConvert.DeserializeObject(main), ref recipe);
+        #endregion
+        if (recipe.RecipeMaterialCode.Substring(0, 1) != "2")
+   
+        {
+
+            if ((recipe.LotDoneTime == 0) || (string.IsNullOrEmpty(recipe.LotDoneTime.ToString())))
+            { return "每车标准时间不能为0！"; }
+        }
+        #region 称量信息
+        EntityArrayList<PmtRecipeWeight> recipeWeight = new EntityArrayList<PmtRecipeWeight>();
+        if (Flag == 1)
+        {
+            arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(weight);
+            IniPmtRecipeWeight(arry, ref recipeWeight);
+        }       
+
+
+
+        #endregion
+
+
+    
+
+
+   
+        #region 混炼信息
+        EntityArrayList<PmtRecipeMixing> recipeMixing = new EntityArrayList<PmtRecipeMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mixing);
+        IniPmtRecipeMixing(arry, ref recipeMixing);
+        #endregion
+
+        #region 开炼信息
+        EntityArrayList<PmtRecipeOpenMixing> recipeOpenMixing = new EntityArrayList<PmtRecipeOpenMixing>();
+        EntityArrayList<PmtRecipeOpenMixing> tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix0);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "0");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "0";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix1);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "1");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "1";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix2);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "2");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "2";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix3);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "3");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "3";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix4);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "4");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "4";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix5);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "5");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "5";
+                recipeOpenMixing.Add(item);
+            }
+        tempList = new EntityArrayList<PmtRecipeOpenMixing>();
+        arry = (JavaScriptArray)JavaScriptConvert.DeserializeObject(mix6);
+        IniPmtRecipeOpenMixing(arry, ref tempList);
+        if (tempList.Count == 0)
+        {
+
+            try
+            {
+                PmtRecipeOpenMixingManager m = new PmtRecipeOpenMixingManager();
+                tempList = m.GetListByWhere(PmtRecipeOpenMixing._.RecipeObjID == recipe.ObjID && PmtRecipeOpenMixing._.OpenMixingNo == "6");
+                foreach (PmtRecipeOpenMixing w in tempList)
+                {
+                    recipeOpenMixing.Add(w);
+                }
+
+            }
+            catch (Exception e) { }
+        }
+        else
+            foreach (var item in tempList)
+            {
+                item.OpenMixingNo = "6";
+                recipeOpenMixing.Add(item);
+            }
+        #endregion
+        recipe.RecipeModifyUser = this.UserID;
+        Result = pmtRecipeManager.SavePmtRecipe(recipe, recipeWeight, recipeMixing, recipeOpenMixing);
+        return Result;
+    }
+    #endregion
+
+
+    /// <summary>
+    /// Audits the PMT recipe.
+    /// 孙本强 @ 2013-04-03 13:06:17
+    /// </summary>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    [DirectMethod]
+    public string AuditPmtRecipe()
+    {
+
+        if (this._.配方审核.SeqIdx == 0)
+        {
+            return "您没有配方审核的权限，不能进行配方审核！";
+        }
+        string msg = string.Empty;
+        string recipe = GetRequest("Recipe");
+        if (string.IsNullOrWhiteSpace(recipe))
+        {
+            return "当前配方不能进行审核！";
+        }
+        else
+        {
+            PmtRecipe PR = pmtRecipeManager.GetListByWhere(PmtRecipe._.ObjID == recipe)[0];
+            BasMaterial BM = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == PR.RecipeMaterialCode)[0];
+            if (string.IsNullOrWhiteSpace(BM.MinParkTime.ToString()) || BM.MaxParkTime == 0 || string.IsNullOrWhiteSpace(BM.MaxParkTime.ToString()))
+            {
+                return "此配方主物料未设置最大或最小停放时间，请先行设置！";
+            }
+            //String sql; DataSet ds;
+
+
+            //if (PR.RecipeMaterialCode.Substring(0, 1) == "5")
+            //{
+            //    sql = @"   select * from QmtCheckStandMaster  where matercode ='" + PR.RecipeMaterialCode + "' and pmttype = '" + PR.RecipeType + "' and  StandVisionStat = '1' ";
+            //    ds = pmtRecipeManager.GetBySql(sql).ToDataSet();
+            //    if (ds.Tables[0].Rows.Count == 0)
+            //    {
+            //        sql = @"   select * from QmtCheckDT  where materialid ='" + PR.RecipeMaterialCode + "' and RecipeType = '" + PR.RecipeType + "' and  GroupName <>  '' ";
+            //        ds = pmtRecipeManager.GetBySql(sql).ToDataSet();
+
+            //        if (ds.Tables[0].Rows.Count == 0)
+            //        { return "此配方没有对应质检标准，暂时无法审核！"; }
+
+
+
+
+
+            //    }
+
+            //}
+
+       
+
+
+            msg = pmtRecipeManager.AuditPmtRecipe(recipe, true, this.UserID);
+        }
+        return msg;
+    }
+   
+
+    
+    #region 调整塑解剂重量
+    
+    /// <summary>
+    /// 调整塑解剂按钮点击方法
+    /// 袁洋 @ 2013年6月5日16:57:54
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    [Ext.Net.DirectMethod()]
+    public string btnEditSuJieJiWeightClick(string values)
+    {
+        EntityArrayList<PmtRecipeWeight> lst = new EntityArrayList<PmtRecipeWeight>();
+        EntityArrayList<PmtRecipeWeight> result = new EntityArrayList<PmtRecipeWeight>();
+        string recipe = GetRequest("Recipe");
+        if (!string.IsNullOrWhiteSpace(recipe))
+        {
+            WhereClip where = new WhereClip();
+            where.And(PmtRecipeWeight._.RecipeObjID == recipe);
+            where.And(PmtRecipeWeight._.WeightType == "2");
+            where.And(!PmtRecipeWeight._.MaterialCode.StartsWith("2"));
+            OrderByClip order = new OrderByClip();
+            order = PmtRecipeWeight._.WeightID.Asc;
+            lst = pmtRecipeWeightManager.GetListByWhereAndOrder(where, order);
+        }
+
+        //填充补偿温度框的配方对应值
+        PmtRecipe recipeCurrent = pmtRecipeManager.GetById(recipe);
+        nonAuditMakeUpTemp.Text = recipeCurrent.MakeUpTemp == null ? "0" : recipeCurrent.MakeUpTemp.ToString();
+
+        for (int i = 0; i < lst.Count; i++)
+        {
+            PmtRecipeWeight p = lst[i];
+            p.RecipeMaterialCode = p.MaterialName;
+            p.ActCode = WeightActionConvert(PmtConfigManager.TypeCode.WeightAction, p.ActCode);
+            try
+            {
+                p.RecipeEquipCode = "";
+                p.RecipeEquipCode = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == p.MaterialCode)[0].MaterialLevel;
+            }
+            catch { }
+            EntityArrayList<PmtNonAuditMaterial> nonList = pmtNonAuditMaterialManager.GetListByWhere(PmtNonAuditMaterial._.MaterialCode == p.MaterialCode
+                && PmtNonAuditMaterial._.DeleteFlag == 0);
+            if (nonList.Count != 0)
+            {
+                result.Add(p);
+            }
+        }
+        storeSetWeightRub.Data = result;
+        storeSetWeightRub.DataBind();
+
+        return "";
+    }
+
+    /// <summary>
+    /// 转换动作代码到动作描述
+    /// </summary>
+    /// <param name="typeCode"></param>
+    /// <param name="act"></param>
+    /// <returns></returns>
+    private string WeightActionConvert(PmtConfigManager.TypeCode typeCode , string act)
+    {
+        WhereClip where = new WhereClip();
+        where.And(PmtConfig._.DeleteFlag == 0);
+        where.And(PmtConfig._.TypeCode == typeCode.ToString());
+        string sqlstr = pmtConfigManager.GetListByWhere(where)[0].ItemInfo;
+        DataSet data = pmtConfigManager.GetBySql(sqlstr).ToDataSet();
+        if (data != null && data.Tables.Count > 0)
+        {
+            foreach (DataRow dr in data.Tables[0].Rows)
+            {
+                string actStr = dr["ShowInfo"].ToString();
+                string actCode = dr["ValueInfo"].ToString();
+                if (actCode.Equals(act))
+                {
+                    return actStr;
+                }
+            }
+        }
+        return "";
+    }
+    /// <summary>
+    /// 调节塑解剂确定按钮点击事件
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    [Ext.Net.DirectMethod]
+    public string BtnEditWeightSave_Click(string json)
+    {
+        Dictionary<string, string>[] recipeWeightDic = JSON.Deserialize<Dictionary<string, string>[]>(json);
+        List<object> data = new List<object>();
+        List<PmtRecipeWeight> recipeWeightList = new List<PmtRecipeWeight>();
+        decimal sumTmp = 0;
+        double section = 0.34;//yzx 171031 由0.2改为0.34
+
+        if (Convert.ToInt32(nonAuditMakeUpTemp.Text) < 0)
+        {
+            return "补偿温度不能为负数!";
+        }
+
+        int pweight = 0;
+        if (!string.IsNullOrEmpty(txtPackWeight.Text))
+        {
+
+
+            pweight = Convert.ToInt32(txtPackWeight.Text);
+
+            if (pweight < 0 || pweight > 200)
+                return "小料袋重必须在0-200g之间!";
+
+        }
+        foreach (Dictionary<string, string> row in recipeWeightDic)
+        {
+            PmtRecipeWeight recipeWeight = new PmtRecipeWeight();
+            recipeWeight.ObjID = Convert.ToInt32(row["ObjID"]);
+            recipeWeight.RecipeMaterialCode = row["RecipeMaterialCode"];
+            recipeWeight.RecipeEquipCode = row["RecipeEquipCode"];
+            recipeWeight.MaterialName = row["MaterialName"];
+            recipeWeight.ActCode = row["ActCode"];
+            recipeWeight.OldSetWeight = Convert.ToDecimal(row["OldSetWeight"]);
+            recipeWeight.SetWeight = Convert.ToDecimal(row["SetWeight"]);
+            recipeWeight.ErrorAllow = Convert.ToDecimal(row["ErrorAllow"]);
+          
+
+
+
+
+
+
+
+
+
+
+
+            decimal tempDouble = Convert.ToDecimal(recipeWeight.SetWeight - recipeWeight.OldSetWeight);
+            tempDouble = System.Math.Abs(tempDouble);
+            if (tempDouble > Convert.ToDecimal(section))
+            {
+                return recipeWeight.MaterialName + " 的调整重量必须在 ±" + section + " 千克之间!";
+            }
+
+            recipeWeightList.Add(recipeWeight);
+        }
+        foreach (PmtRecipeWeight recipeWeight in recipeWeightList)
+        {
+            PmtRecipeWeight tempRecipeWeight = pmtRecipeWeightManager.GetById(recipeWeight.ObjID);
+            if (tempRecipeWeight.SetWeight != recipeWeight.SetWeight)
+            {
+                sumTmp = sumTmp + Convert.ToDecimal(recipeWeight.SetWeight - tempRecipeWeight.SetWeight);
+            }
+            tempRecipeWeight.SetWeight = recipeWeight.SetWeight;
+
+
+
+            tempRecipeWeight.CheckWeight = recipeWeight.SetWeight;
+
+
+            Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+
+            {
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.102))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.003);
+                }
+
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.204))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.005);
+                }
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.306))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.008);
+                }
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.408))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.010);
+                }
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.510))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.013);
+                }
+                if (tempRecipeWeight.SetWeight == converter.ToDecimal(0.612))
+                {
+
+                    tempRecipeWeight.CheckError = converter.ToDecimal(0.015);
+                }
+            }
+
+
+
+            pmtRecipeWeightManager.Update(tempRecipeWeight);
+        }
+        PmtRecipe recipe = pmtRecipeManager.GetById(hiddenRecipeObjID.Text);
+        recipe.LotTotalWeight = recipe.LotTotalWeight + sumTmp;
+        recipe.MakeUpTemp = Convert.ToInt32(nonAuditMakeUpTemp.Text);
+        recipe.Packweight = pweight;
+        pmtRecipeManager.Update(recipe);
+
+        if (recipe.RecipeMaterialCode.Substring(0, 1) == "2")
+        {
+            PmtRecipeService ps = new PmtRecipeService();
+            ps.RefreshPmtRecipe(hiddenRecipeObjID.Text);
+            this.AppendWebLog("袋重调整", "配方：" + recipe.RecipeMaterialName + "袋重：" + pweight);
+        }
+        return "";
+
+    }
+    /// <summary>
+    /// 调节塑解剂取消按钮点击事件
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnEditWeightCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winEditWeight.Close();
+    }
+
+    #endregion
+}

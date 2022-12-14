@@ -1,0 +1,181 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Data.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Interface;
+    using Mesnac.Data.Components;
+    using NBear.Data;
+    /// <summary>
+    /// PmtEquipAbilityService 实现类
+    /// 孙本强 @ 2013-04-03 13:03:13
+    /// </summary>
+    /// <remarks></remarks>
+    public class PmtEquipAbilityService : BaseService<PmtEquipAbility>, IPmtEquipAbilityService
+    {
+		#region 构造方法
+
+        /// <summary>
+        /// 类 PmtEquipAbilityService 构造函数
+        /// 孙本强 @ 2013-04-03 13:03:13
+        /// </summary>
+        /// <remarks></remarks>
+        public PmtEquipAbilityService() : base(){ }
+
+        /// <summary>
+        /// 类 PmtEquipAbilityService 构造函数
+        /// 孙本强 @ 2013-04-03 13:03:13
+        /// </summary>
+        /// <param name="connectStringKey">The connect string key.</param>
+        /// <remarks></remarks>
+        public PmtEquipAbilityService(string connectStringKey) : base(connectStringKey){ }
+
+        /// <summary>
+        /// 类 PmtEquipAbilityService 构造函数
+        /// 孙本强 @ 2013-04-03 13:03:13
+        /// </summary>
+        /// <param name="way">The way.</param>
+        /// <remarks></remarks>
+        public PmtEquipAbilityService(NBear.Data.Gateway way) : base(way){ }
+
+        #endregion 构造方法
+
+        /// <summary>
+        /// 查询条件定义类
+        /// 孙本强 @ 2013-04-03 13:58:33
+        /// </summary>
+        /// <remarks></remarks>
+        public class QueryParams
+        {
+            /// <summary>
+            /// Gets or sets the plan start date.
+            /// 孙本强 @ 2013-04-03 13:03:13
+            /// </summary>
+            /// <value>The plan start date.</value>
+            /// <remarks></remarks>
+            public string planStartDate { get; set; }
+            /// <summary>
+            /// Gets or sets the plan end date.
+            /// 孙本强 @ 2013-04-03 13:03:13
+            /// </summary>
+            /// <value>The plan end date.</value>
+            /// <remarks></remarks>
+            public string planEndDate { get; set; }
+            /// <summary>
+            /// Gets or sets the equip code.
+            /// 孙本强 @ 2013-04-03 13:03:13
+            /// </summary>
+            /// <value>The equip code.</value>
+            /// <remarks></remarks>
+            public string equipCode { get; set; }
+            /// <summary>
+            /// Gets or sets the page params.
+            /// 孙本强 @ 2013-04-03 13:03:13
+            /// </summary>
+            /// <value>The page params.</value>
+            /// <remarks></remarks>
+            public PageResult<PmtEquipAbility> pageParams { get; set; }
+            /// <summary>
+            /// Gets or sets the equip code.
+            /// yuany @ 2014年3月31日
+            /// </summary>
+            /// <value>The workbarcode.</value>
+            /// <remarks></remarks>
+            public string statUser { get; set; }
+
+        }
+
+        /// <summary>
+        /// 获取分页数据集
+        /// 孙本强 @ 2013-04-03 13:03:13
+        /// </summary>
+        /// <param name="queryParams">查询参数</param>
+        /// <returns>分页数据集</returns>
+        /// <remarks></remarks>
+        public PageResult<PmtEquipAbility> GetTablePageDataBySql(QueryParams queryParams)
+        {
+            PageResult<PmtEquipAbility> pageParams = queryParams.pageParams;
+            StringBuilder sqlstr = new StringBuilder();
+            sqlstr.AppendLine(@"SELECT     b.EquipName ,
+                               m.MaterialName,
+                               MaxAllrtime ,
+                               AvgAllrtime ,
+                               MinAllrtime ,
+                               MaxBwbtime ,
+                               AvgBwbtime ,
+                               MinBwbtime ,
+                               MaxRtime ,
+                               AvgRtime ,
+                               MinRtime ,
+                               MaxPolyTime ,
+                               AvgPolyTime ,
+                               MinPolyTime ,
+                               AvgCbTime ,
+                               AvgOilTime ,
+                               StatTime,
+                               StatUser 
+                            FROM dbo.PmtEquipAbility p
+                            LEFT JOIN dbo.BasEquip b ON p.EquipCode = b.EquipCode
+                            LEFT JOIN dbo.BasMaterial m ON m.MaterialCode=p.MaterCode
+                                WHERE   1 = 1");
+            sqlstr.AppendLine(" AND convert(char(10),StatTime,121) BETWEEN '" + queryParams.planStartDate + "' AND '" + queryParams.planEndDate + "'");
+            if (!string.IsNullOrEmpty(queryParams.equipCode))
+            {
+                sqlstr.AppendLine(" AND p.EquipCode = '" + queryParams.equipCode + "'");
+            }
+            //if (!string.IsNullOrEmpty(queryParams.statUser))
+            //{
+            //    sqlstr.AppendLine(" AND p.StatUser = '" + queryParams.statUser + "'");
+            //}
+            pageParams.QueryStr = sqlstr.ToString();
+            if (pageParams.PageSize < 0)
+            {
+                NBear.Data.CustomSqlSection css = this.GetBySql(sqlstr.ToString());
+                pageParams.DataSet = css.ToDataSet();
+                return pageParams;
+            }
+            else
+            {
+                return this.GetPageDataBySql(pageParams);
+            }
+        }
+
+        #region IPmtEquipAbilityService 成员
+
+
+        /// <summary>
+        /// 执行存储过程进行汇总
+        /// 孙本强 @ 2013-04-03 13:03:14
+        /// </summary>
+        /// <param name="startDate">汇总开始日期</param>
+        /// <param name="endDate">汇总结束日期</param>
+        /// <param name="shiftID">当班次为“全部”时，传入参数为“0”</param>
+        /// <remarks></remarks>
+        public void ExecProcEquipAbility(string startDate, string endDate, string shiftID , string workbarcode)
+        {
+
+            string[] paramNames ={
+                this.defaultGateway.BuildDbParamName("StartTime"),
+                this.defaultGateway.BuildDbParamName("EndTime"),
+                this.defaultGateway.BuildDbParamName("ShiftID"),
+                this.defaultGateway.BuildDbParamName("WorkBarCode"),
+            };
+            object[] paramValues = {
+               startDate,
+               endDate,
+               shiftID,
+               workbarcode
+            };
+            StoredProcedureSection sps = this.defaultGateway.FromStoredProcedure("ProcEquipAbility");
+            for (int i = 0; i < paramNames.Length; i++)
+            {
+                sps.AddInputParameter(paramNames[i], this.TypeToDbType(paramValues[i].GetType()), paramValues[i]);
+            }
+            sps.ExecuteNonQuery();
+        }
+
+        #endregion
+    }
+}

@@ -1,0 +1,616 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Business.Implements;
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using System.Data;
+using System.Text.RegularExpressions;
+using Mesnac.Business.Interface;
+using System.Text;
+
+public partial class Manager_BasicInfo_EquipmentInfo_EquipmentInfo : Mesnac.Web.UI.Page
+{
+    protected IBasEquipManager manager = new BasEquipManager();//业务对象
+    protected IBasEquipTypeManager equipTypeManager = new BasEquipTypeManager();
+    protected IBasEquipPartRelationManager relationManager = new BasEquipPartRelationManager();
+    protected IBasWorkShopManager workshopMananager = new BasWorkShopManager();
+    protected IBasUserManager userMananager = new BasUserManager();
+    protected IPmt_equipManager Pmanager = new Pmt_equipManager();//业务对象
+    protected Ext.Net.MessageBox msg = new Ext.Net.MessageBox();//弹出框
+
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btn_search" };
+            历史查询 = new SysPageAction() { ActionID = 2, ActionName = "btn_history_search" };
+            导出 = new SysPageAction() { ActionID = 3, ActionName = "btnExport" };
+            修改 = new SysPageAction() { ActionID = 4, ActionName = "Edit" };
+            删除 = new SysPageAction() { ActionID = 5, ActionName = "Delete" };
+            恢复 = new SysPageAction() { ActionID = 6, ActionName = "Recover" };
+            添加 = new SysPageAction() { ActionID = 7, ActionName = "btn_add" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 历史查询 { get; private set; } //必须为 public
+        public SysPageAction 导出 { get; private set; } //必须为 public
+        public SysPageAction 修改 { get; private set; } //必须为 public
+        public SysPageAction 删除 { get; private set; } //必须为 public
+        public SysPageAction 恢复 { get; private set; } //必须为 public
+        public SysPageAction 添加 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    #region 初始化方法
+    /// <summary>
+    /// 页面初始化方法
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+        }
+    }
+
+    /// <summary>
+    /// 初始化设备分类列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        if (this._.查询.SeqIdx == 0)
+        {
+            return;
+        }
+        EntityArrayList<BasEquipType> equipTypeList = equipTypeManager.GetListByWhere(BasEquipType._.DeleteFlag == 0);
+        treeDept.GetRootNode().RemoveAll();
+        foreach (BasEquipType equipType in equipTypeList)
+        {
+            Node node = new Node();
+            node.NodeID = equipType.ObjID.ToString();
+            node.Text = equipType.EquipTypeName;
+            node.Expanded = true;
+            node.Icon = Icon.Monitor;
+            treeDept.GetRootNode().AppendChild(node);
+        }
+
+        string sql = "select * from BasWorkShop";
+        DataTable dt = manager.GetBySql(sql).ToDataSet().Tables[0];
+        foreach (DataRow dr in dt.Rows)
+        {
+            Ext.Net.ListItem li = new Ext.Net.ListItem(dr["WorkShopName"].ToString(), dr["WorkShop_Code"].ToString());
+            add_is_workshop.Items.Add(li);
+            modify_is_workshop.Items.Add(li);
+        }
+
+
+    }
+    #endregion
+
+    #region 分页相关方法
+    private PageResult<BasEquip> GetPageResultData(PageResult<BasEquip> pageParams)
+    {
+        BasEquipManager.QueryParams queryParams = new BasEquipManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.equipCode = txt_equip_code.Text.TrimEnd().TrimStart();
+        queryParams.equipName = txt_equip_name.Text.TrimEnd().TrimStart();
+        queryParams.equipType = hidden_select_equip_type.Text;
+        queryParams.remark = txt_remark.Text.TrimEnd().TrimStart();
+        queryParams.deleteFlag = hidden_delete_flag.Text;
+
+        return GetTablePageDataBySql(queryParams);
+    }
+    public PageResult<BasEquip> GetTablePageDataBySql(BasEquipManager.QueryParams queryParams)
+    {
+        PageResult<BasEquip> pageParams = queryParams.pageParams;
+        StringBuilder sqlstr = new StringBuilder();
+    
+        sqlstr.AppendLine(@"SELECT	    equip.ObjID, equip.EquipCode,equipType.EquipTypeName AS EquipType, EquipName, 
+                                            EquipIP, EquipGroup, shop.WorkShopName AS WorkShopCode, equip.SubFac, 
+                                            equip.MixEquipType,  equip.LEDIP, equip.AreaCode,
+                                            equip.MixType, 
+                                            equip.Remark , equip.DeleteFlag , u.UserName AS RepairUser,u2.UserName as DGName
+                                 FROM	    BasEquip equip
+                                 LEFT JOIN  BasEquipType equipType   ON  equip.EquipType = equipType.ObjID
+                                 LEFT JOIN  BasWorkShop  shop        ON  equip.WorkShopCode = shop.ObjID    
+                                 LEFT JOIN  BasUser u             ON  equip.RepairUser = u.WorkBarcode   
+LEFT JOIN  BasUser u2             ON  equip.DGUser = u2.WorkBarcode     
+                                 WHERE      1 = 1");
+        if (!string.IsNullOrEmpty(queryParams.equipCode))
+        {
+            sqlstr.AppendLine(" AND equip.EquipCode    like '%" + queryParams.equipCode + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.equipType))
+        {
+            sqlstr.AppendLine(" AND equip.EquipType    like '%" + queryParams.equipType + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.WorkShopCode))
+        {
+            sqlstr.AppendLine(" AND equip.WorkShopCode    = " + queryParams.WorkShopCode);
+        }
+        if (!string.IsNullOrEmpty(queryParams.equipName))
+        {
+            sqlstr.AppendLine(" AND equip.EquipName    like '%" + queryParams.equipName + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.remark))
+        {
+            sqlstr.AppendLine(" AND equip.Remark like '%" + queryParams.remark + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.deleteFlag))
+        {
+            sqlstr.AppendLine(" AND equip.DeleteFlag ='" + queryParams.deleteFlag + "'");
+        }
+        pageParams.QueryStr = sqlstr.ToString();
+        if (pageParams.PageSize < 0)
+        {
+            NBear.Data.CustomSqlSection css = manager.GetBySql(sqlstr.ToString());
+            pageParams.DataSet = css.ToDataSet();
+            return pageParams;
+        }
+        else
+        {
+            return manager.GetPageDataBySql(pageParams);
+        }
+    }
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        //X.Msg.Notify("", "2").Show();
+        if (!Regex.IsMatch(txt_equip_code.Text.TrimEnd().TrimStart(), "^[0-9]*$"))
+        {
+            txt_equip_code.Text = "";
+        }
+        if (this._.查询.SeqIdx == 0)
+        {
+            return "";
+        }
+
+        
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<BasEquip> pageParams = new PageResult<BasEquip>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "EquipCode ASC";
+
+        PageResult<BasEquip> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+    #region 打印
+    /// <summary>
+    /// 打印调用方法
+    /// yuany 2013年3月2日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        if (!Regex.IsMatch(txt_equip_code.Text.TrimEnd().TrimStart(), "^[0-9]*$"))
+        {
+            txt_equip_code.Text = "";
+        }
+        PageResult<BasEquip> pageParams = new PageResult<BasEquip>();
+        pageParams.PageSize = -100;
+        PageResult<BasEquip> lst = GetPageResultData(pageParams);
+        for (int i = 0; i < lst.DataSet.Tables[0].Columns.Count; i++)
+        {
+            bool isshow = false;
+            DataColumn dc = lst.DataSet.Tables[0].Columns[i];
+            foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+            {
+                if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                {
+                    dc.ColumnName = cb.Text;
+                    isshow = true;
+                    break;
+                }
+            }
+            if (!isshow)
+            {
+                lst.DataSet.Tables[0].Columns.Remove(dc.ColumnName);
+                i--;
+            }
+        }
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(lst.DataSet, "设备信息");
+    }
+    #endregion
+
+    #region 增删改查按钮激发的事件
+    /// <summary>
+    /// 点击添加按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btn_add_Click(object sender, EventArgs e)
+    {
+        if (hidden_select_equip_type.Value == "")
+        {
+            msg.Alert("操作", "请选择左侧设备类型节点！");
+            msg.Show();
+            return;
+        }
+        add_obj_id.Text = "";
+        add_equip_code.Text = "";
+        add_is_workshop.Value = "";
+      
+        //add_equip_type.Text = equipTypeManager.GetById(hidden_select_equip_type.Value).EquipTypeName;
+
+        EntityArrayList<BasEquipType> userList = equipTypeManager.GetListByWhere(BasEquipType._.ObjID == hidden_select_equip_type.Value);
+        add_equip_type.Text = userList[0].EquipTypeName;
+
+
+        add_equip_name.Text = "";
+        hidden_equip_name.Value = "";
+        add_equip_ip.Text = "";
+       // add_equip_group.Text = "";
+        add_sub_fac.Text = "";
+        add_mix_equip_type.Text = "";
+      
+        add_led_ip.Text = "";
+  
+        add_remark.Text = "";
+        add_repair_user.Text = "";
+        add_Qrepair_user.Text = "";
+        hidden_repair_user.Value = "";
+        btnAddSave.Disable(true);
+        this.winAdd.Show();
+    }
+
+
+    /// <summary>
+    /// 点击修改激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    [Ext.Net.DirectMethod()]
+    public void commandcolumn_direct_edit(string objID)
+    {
+        //X.Msg.Notify(objID,"").Show();
+        string sql = "select * from BasEquip where EquipCode ='"+ objID + "'";
+        DataSet ds = manager.GetBySql(sql).ToDataSet();
+
+        //    BasEquip equip = manager.GetById(objID); EquipGroup   IsFinalMixing IsProEnvironment EquipType EquipName EquipIP EquipGroup
+        modify_obj_id.Text = objID;
+        modify_equip_code.Text = ds.Tables[0].Rows[0]["EquipCode"].ToString(); 
+        modify_equip_type.Text = ds.Tables[0].Rows[0]["EquipGroup"].ToString();
+        //if (equip.EquipType == "01")//密炼机有机台类型和环保机台
+        //{
+        //    modify_is_final_mixing.Hidden = false;
+      
+        //}
+        //else
+        //{
+        //    modify_is_final_mixing.Hidden = true;
+     
+        //}
+       
+
+        hidden_select_equip_type.Value = ds.Tables[0].Rows[0]["EquipType"].ToString();
+        modify_equip_name.Text = ds.Tables[0].Rows[0]["EquipName"].ToString();
+        hidden_equip_name.Value = ds.Tables[0].Rows[0]["EquipName"].ToString();
+        modify_equip_ip.Text = ds.Tables[0].Rows[0]["EquipIP"].ToString();
+        modify_equip_group.Text = ds.Tables[0].Rows[0]["EquipGroup"].ToString();
+        //if (workshopMananager.GetById(equip.WorkShopCode.ToString()) == null)
+        //{
+        //    modify_workshop_code.Text = "无此车间信息！";
+        //}
+        //else
+        //{
+        //    modify_workshop_code.Text = workshopMananager.GetById(equip.WorkShopCode.ToString()).WorkShopName;
+        //}      
+        //WorkShopCode SubFac MixEquipType IsOneMix LEDIP AreaCode MixType Remark
+        //hidden_workshop_code.Value = ds.Tables[0].Rows[0]["WorkShopCode"].ToString();
+        //modify_sub_fac.Text = ds.Tables[0].Rows[0]["SubFac"].ToString();
+        //modify_is_workshop.Value = ds.Tables[0].Rows[0]["WorkShopCode"].ToString();
+        //EntityArrayList<BasWorkShop> BasWorkShopList = workshopMananager.GetListByWhere(BasWorkShop._.WorkShop_Code == ds.Tables[0].Rows[0]["WorkShopCode"].ToString());
+        //if (BasWorkShopList.Count > 0)
+        //{
+        //    modify_is_workshop.Text = BasWorkShopList[0].WorkShopName;
+         
+        //}
+        modify_is_workshop.Text = ds.Tables[0].Rows[0]["WorkShopCode"].ToString();
+        modify_led_ip.Text = ds.Tables[0].Rows[0]["LEDIP"].ToString();
+        modify_area_code.Text = ds.Tables[0].Rows[0]["AreaCode"].ToString();
+        modify_mix_type.Text = ds.Tables[0].Rows[0]["MixType"].ToString();
+
+
+        EntityArrayList<BasUser> userList = userMananager.GetListByWhere(BasUser._.WorkBarcode == ds.Tables[0].Rows[0]["DGUser"].ToString());
+        if (userList.Count > 0)
+        {
+            modify_repair_user.Text = userList[0].UserName;
+            hidden_repair_user.Value = ds.Tables[0].Rows[0]["DGUser"].ToString();
+        }
+        else
+        {
+            modify_repair_user.Text = "";
+            hidden_repair_user.Value = "";
+        }
+
+
+        userList = userMananager.GetListByWhere(BasUser._.WorkBarcode == ds.Tables[0].Rows[0]["RepairUser"].ToString());
+        if (userList.Count > 0)
+        {
+            modify_Qrepair_user.Text = userList[0].UserName;
+            hidden_Qrepair_user.Value = ds.Tables[0].Rows[0]["RepairUser"].ToString();
+        }
+        else
+        {
+            modify_Qrepair_user.Text = "";
+            hidden_Qrepair_user.Value = "";
+        }
+        this.winModify.Show();
+    }
+
+    /// <summary>
+    /// 点击恢复激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_recover(string obj_id)
+    {
+        try
+        {
+            BasEquip equip = manager.GetById(obj_id);
+            BasEquipType equipType = equipTypeManager.GetById(equip.EquipType);
+            if (equipType != null && equipType.DeleteFlag.Equals("1"))
+            {
+                return "恢复失败：请先恢复设备类型[" + equipType.EquipTypeName+ "]";
+            }
+            equip.DeleteFlag = "0";
+            manager.Update(equip);
+            this.AppendWebLog("设备信息添加", "设备代码：" + equip.EquipCode);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "恢复失败：" + e;
+        }
+        return "恢复成功";
+    }
+
+    /// <summary>
+    /// 点击删除触发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>commandcolumn_direct_edit
+    /// <returns></returns>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string objID)
+    {
+        try
+        {
+            string sql = "select * from Pmt_weight where Equip_Code ='" + objID + "'  ";
+            DataSet ds = manager.GetBySql(sql).ToDataSet();
+            if (ds.Tables[0].Rows.Count > 0)
+            { return "删除失败 机台已被配方使用"; }
+          
+             sql = "delete from Pmt_equip where Equip_code='"+ objID + "'";
+            manager.GetBySql(sql).ToDataSet();
+
+            this.AppendWebLog("设备信息删除", "设备代码：" + objID);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+
+
+    /// <summary>
+    /// 点击取消按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAdd.Close();
+        this.winModify.Close();
+    }
+
+    /// <summary>
+    /// 点击添加信息中保存按钮激发的事件
+    /// yuany   2013年1月22日
+    /// 修改标识：qusf 20131025
+    /// 修改内容：暂时去除IP校验
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnAddSave_Click(object sender, DirectEventArgs e)
+    {
+        try
+        {
+            //IP地址格式校验
+            //if ((add_equip_ip.Text != "") && (add_equip_ip.Text != null))
+            //{
+            //    if (!Regex.IsMatch(add_equip_ip.Text, @"^((0|(?:[1-9]\d{0,1})|(?:1\d{2})|(?:2[0-4]\d)|(?:25[0-5]))\.){3}((?:[1-9]\d{0,1})|(?:1\d{2})|(?:2[0-4]\d)|(?:25[0-5]))$"))
+            //    {
+            //        X.Msg.Alert("提示", "IP地址格式不正确！").Show();
+            //        return;
+            //    }
+            //}
+            //添加校验重复
+            //EntityArrayList<BasEquip> equipList = manager.GetListByWhere(BasEquip._.EquipName == add_equip_name.Text.TrimStart().TrimEnd());
+            //if (equipList.Count > 0)
+            //{
+            //    X.Msg.Alert("提示", "此设备名称已被使用！").Show();
+            //    return;
+            //}
+
+            string sql = "select  isnull(max (equip_code),0) from Pmt_equip where Equip_class = '" + hidden_select_equip_type.Text + "'";
+            DataTable dt = manager.GetBySql(sql).ToDataSet().Tables[0];
+            String Equip_code = "";
+            if ((dt.Rows[0][0].ToString().Trim())=="0")
+            { Equip_code = hidden_select_equip_type.Text + "001"; }
+            else
+            {
+                int i = int.Parse(dt.Rows[0][0].ToString());
+                i = i + 1;
+                Equip_code = i.ToString();
+                if (Equip_code.Trim().Length == 4)
+                { Equip_code = "0" + Equip_code; }
+               
+            }
+
+
+            Pmt_equip equip = new Pmt_equip();
+            equip.Equip_code = Equip_code;
+            equip.Equip_class = hidden_select_equip_type.Text;
+            //equip.Equip_groupid = hidden_select_equip_type.Text;
+            equip.Equip_ip = add_equip_ip.Text;
+            equip.Equip_name = add_equip_name.Text;
+            equip.LED_IP = add_led_ip.Text;
+            equip.DG_user = hidden_repair_user.Text;
+            equip.QG_user = hidden_Qrepair_user.Text;
+            //equip.WorkShop_Code = int.Parse(add_is_workshop.Value.ToString());
+            equip.WorkShop_Code = string.IsNullOrEmpty(add_is_workshop.Value.ToString()) ? 0 : int.Parse(add_is_workshop.Value.ToString());
+            equip.Equip_groupid=add_remark.Text;
+            Pmanager.Insert(equip);
+            this.AppendWebLog("设备信息添加", "设备代码：" + equip.Equip_code);
+            pageToolBar.DoRefresh();
+            this.winAdd.Close();
+            msg.Alert("操作", "保存成功");
+            msg.Show();
+        }
+        catch (Exception ex)
+        {
+            msg.Alert("操作", "保存失败：" + ex);
+            msg.Show();
+        }
+    }
+
+    /// <summary>
+    /// 点击修改信息中保存按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void BtnModifySave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            //IP地址格式校验
+            //if ((modify_equip_ip.Text != "") && (modify_equip_ip.Text != null))
+            //{
+            //    if (!Regex.IsMatch(modify_equip_ip.Text, @"^((0|(?:[1-9]\d{0,1})|(?:1\d{2})|(?:2[0-4]\d)|(?:25[0-5]))\.){3}((?:[1-9]\d{0,1})|(?:1\d{2})|(?:2[0-4]\d)|(?:25[0-5]))$"))
+            //    {
+            //        X.Msg.Alert("提示", "IP地址格式不正确！").Show();
+            //        return;
+            //    }
+            //}
+            //修改重复校验
+            EntityArrayList<Pmt_equip> workList = Pmanager.GetListByWhere(Pmt_equip._.Equip_name == modify_equip_name.Text.TrimStart().TrimEnd());
+            if (workList.Count > 0)
+            {
+                if (workList[0].Equip_name != hidden_equip_name.Text)
+                {
+                    X.Msg.Alert("提示", "此设备名称已被使用！").Show();
+                    return;
+                }
+            }
+          
+                 Pmt_equip equip = new Pmt_equip();
+           EntityArrayList<Pmt_equip> PmanagerList = Pmanager.GetListByWhere(Pmt_equip._.Equip_code ==  modify_equip_code.Text);
+          equip =PmanagerList[0];
+          equip.Equip_name = modify_equip_name.Text;
+          equip.Equip_ip = modify_equip_ip.Text;
+          equip.LED_IP = modify_led_ip.Text;
+          equip.Equip_groupid = modify_equip_group.Text;
+          //X.Msg.Alert("提示", modify_is_workshop.Value.ToString()).Show();
+          //return;
+            if(!string.IsNullOrEmpty(modify_is_workshop.Value.ToString())){
+          equip.WorkShop_Code = int.Parse(modify_is_workshop.Value.ToString());}
+          equip.DG_user = hidden_repair_user.Text;
+          equip.QG_user = hidden_Qrepair_user.Text;
+         Pmanager.Update(equip);
+
+            //string sql = "update Pmt_equip set Equip_class='"+ hidden_select_equip_type.Value.ToString() + "',Equip_name='"+ modify_equip_name.Text + "', Equip_ip='"+ modify_led_ip.Text + "',Equip_groupid='"+ modify_equip_group.Text + "',WorkShop_Code='"+ hidden_workshop_code.Text + "' where Equip_code = '"+ modify_equip_code.Text + "'";
+            //manager.GetBySql(sql).ToDataSet();
+
+            this.AppendWebLog("设备信息修改", "设备代码：" + modify_equip_code.Text);
+            pageToolBar.DoRefresh();
+            this.winModify.Close();
+            msg.Alert("操作", "更新成功");
+            msg.Show();
+        }
+        catch (Exception ex)
+        {
+            msg.Alert("操作", "更新失败：" + ex);
+            msg.Show();
+        }
+    }
+    #endregion
+
+    #region 校验方法
+    /// <summary>
+    /// 检查设备名称是否重复
+    /// yuany
+    /// 2013年1月31日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void CheckEquipName(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+        string equipname = field.Text;
+        EntityArrayList<BasEquip> equipList = manager.GetListByWhere(BasEquip._.EquipName == equipname);
+        if (equipList.Count == 0)
+        {
+            e.Success = true;
+        }
+        else
+        {
+            if (equipList[0].EquipName.ToString() == hidden_equip_name.Value.ToString())
+            {
+
+                e.Success = true;
+            }
+            else
+            {
+                e.Success = false;
+                e.ErrorMessage = "此设备名称已被使用！";
+            }
+        }
+    }
+    /// <summary>
+    /// 验证设备IP及外挂LEDIP
+    /// huiw
+    /// 2013年10月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void CheckEquipIP(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+        string equipip = field.Text.Trim();
+        if (Regex.IsMatch(equipip, @"^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$"))
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = true;
+            // e.ErrorMessage = "IP输入不符合要求!";
+        }
+       
+    }
+    #endregion
+}

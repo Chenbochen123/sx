@@ -1,0 +1,215 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="RubberRealStorage.aspx.cs" Inherits="Manager_Rubber_RubberRealStorage" %>
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>车间胶料实时库存</title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <script type="text/javascript" src="<%= Page.ResolveUrl("~/") %>resources/js/jquery-1.7.1.js" ></script>
+    <style type="text/css">
+        .x-grid-row-collapsed .x-grid-cell
+        {
+        	background-color: #CCFF66 !important;
+        }
+    </style>
+    <script type="text/javascript">
+        //根据按钮类别进行删除和编辑操作
+        var commandcolumn_click = function (command, record) {
+            commandcolumn_click_confirm(command, record);
+            return false;
+        };
+        //区分删除操作，并进行二次确认操作
+        var commandcolumn_click_confirm = function (command, record) {
+            if (command.toLowerCase() == "edit") {
+                commandcolumn_direct_edit(record);
+            }
+            return false;
+        };
+        //点击修改按钮
+        var commandcolumn_direct_edit = function (record) {
+            var serialid = record.data.生产编号;
+            App.direct.commandcolumn_direct_edit(serialid, {
+                success: function (result) {
+                },
+
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <ext:ResourceManager ID="ResourceManager1" runat="server" />
+    <ext:Hidden ID="hidden_stop_type" runat="server" />
+    <ext:Hidden ID="hidden_stop_fault" runat="server" />
+    <ext:Hidden ID="hidden_fault_reason" runat="server" />
+    <ext:Hidden ID="hidden_position" runat="server" />
+        <ext:Viewport ID="vwUnit" runat="server" Layout="border">
+            <Items>
+                <ext:Panel ID="pnlStopType" runat="server" Region="North" AutoHeight="true">
+                    <TopBar>
+                        <ext:Toolbar runat="server" ID="barStopType">
+                            <Items>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="Find" Text="查询" ID="btnSearch">
+                                    <ToolTips><ext:ToolTip ID="ttSearch" runat="server" Html="点击进行查询" /></ToolTips>
+                                    <DirectEvents><Click OnEvent="btnSearch_Click">
+                                        <EventMask ShowMask="true" Target="Page"></EventMask>
+                                    </Click></DirectEvents>
+                                </ext:Button>
+                                <ext:ToolbarSeparator />
+                                <ext:Button runat="server" Icon="PageWhiteExcel" Text="导出" ID="btnExcel">
+                                    <ToolTips><ext:ToolTip ID="ToolTip3" runat="server" Html="点击进行结果导出" /></ToolTips>
+                                    <DirectEvents>
+                                    <Click OnEvent="btnExportSubmit_Click" IsUpload="true">
+                                        <ExtraParams>
+                                            <ext:Parameter Name="fields" Value="#{ModelCenter}.getFields()" Mode="Raw" />
+                                            <ext:Parameter Name="records" Value="#{StoreCenter}.getRecordsValues({ excludeId: true })"
+                                                Mode="Raw" />
+                                        </ExtraParams>
+                                    </Click>
+                                    </DirectEvents>
+                                </ext:Button>
+                            </Items>
+                        </ext:Toolbar>
+                    </TopBar>
+                    <Items>
+                        <ext:FormPanel ID="container_top" runat="server" Layout="ColumnLayout" AutoHeight="true" BodyPadding="5">
+                            <FieldDefaults>
+                                <CustomConfig>
+                                    <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                                </CustomConfig>
+                            </FieldDefaults>
+                            <Items>
+                                 <ext:Container ID="container3" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                    Padding="5">
+                                    <Items>
+                                        <ext:ComboBox ID="cbofac" runat="server" FieldLabel="部门" LabelAlign="Right" Text="全部"
+                                            Editable="false">
+                                            <Items>
+                                                <ext:ListItem Text="全部" Value="01,07">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="子午" Value="01">
+                                                </ext:ListItem>
+                                                <ext:ListItem Text="斜交" Value="07">
+                                                </ext:ListItem>
+                                            </Items>
+                                            <Triggers>
+                                                <ext:FieldTrigger Icon="Clear" Qtip="清空">
+                                                </ext:FieldTrigger>
+                                            </Triggers>
+                                            <Listeners>
+                                                <TriggerClick Handler="this.setValue('');" />
+                                            </Listeners>
+                                        </ext:ComboBox>
+                                    </Items>
+                                </ext:Container>
+                            </Items>
+                        </ext:FormPanel>
+                    </Items>
+                </ext:Panel>
+
+                <ext:Panel runat="server" ID="PanelCenter" Region="Center" Layout="FitLayout">
+                    <Items>
+                        <ext:GridPanel runat="server" ID="GridPanelCenter" ColumnLines="true" AnchorHeight="100">
+                            <Store>
+                                <ext:Store runat="server" ID="StoreCenter">
+                                    <Model>
+                                        <ext:Model runat="server" ID="ModelCenter" IDProperty="生产编号">
+                                    <Fields>
+                                        <ext:ModelField Name="车间" />
+                                        <ext:ModelField Name="物料名称"/>
+                                        <ext:ModelField Name="辊数"/>
+                                        <ext:ModelField Name="重量(T)"/>
+                                        <ext:ModelField Name="首盘位置"/>
+                                        <ext:ModelField Name="生产编号"/>
+                                        <ext:ModelField Name="状态"/>
+                                    </Fields>
+                                        </ext:Model>
+                                    </Model>
+                                </ext:Store>
+                            </Store>
+                            <ColumnModel>
+                                <Columns>
+                            <ext:Column runat="server" ID="Plan_date" DataIndex="车间" Text="车间" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column2" DataIndex="物料名称" Text="物料名称" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column3" DataIndex="辊数" Text="辊数" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column4" DataIndex="重量(T)" Text="重量(T)" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column5" DataIndex="首盘位置" Text="首盘位置" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column1" DataIndex="生产编号" Text="生产编号" MenuDisabled="true" />
+                            <ext:Column runat="server" ID="Column8" DataIndex="状态" Text="状态" MenuDisabled="true" />
+                            <ext:CommandColumn ID="commandCol" runat="server" Width="60" Text="操作" Align="Center">
+                                <Commands>
+                                    <ext:GridCommand Icon="TableEdit" CommandName="Edit" Text="修改">
+                                        <ToolTip Text="修改本条数据" />
+                                    </ext:GridCommand>
+                                </Commands>
+                                <Listeners>
+                                    <Command Handler="return commandcolumn_click(command, record);" />
+                                </Listeners>
+                            </ext:CommandColumn>
+                                </Columns>
+                            </ColumnModel>
+                        </ext:GridPanel>
+                    </Items>
+                </ext:Panel>
+               
+            </Items>
+        </ext:Viewport>
+        
+           <ext:Window ID="ModifyConfigWin" runat="server" Icon="MonitorAdd" Closable="false" Title="修改首盘位置"
+            Width="580" Height="480" Resizable="false" Hidden="true" Modal="false" BodyStyle="background-color:#fff;"
+            BodyPadding="5" Layout="Form">
+            <Items>
+                <ext:FormPanel ID="FormPanel1" runat="server" BodyPadding="5">
+                    <FieldDefaults>
+                        <CustomConfig>
+                            <ext:ConfigItem Name="LabelWidth" Value="80" Mode="Raw" />
+                            <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                        </CustomConfig>
+                    </FieldDefaults>
+                    <Items>
+                        <ext:Container ID="Container7" runat="server" AutoHeight="true">
+                            <Items>
+                                        <ext:Container ID="Container9" runat="server" Layout="HBoxLayout" MarginSpec="5 5 5 5">
+                                            <Items>
+                                                <ext:TextField ID="txtname" Flex="1" FieldLabel="首盘位置" LabelAlign="Right" Disabled="false"
+                                                    runat="server">
+                                                </ext:TextField>
+                                            </Items>
+                                        </ext:Container>
+                            </Items>
+                        </ext:Container>
+                    </Items>
+                    <Listeners>
+                        <ValidityChange Handler="#{btnModifySave}.setDisabled(!valid);" />
+                    </Listeners>
+                </ext:FormPanel>
+            </Items>
+            <Buttons>
+                <ext:Button ID="btnModifySave" runat="server" Text="确定" Icon="Accept" Disabled="true">
+                    <DirectEvents>
+                        <Click OnEvent="BtnModifySave_Click">
+                            <EventMask ShowMask="true" Msg="Saving..." MinDelay="50" />
+                        </Click>
+                    </DirectEvents>
+                </ext:Button>
+                <ext:Button ID="btnModifyCancel" runat="server" Text="取消" Icon="Cancel">
+                    <DirectEvents>
+                        <Click OnEvent="BtnModifyCancel_Click">
+                        </Click>
+                    </DirectEvents>
+                </ext:Button>
+            </Buttons>
+            <Listeners>
+                <Show Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).disable(true);}" />
+                <Hide Handler="for(var i=0;i<#{Viewport1}.items.length;i++){#{Viewport1}.getComponent(i).enable(true);}" />
+            </Listeners>
+        </ext:Window>
+    </form>
+</body>
+</html>

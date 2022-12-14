@@ -1,0 +1,12 @@
+﻿ReportCenter报表管理
+	|
+	|-----CommonReportView(原ReportingService公用页面)
+	|
+	|
+	|
+	|-----RptPmtLotInfo(工艺管理-车报表)
+	|
+	|
+	|
+	|-----RptPlanLotInfo(工艺管理-批报表)
+	|

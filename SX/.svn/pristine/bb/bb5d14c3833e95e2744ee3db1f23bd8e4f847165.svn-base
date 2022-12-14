@@ -1,0 +1,642 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Mesnac.Entity;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using Mesnac.Data.Components;
+using System.Data;
+using Newtonsoft.Json;
+using Mesnac.Business.Interface;
+
+public partial class Manager_ProducingPlan_PlanEntering_DrugAutoPlanExec : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    BasEquipManager baseEquipManager = null;// new BasEquipManager();
+    PptPlanManager pptPlanManager = null;// new PptPlanManager();
+    PmtRecipeManager pmtRecipeManager = null;
+    PptShiftTimeManager pptShiftTimeManager = null;
+    PptShiftManager pptShiftManager = null;
+    PptClassManager pptClassManeger = null;
+    Ext.Net.MessageBox mss = new MessageBox();//提示信息
+    protected IBasWorkShopManager basWorkShopManager = new BasWorkShopManager();
+    private const string constSelectAllText = "---请选择---";
+    #endregion
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "txtStratPlanDate" };
+            浏览 = new SysPageAction() { ActionID = 2};
+            生成计划 = new SysPageAction() { ActionID = 3, ActionName = "MenuDel,MenuEdit,MenuItem2,MenuItem3,MenuItem8,MenuItem9" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 浏览 { get; private set; } //必须为 public
+        public SysPageAction 生成计划 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        
+        baseEquipManager = new BasEquipManager();
+        pptPlanManager = new PptPlanManager();
+        pmtRecipeManager = new PmtRecipeManager();
+        pptShiftTimeManager = new PptShiftTimeManager();
+        pptClassManeger = new PptClassManager();
+        pptShiftManager = new PptShiftManager();
+
+        if (!X.IsAjaxRequest)
+        {
+            this.Session["AllPlan"] = null;
+            this.Session["AutoequipCode"] = null;
+            this.txtPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            txtAllPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            this.txtPlanDate.MinDate = DateTime.Now.AddDays(-1);
+            this.txtAllPlanDate.MinDate = DateTime.Now.AddDays(-1);
+            txtStratPlanDate.Value = DateTime.Now.ToString("yyyy-MM-dd");
+            InitTreeDept();
+            LoadShift();
+            #region 设备类型
+            Ext.Net.ListItem allitem = new Ext.Net.ListItem(constSelectAllText, constSelectAllText);
+            EntityArrayList<BasWorkShop> lstBasWorkShop = basWorkShopManager.GetListByWhere(BasWorkShop._.DeleteFlag == "0");
+            txtWorkShopCode.Items.Clear();
+            txtWorkShopCode.Items.Add(allitem);
+            foreach (BasWorkShop m in lstBasWorkShop)
+            {
+                Ext.Net.ListItem item = new Ext.Net.ListItem();
+                item.Value = m.ObjID.ToString();
+                item.Text = m.WorkShopName;
+                txtWorkShopCode.Items.Add(item);
+            }
+            if (txtWorkShopCode.Items.Count > 0)
+            {
+                txtWorkShopCode.Text = (txtWorkShopCode.Items[0].Value);
+            }
+            #endregion
+        }
+    }
+
+    private List<PptPlan> AddPlans
+    {
+        get
+        {
+            object plans = this.Session["AllPlan"];
+            if (plans == null)
+            {
+                plans = new List<PptPlan>();
+                this.Session["AllPlan"] = plans;
+            }
+            return (List<PptPlan>)plans;
+        }
+    }
+    protected void LoadShift()
+    {
+        DataTable shift = pptShiftManager.GetDataSetByWhere("Where UseFlag='1'").Tables[0];
+        foreach (DataRow cl in shift.Rows)
+        {
+            string ShiftName = cl["ShiftName"].ToString();
+            string ObjID = Convert.ToInt32(cl["ObjID"]).ToString();
+            this.cboPlanShift.Items.Add(new Ext.Net.ListItem(ShiftName, ObjID));
+        }
+    }
+    #region 树
+    /// <summary>
+    /// 初始化机台列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        treeEquip.GetRootNode().RemoveAll();
+        treeEquip.GetRootNode().AppendChild(getTreeNodeByDelLevel());
+    }
+
+    /// <summary>
+    /// 获取机台树的算法
+    /// </summary>
+    /// <param name="dep_num"></param>
+    /// <returns></returns>
+    private Node getTreeNodeByDelLevel()
+    {
+        Node node = new Node();
+        node.NodeID = "0";
+        node.Text = "机台分组";
+        node.Expanded = true;
+        Dictionary<string, string> depChildFristList = new Dictionary<string, string>();
+        var query = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipType == "01" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipGroup.Asc).GroupBy(pet => pet.EquipGroup).Where(pet => !string.IsNullOrEmpty(pet.Key));
+        foreach (var info in query)
+        {
+            Node childNode = new Node();
+            childNode.NodeID = info.Key;
+            childNode.Text = info.Key;
+            childNode.Expanded = false;
+            var child = baseEquipManager.GetListByWhereAndOrder(BasEquip._.EquipGroup == info.Key & BasEquip._.EquipType == "01" && BasEquip._.DeleteFlag == 0, BasEquip._.EquipCode.Asc);
+            foreach (var item in child)
+            {
+                Node nodeLeaf = new Node();
+                nodeLeaf.Text = item.EquipName;
+                nodeLeaf.Qtip = item.EquipCode;
+                nodeLeaf.Leaf = true;
+                childNode.Children.Add(nodeLeaf);
+            }
+            node.Children.Add(childNode);
+        }
+        return node;
+    }
+    #endregion
+
+    /// <summary>
+    /// 相应点击机台树事件
+    /// </summary>
+    /// <param name="equipCode"></param>
+    [DirectMethod]
+    public void LoadGridData(string equipCode)
+    {
+        //判断当前机台当前时间是否设置班组信息
+
+        #region 初始化班组信息
+        this.Session["AutoequipCode"] = equipCode;
+        string date = Convert.ToDateTime(this.txtStratPlanDate.Text).ToString("yyyy-MM-dd");
+        hidden_parent_num.Value = date;
+        if (equipCode.Length > 2)
+        {
+            string proID = equipCode.Substring(1, 1);
+            string count = pptShiftTimeManager.GetClassNameByPIDAndDate("0", proID, date).Rows[0]["Num"].ToString();
+            if (Convert.ToInt32(count) <= 0)
+            {
+
+                mss.Alert("提示", "还没有设置" + date + "班次信息！请先设置密炼班次信息");
+                mss.Show();
+                return;
+            }
+            DataTable dtZao = pptShiftTimeManager.GetClassNameByPIDAndDate("1", proID, date);
+            DataTable dtZHong = pptShiftTimeManager.GetClassNameByPIDAndDate("2", proID, date);
+            DataTable dtYe = pptShiftTimeManager.GetClassNameByPIDAndDate("3", proID, date);
+            string zaoClass = dtZao.Rows[0]["ClassName"].ToString();
+            string zaoShift = dtZao.Rows[0]["ShiftName"].ToString();
+
+            string zhongClass = dtZHong.Rows[0]["ClassName"].ToString();
+            string zhongShift = dtZHong.Rows[0]["ShiftName"].ToString();
+            string yeClass = dtYe.Rows[0]["ClassName"].ToString();
+            string yeShift = dtYe.Rows[0]["ShiftName"].ToString();
+
+            zaoPanel.Html = "<table width='100%' height='100%'><tr align='center'><td align='center'>" + zaoShift + "--" + zaoClass + "</td></tr></table> ";
+            ZhongPanel.Html = "<table width='100%' height='100%'><tr align='center'><td align='center'>" + zhongShift + "--" + zhongClass + "</td></tr></table> ";
+            YePanel.Html = "<table width='100%' height='100%'><tr align='center'><td align='center'>" + yeShift + "--" + yeClass + "</td></tr></table> ";
+        }
+        #endregion
+
+        #region 绑定对应的早中晚 计划信息
+
+
+        DataSet ds = pptPlanManager.GetXLPlanCreate(date,equipCode,"1");
+        this.ZaoPlanStore.DataSource = ds.Tables[0];
+        this.ZaoPlanStore.DataBind();
+
+        DataSet ds2 = pptPlanManager.GetXLPlanCreate(date, equipCode, "2");
+        this.ZhongPlanStore.DataSource = ds2.Tables[0];
+        this.ZhongPlanStore.DataBind();
+
+        DataSet ds3 = pptPlanManager.GetXLPlanCreate(date, equipCode, "3");
+        this.YePlanStore.DataSource = ds3.Tables[0];
+        this.YePlanStore.DataBind();
+
+        //获取对应机台的物料配方 删除标识未添加
+
+        this.Panel3.Title = baseEquipManager.GetListByWhere(BasEquip._.EquipCode == equipCode)[0].EquipName;
+        #endregion
+    }
+    /// <summary>
+    /// 点击取消按钮激发的事件
+    /// 孙宜建   2013年3月4日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.txtPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+        this.txtAllPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+        this.txtClassName.Text = "";
+        this.txtAllClassName.Text = "";
+        this.cboPlanShift.Value = "";
+        this.cboAllPlanShift.Value = "";
+        this.Session["AllPlan"] = null;
+       
+        this.winModify.Close();
+        this.AllWin.Close();
+
+    }
+
+    protected void EquipCodeRefresh(object sender, StoreReadDataEventArgs e)
+    {
+        List<object> data = new List<object>();
+        EntityArrayList<BasEquip> equipList = baseEquipManager.GetListByWhereAndOrder(BasEquip._.WorkShopCode == txtWorkShopCode.Text.Replace(constSelectAllText, "0") & BasEquip._.DeleteFlag == 0 & BasEquip._.EquipType =="02", BasEquip._.EquipName.Asc);
+        cbo_equip_code.Items.Clear();
+        data.Add(new { Id = constSelectAllText, Name = constSelectAllText });
+        foreach (BasEquip equip in equipList)
+        {
+            string id = equip.EquipCode;
+            string name = equip.EquipName;
+
+            data.Add(new { Id = id, Name = name });
+        }
+        this.equipCodeStore.DataSource = data;
+        this.equipCodeStore.DataBind();
+    }
+
+    /// <summary>
+    /// 弹出窗体显示默认值
+    /// </summary>
+    /// <param name="planID"></param>
+    /// <returns></returns>
+    [DirectMethod]
+    public bool UpPlanState(JsonObject data)
+    {
+
+        try
+        {
+            string equipID = this.Session["AutoequipCode"].ToString();
+            EntityArrayList<BasEquip> lstEquip = baseEquipManager.GetListByWhere(BasEquip._.EquipCode == equipID);
+            if (lstEquip.Count > 0)
+            {
+                this.txtWorkShopCode.Text = lstEquip[0].WorkShopCode.ToString();
+                equipCodeStore.Reload();
+            }
+            string date = Convert.ToDateTime(this.txtPlanDate.Text).ToString("yyyy-MM-dd");
+            string count = pptShiftTimeManager.GetClassNameByPIDAndDate("0", "2", date).Rows[0]["Num"].ToString();
+            if (Convert.ToInt32(count) <= 0)
+            {
+
+                mss.Alert("提示", "还没有设置" + date + "班次信息！请先设置小料班次信息");
+                mss.Show();
+                return false;
+            }
+            this.cboPlanShift.SelectedItem.Index = 2;
+            EntityArrayList<PptShiftTime> lst = pptShiftTimeManager.GetListByWhere(PptShiftTime._.ProcedureID == 2 & PptShiftTime._.ShiftDT ==Convert.ToDateTime(txtPlanDate.Text).ToString("yyyy-MM-dd") & PptShiftTime._.ShiftID == 1);
+             if (lst.Count <= 0)
+             {
+                 mss.Alert("提示", "还没有设置" + date + "班次信息！请先设置小料班次信息");
+                 mss.Show();
+             }
+            //this.txtEquip_Code.Text = data["equip_Code"].ToString();
+            this.txtEdt_Code.Text = data["edt_Code"].ToString();
+            this.txtMater_Code.Text = data["mater_Code"].ToString();
+            this.txtMater_name.Text = data["mater_name"].ToString();
+            this.txtPlanNum.Text = data["plan_num"].ToString();
+            this.txtRecipe_code.Text = data["recipe_code"].ToString();
+            this.txtRecipe_type.Text = data["recipe_type"].ToString();
+            this.txtTotal_weight.Text = data["total_weight"].ToString();
+            //XlPlanDateChage();
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+    }
+
+    /// <summary>
+    /// 点击修改信息中保存按钮激发的事件
+    /// 孙宜建   2013年2月16日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void BtnModifySave_Click(object sender, EventArgs e)
+    {
+        string date =this.txtPlanDate.Text;
+        if (this.cboPlanShift.SelectedItem == null || this.txtClassName.Text == "" || this.cboPlanShift.SelectedItem.Value==null)
+        {
+            mss.Alert("提示", "请选择班次信息！");
+            mss.Show();
+            return;
+        }
+       
+        //if (Convert.ToDateTime(date) < DateTime.Now.AddDays(-1))
+        //{
+        //    mss.Alert("提示", "不能设置当前日期之前的计划信息！");
+        //    mss.Show();
+        //    return;
+        //}
+
+        string edt_Code="";
+        string equip_Code="";//: "02002"
+        string mater_Code="";//: "2020100010040"
+        string mater_name="";//: "自-A1-无S1°A061-C"
+        string plan_num="";//: 6
+        string recipe_code="";//: "121209正常001"
+        string recipe_type="";//: 0
+        string total_weight="";//: 0
+
+        
+        string shiftid = this.cboPlanShift.SelectedItem.Value;
+        string s=cboPlanShift.Value.ToString();
+        edt_Code = txtEdt_Code.Text;
+        equip_Code = cbo_equip_code.Text;
+        mater_Code = txtMater_Code.Text;
+        mater_name = txtMater_name.Text;
+        plan_num = txtPlanNum.Text;
+        recipe_code = txtRecipe_code.Text;
+        recipe_type = txtRecipe_type.Text;
+        total_weight = txtTotal_weight.Text;
+
+        EntityArrayList<PmtRecipe> pmtlist=pmtRecipeManager.GetListByWhere(PmtRecipe._.RecipeEquipCode == equip_Code & PmtRecipe._.RecipeMaterialCode == mater_Code & PmtRecipe._.RecipeType == recipe_type & PmtRecipe._.AuditFlag == 1 & PmtRecipe._.RecipeState == 1);
+        if (pmtlist.Count == 0)
+        {
+            mss.Alert("提示", "选择的机台没有此配方！");
+            mss.Show();
+            return;
+        }
+
+        //string date = this.modify_dfStartWook.Text;
+        //string equipCode = "";
+
+        string proID = equip_Code.Substring(1, 1);
+        //string shiftid = this.modify_shift.SelectedItem.Value;
+        string planNo = pptPlanManager.GetGetMaxPlanId(Convert.ToDateTime(date).ToString("yyyy-MM-dd"), equip_Code, shiftid);
+        string classID = pptShiftTimeManager.GetClassNameByPIDAndDate(shiftid, proID, date).Rows[0]["ShiftClassID"].ToString();
+        PptPlan pptPlan = new PptPlan();
+        WhereClip where = PptPlan._.PlanDate == date & PptPlan._.RecipeEquipCode == equip_Code & PptPlan._.ShiftID == shiftid & PptPlan._.ClassID == classID;
+        OrderByClip order = PptPlan._.PriLevel.Desc;
+        EntityArrayList<PptPlan> lst = pptPlanManager.GetListByWhereAndOrder(where, order);
+        if (lst.Count > 0)
+        {
+            //pptPlan.SerialNum = lst.Count + 1;
+            pptPlan.PriLevel = lst[0].PriLevel + 1;
+        }
+        else
+        {
+            pptPlan.PriLevel = 1;
+            //pptPlan.SerialNum = 1;
+        }
+        order = PptPlan._.SerialNum.Desc;
+        lst = pptPlanManager.GetListByWhereAndOrder(where, order);
+
+        if (lst.Count > 0)
+        {
+            pptPlan.SerialNum = lst[0].SerialNum + 1;
+        }
+        else
+        {
+            pptPlan.SerialNum = 1;
+        }
+        pptPlan.PlanState = "1";
+        pptPlan.RecipeMaterialCode = mater_Code;
+        pptPlan.RecipeMaterialName = mater_name;
+        pptPlan.RecipeVersionID = Convert.ToInt32(edt_Code);
+        pptPlan.PlanNum =Convert.ToInt32(plan_num);
+        pptPlan.PlanDate = Convert.ToDateTime(date);
+        pptPlan.RecipeEquipCode = equip_Code;
+        pptPlan.RecipeType = Convert.ToInt32(recipe_type);
+        pptPlan.RecipeName = recipe_code;
+        pptPlan.TotalWeight =Convert.ToDecimal(total_weight);
+        pptPlan.PlanWeight = pptPlan.PlanNum * pptPlan.TotalWeight;
+
+
+        pptPlan.PlanSource = "N";
+        pptPlan.UrgencyState = 2;//计划紧急状态
+        pptPlan.SmallCreate = 0;
+        pptPlan.ClassID = Convert.ToInt32(classID);//获取当前班次id;
+        pptPlan.PlanID = planNo;
+        pptPlan.ShiftID = Convert.ToInt32(shiftid);
+        pptPlan.OperDatetime = DateTime.Now;
+        pptPlan.OperCode = this.UserID;// "000004";//获取当前登录用户工号
+        pptPlan.DeleteFlag = "0";
+        try
+        {
+            //pptPlanManager.Insert(pptPlan);
+            string sqlstr = " insert into Ppt_Plan values('" + planNo + "','" + Convert.ToDateTime(date).ToString("yyyy-MM-dd") + "','" + pptPlan.RecipeEquipCode + "','"
+                + pptPlan.RecipeMaterialCode + "','" + pptPlan.RecipeMaterialName + "','" + pptPlan.RecipeVersionID + "','','" + pptPlan.ShiftID + "','" + pptPlan.ClassID + "','" + pptPlan.SerialNum + "','" + pptPlan.PriLevel + "','" + pptPlan.RecipeName + "','" + pptPlan.RecipeType + "','','','','" + pptPlan.TotalWeight + "','" + pptPlan.PlanNum + "','" + pptPlan.PlanWeight + "','" + pptPlan.RealNum + "',cast('0' as numeric(12,3)),'" + pptPlan.UrgencyState + "','" + pptPlan.PlanState + "',CONVERT(varchar(19),GETDATE(),120),'','','','" + pptPlan.OperCode + "','','','','',dbo.FuncGetUserName('" + pptPlan.OperCode + "'),null,'','','','',null,'','','','')";
+            pptPlanManager.GetBySql(sqlstr).ToDataSet();
+
+        }
+        catch (Exception ex)
+        {
+            mss.Alert("提示", ex.Message);
+            mss.Show();
+            return;
+        }
+        this.txtPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+        this.txtClassName.Text = "";
+        this.cboPlanShift.Value = "";
+        this.winModify.Close();
+        mss.Alert("提示", "生成计划完成！请核实后下达计划！");
+        mss.Show();
+    }
+
+    protected void BtnModifyAllSave_Click(object sender, EventArgs e)
+    {
+        lock (lockObj)
+        {
+            List<PptPlan> plans = this.AddPlans;
+            foreach (PptPlan pptPlan in plans)
+            {
+
+                string date = this.txtAllPlanDate.Text;
+                if (this.cboAllPlanShift.SelectedItem == null || this.txtAllClassName.Text == "" || this.cboAllPlanShift.SelectedItem.Value == null)
+                {
+                    mss.Alert("提示", "请选择班次信息！");
+                    mss.Show();
+                    return;
+                }
+                string shiftid = this.cboAllPlanShift.SelectedItem.Value;
+                string s = cboAllPlanShift.Value.ToString();
+                string proID = "2";
+                try
+                {
+                     proID = pptPlan.RecipeEquipCode.Substring(1, 1);
+                }
+                catch (Exception)
+                {
+                }
+                string planNo = pptPlanManager.GetGetMaxPlanId(Convert.ToDateTime(date).ToString("yyyy-MM-dd"), pptPlan.RecipeEquipCode, shiftid);
+                string classID = pptShiftTimeManager.GetClassNameByPIDAndDate(shiftid, proID, date).Rows[0]["ShiftClassID"].ToString();
+                WhereClip where = PptPlan._.PlanDate == date & PptPlan._.RecipeEquipCode == pptPlan.RecipeEquipCode & PptPlan._.ShiftID == shiftid & PptPlan._.ClassID == classID;
+                OrderByClip order = PptPlan._.PriLevel.Desc;
+                EntityArrayList<PptPlan> lst = pptPlanManager.GetListByWhereAndOrder(where, order);
+                if (lst.Count > 0)
+                {
+                    pptPlan.PriLevel = lst[0].PriLevel + 1;
+                }
+                else
+                {
+                    pptPlan.PriLevel = 1;
+                }
+                order = PptPlan._.SerialNum.Desc;
+                lst = pptPlanManager.GetListByWhereAndOrder(where, order);
+
+                if (lst.Count > 0)
+                {
+                    pptPlan.SerialNum = lst[0].SerialNum + 1;
+                }
+                else
+                {
+                    pptPlan.SerialNum = 1;
+                }
+                pptPlan.PlanState = "1";
+                pptPlan.PlanDate = Convert.ToDateTime(date);
+                pptPlan.PlanWeight = pptPlan.PlanNum * pptPlan.TotalWeight;
+                pptPlan.PlanSource = "N";
+                pptPlan.UrgencyState = 2;//计划紧急状态
+                pptPlan.SmallCreate = 0;
+                pptPlan.ClassID = Convert.ToInt32(classID);//获取当前班次id;
+                pptPlan.PlanID = planNo;
+                pptPlan.ShiftID = Convert.ToInt32(shiftid);
+                pptPlan.OperDatetime = DateTime.Now;
+                pptPlan.OperCode = this.UserID;// "000004";//获取当前登录用户工号
+                pptPlan.DeleteFlag = "0";
+                //pptPlanManager.Insert(pptPlan);
+                // LoadGridData(equip_Code);
+
+
+                string sqlstr = " insert into Ppt_Plan values('" + planNo + "','" + Convert.ToDateTime(date).ToString("yyyy-MM-dd") + "','" + pptPlan.RecipeEquipCode + "','"
+              + pptPlan.RecipeMaterialCode + "','" + pptPlan.RecipeMaterialName + "','" + pptPlan.RecipeVersionID + "','','" + pptPlan.ShiftID + "','" + pptPlan.ClassID + "','" + pptPlan.SerialNum + "','" + pptPlan.PriLevel + "','" + pptPlan.RecipeName + "','" + pptPlan.RecipeType + "','','','','" + pptPlan.TotalWeight + "','" + pptPlan.PlanNum + "','" + pptPlan.PlanWeight + "','" + pptPlan.RealNum + "',cast('0' as numeric(12,3)),'" + pptPlan.UrgencyState + "','" + pptPlan.PlanState + "',CONVERT(varchar(19),GETDATE(),120),'','','','" + pptPlan.OperCode + "','','','','',dbo.FuncGetUserName('" + pptPlan.OperCode + "'),null,'','','','',null,'','','','')";
+                pptPlanManager.GetBySql(sqlstr).ToDataSet();
+            }
+            this.txtAllPlanDate.Text = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            this.txtAllClassName.Text = "";
+            this.cboAllPlanShift.Value = "";
+            this.Session["AllPlan"] = null;
+            mss.Alert("提示", "生成计划完成！请核实后下达计划！");
+            mss.Show();
+            this.AllWin.Close();
+            if (plans == null)
+            {
+                throw new Exception("没有计划");
+            }
+        }
+    }
+    /// <summary>
+    /// 查询日期更改事件
+    /// </summary>
+    /// <returns></returns>
+    [DirectMethod]
+    public bool DateChage()
+    {
+        if (this._.查询.SeqIdx == 0)
+        {
+            return false;
+        }
+        if (this.Session["AutoequipCode"] == null)
+        {
+            return false;
+        }
+        else
+        {
+            LoadGridData(this.Session["AutoequipCode"].ToString());
+            return true;
+        }
+
+    }
+
+    /// <summary>
+    /// win窗体中小料计划日期改变相应事件
+    /// </summary>
+    /// <returns></returns>
+    [DirectMethod]
+    public bool XlPlanDateChage(string flag)
+    {
+            txtClassName.Text = "";
+            txtAllClassName.Text = "";
+            if (this.txtPlanDate.Text == "")
+            {
+                mss.Alert("提示", "计划日期！");
+                mss.Show();
+                return false;
+            }
+            if (this.cboPlanShift.SelectedItem.Value != null)
+            {
+                string id = this.cboPlanShift.SelectedItem.Value;
+                EntityArrayList<PptShiftTime> lst = pptShiftTimeManager.GetListByWhere(PptShiftTime._.ProcedureID == 2 & PptShiftTime._.ShiftDT == txtPlanDate.Text & PptShiftTime._.ShiftID == id);
+                if (lst.Count <= 0)
+                {
+                    mss.Alert("提示", "还没有设置" + Convert.ToDateTime(this.txtPlanDate.Text).ToString("yyyy-MM-dd") + "班次信息！请先设置小料班次信息");
+                    mss.Show();
+                    return false;
+                }
+                else
+                {
+                    this.txtClassName.Text = pptClassManeger.GetDataSetByFieldsAndWhere("ClassName", "Where ObjID='" + lst[0].ShiftClassID + "'").Tables[0].Rows[0]["ClassName"].ToString();
+                    return true;
+                }
+            }
+            if (this.txtAllPlanDate.Text == "")
+            {
+                mss.Alert("提示", "计划日期！");
+                mss.Show();
+                return false;
+            }
+            if (this.cboAllPlanShift.SelectedItem.Value != null)
+            {
+                string id = this.cboAllPlanShift.SelectedItem.Value;
+                EntityArrayList<PptShiftTime> lst = pptShiftTimeManager.GetListByWhere(PptShiftTime._.ProcedureID == 2 & PptShiftTime._.ShiftDT == txtAllPlanDate.Text & PptShiftTime._.ShiftID == id);
+                if (lst.Count <= 0)
+                {
+                    mss.Alert("提示", "还没有设置" + Convert.ToDateTime(this.txtAllPlanDate.Text).ToString("yyyy-MM-dd") + "班次信息！请先设置小料班次信息");
+                    mss.Show();
+                    return false;
+                }
+                else
+                {
+                    this.txtAllClassName.Text = pptClassManeger.GetDataSetByFieldsAndWhere("ClassName", "Where ObjID='" + lst[0].ShiftClassID + "'").Tables[0].Rows[0]["ClassName"].ToString();
+                    return true;
+                }
+            }
+            return true;
+    }
+
+    private static object lockObj = new object();
+    [DirectMethod]
+    public void AllUpdatePlanState(string typejsonstr, object datajsonstr)
+    {
+
+        string date = Convert.ToDateTime(this.txtPlanDate.Text).ToString("yyyy-MM-dd");
+        string count = pptShiftTimeManager.GetClassNameByPIDAndDate("0", "2", date).Rows[0]["Num"].ToString();
+        if (Convert.ToInt32(count) <= 0)
+        {
+
+            mss.Alert("提示", "还没有设置" + date + "班次信息！请先设置小料班次信息");
+            mss.Show();
+            return;
+        }
+        Mesnac.Util.BaseInfo.ObjectConverter converter = new Mesnac.Util.BaseInfo.ObjectConverter();
+        JavaScriptArray datajson = (JavaScriptArray)JavaScriptConvert.DeserializeObject(datajsonstr.ToString());
+
+        lock (lockObj)
+        {
+            List<PptPlan> plans = this.AddPlans;
+            for (int i = 0; i < datajson.Count; i++)
+            {
+                JavaScriptObject record = (JavaScriptObject)datajson[i];
+                PptPlan plan = new PptPlan();
+
+                string edt_Code = converter.ToString(record["edt_Code"]);
+                string equip_Code = converter.ToString(record["equip_Code"]);//: "02002"
+                string mater_Code = converter.ToString(record["mater_Code"]);//: "2020100010040"
+                string mater_name = converter.ToString(record["mater_name"]);//: "自-A1-无S1°A061-C"
+                string plan_num = converter.ToString(record["plan_num"]);//: 6
+                string recipe_code = converter.ToString(record["recipe_code"]);//: "121209正常001"
+                string recipe_type = converter.ToString(record["recipe_type"]);//: 0
+                string total_weight = converter.ToString(record["total_weight"]);//: 0
+                plan.RecipeVersionID =Convert.ToInt32(edt_Code);
+                plan.RecipeEquipCode = equip_Code;
+                plan.RecipeMaterialCode = mater_Code;
+                plan.RecipeMaterialName = mater_name;
+                plan.PlanNum = Convert.ToInt32(plan_num);
+                plan.RecipeName = recipe_code;
+                plan.RecipeType = Convert.ToInt32(recipe_type);
+                plan.TotalWeight =Convert.ToDecimal(total_weight);
+                plans.Add(plan);
+            }
+            this.Session["AllPlan"] = plans;
+        }
+    }
+}

@@ -1,0 +1,489 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Data.Components;
+using Mesnac.Entity;
+using System.Data;
+using NBear.Common;
+using System.Text.RegularExpressions;
+using System.Text;
+
+public partial class Manager_BasicInfo_EquipmentInfo_EquipmentPartRelation : Mesnac.Web.UI.Page
+{
+    protected BasEquipPartRelationManager manager = new BasEquipPartRelationManager();//业务对象
+    protected BasEquipPartInfoManager partInfomanager = new BasEquipPartInfoManager();
+    protected BasEquipTypeManager equipTypeManager = new BasEquipTypeManager();
+    protected BasEquipManager equipManager = new BasEquipManager();
+
+    private Ext.Net.MessageBox msg = new Ext.Net.MessageBox();//弹出框
+
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btn_search" };
+            历史查询 = new SysPageAction() { ActionID = 2, ActionName = "btn_history_search" };
+            导出 = new SysPageAction() { ActionID = 3, ActionName = "btnExport" };
+            修改 = new SysPageAction() { ActionID = 4, ActionName = "Edit" };
+            删除 = new SysPageAction() { ActionID = 5, ActionName = "Delete" };
+            恢复 = new SysPageAction() { ActionID = 6, ActionName = "Recover" };
+            添加 = new SysPageAction() { ActionID = 7, ActionName = "btn_add" };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 历史查询 { get; private set; } //必须为 public
+        public SysPageAction 导出 { get; private set; } //必须为 public
+        public SysPageAction 修改 { get; private set; } //必须为 public
+        public SysPageAction 删除 { get; private set; } //必须为 public
+        public SysPageAction 恢复 { get; private set; } //必须为 public
+        public SysPageAction 添加 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    #region 初始化方法
+    /// <summary>
+    /// 页面初始化方法
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest)
+        {
+            InitTreeDept();
+        }
+    }
+
+    /// <summary>
+    /// 初始化设备分类列表树
+    /// </summary>
+    private void InitTreeDept()
+    {
+        if (this._.查询.SeqIdx == 0)
+        {
+            return;
+        }
+        EntityArrayList<BasEquipType> equipTypeList = equipTypeManager.GetListByWhere(BasEquipType._.DeleteFlag == "0");
+        treeDept.GetRootNode().RemoveAll();
+        foreach (BasEquipType equipType in equipTypeList)
+        {
+            Node node = new Node();
+            node.NodeID = equipType.ObjID.ToString();
+            node.Text = equipType.EquipTypeName;
+            node.Icon = Icon.Monitor;
+            EntityArrayList<BasEquip> equipList = equipManager.GetListByWhereAndOrder(BasEquip._.EquipType == equipType.ObjID.ToString() && BasEquip._.DeleteFlag == "0", BasEquip._.EquipName.Asc);
+            if (equipList.Count == 0)
+            {
+                node.Leaf = true;
+            }
+            else
+            {
+                node.Leaf = false;
+            }
+            foreach (BasEquip equip in equipList)
+            {
+                Node nodeChild = new Node();
+                nodeChild.NodeID = equip.EquipCode.ToString();
+                nodeChild.Text = equip.EquipName;
+                nodeChild.Icon = Icon.Laptop;
+                nodeChild.Leaf = true;
+                node.Children.Add(nodeChild);
+            }
+            treeDept.GetRootNode().AppendChild(node);
+        }
+    }
+    #endregion
+
+    #region 分页相关方法
+    private PageResult<BasEquipPartRelation> GetPageResultData(PageResult<BasEquipPartRelation> pageParams)
+    {
+        BasEquipPartRelationManager.QueryParams queryParams = new BasEquipPartRelationManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.objID = txt_obj_id.Text.TrimEnd().TrimStart();
+        queryParams.equipCode = hidden_equip_code.Text;
+        queryParams.equipType = hidden_equip_type.Text;
+        queryParams.remark = txt_remark.Text.TrimEnd().TrimStart();
+        queryParams.deleteFlag = hidden_delete_flag.Text;
+
+        return GetTablePageDataBySql(queryParams);
+    }
+    public PageResult<BasEquipPartRelation> GetTablePageDataBySql(BasEquipPartRelationManager.QueryParams queryParams)
+    {
+        PageResult<BasEquipPartRelation> pageParams = queryParams.pageParams;
+        StringBuilder sqlstr = new StringBuilder();
+        sqlstr.AppendLine(@" SELECT	    relation.ObjID, part.PartName AS PartCode,equip.EquipName ,equip.EquipCode,
+                                            equiptype.EquipTypeName AS EquipType, relation.EquipAddress AS EquipAddress,
+                                            relation.LastModifyDate, relation.Remark, relation.DeleteFlag AS DeleteFlag
+                                 FROM	    BasEquipPartRelation relation  
+                                 LEFT JOIN  BasEquipPartInfo    part       ON  relation.PartCode = part.ObjID
+                                 LEFT JOIN  BasEquip            equip      ON  relation.EquipCode = equip.EquipCode
+                                 LEFT JOIN  BasEquipType        equiptype  ON  relation.EquipType = equiptype.ObjID
+                                 WHERE      1 = 1");
+        if (!string.IsNullOrEmpty(queryParams.objID))
+        {
+            sqlstr.AppendLine(" AND relation.ObjID like '%" + queryParams.objID + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.partCode))
+        {
+            sqlstr.AppendLine(" AND relation.PartCode like '%" + queryParams.partCode + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.equipCode))
+        {
+            sqlstr.AppendLine(" AND relation.EquipCode like '%" + queryParams.equipCode + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.equipType))
+        {
+            sqlstr.AppendLine(" AND relation.EquipType like '%" + queryParams.equipType + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.remark))
+        {
+            sqlstr.AppendLine(" AND relation.Remark like '%" + queryParams.remark + "%'");
+        }
+        if (!string.IsNullOrEmpty(queryParams.deleteFlag))
+        {
+            sqlstr.AppendLine(" AND relation.DeleteFlag ='" + queryParams.deleteFlag + "'");
+        }
+        pageParams.QueryStr = sqlstr.ToString();
+        if (pageParams.PageSize < 0)
+        {
+            NBear.Data.CustomSqlSection css = manager.GetBySql(sqlstr.ToString());
+            pageParams.DataSet = css.ToDataSet();
+            return pageParams;
+        }
+        else
+        {
+            return manager.GetPageDataBySql(pageParams);
+        }
+    }
+    [DirectMethod]
+    public object GridPanelBindData(string action, Dictionary<string, object> extraParams)
+    {
+        if (!Regex.IsMatch(txt_obj_id.Text.TrimEnd().TrimStart(), "^[0-9]*$"))
+        {
+            txt_obj_id.Text = "";
+        }
+        if (this._.查询.SeqIdx == 0)
+        {
+            return "";
+        }
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<BasEquipPartRelation> pageParams = new PageResult<BasEquipPartRelation>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "EquipCode,PartCode ASC";
+
+        PageResult<BasEquipPartRelation> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+    #endregion
+
+    #region 打印
+    /// <summary>
+    /// 打印调用方法
+    /// yuany 2013年3月2日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+        if (!Regex.IsMatch(txt_obj_id.Text.TrimEnd().TrimStart(), "^[0-9]*$"))
+        {
+            txt_obj_id.Text = "";
+        }
+        PageResult<BasEquipPartRelation> pageParams = new PageResult<BasEquipPartRelation>();
+        pageParams.PageSize = -100;
+        PageResult<BasEquipPartRelation> lst = GetPageResultData(pageParams);
+        for (int i = 0; i < lst.DataSet.Tables[0].Columns.Count; i++)
+        {
+            bool isshow = false;
+            DataColumn dc = lst.DataSet.Tables[0].Columns[i];
+            foreach (ColumnBase cb in this.pnlList.ColumnModel.Columns)
+            {
+                if ((cb.DataIndex != null) && (cb.DataIndex.ToUpper() == dc.ColumnName.ToUpper()))
+                {
+                    dc.ColumnName = cb.Text;
+                    isshow = true;
+                    break;
+                }
+            }
+            if (!isshow)
+            {
+                lst.DataSet.Tables[0].Columns.Remove(dc.ColumnName);
+                i--;
+            }
+        }
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(lst.DataSet, "设备部件关联信息");
+    }
+    #endregion
+
+    #region 增删改查按钮激发的事件
+    /// <summary>
+    /// 点击添加按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btn_add_Click(object sender, EventArgs e)
+    {
+        if (hidden_equip_code.Value == "")
+        {
+            msg.Alert("操作", "请选择左侧设备节点！");
+            msg.Show();
+            return;
+        }
+        hidden_equip_type.Value = equipManager.GetListByWhere(BasEquip._.EquipCode == hidden_equip_code.Value)[0].EquipType;
+        add_part_code.Text = "";
+        hidden_part_code.Text = "";
+        add_equip_type.Text = equipTypeManager.GetById(hidden_equip_type.Value).EquipTypeName;
+        add_equip_code.Text = equipManager.GetListByWhere(BasEquip._.EquipCode == hidden_equip_code.Value)[0].EquipName;
+        add_equip_address.Text = "";
+        hidden_part_name.Value = "";
+        add_remark.Text = "";
+        btnAddSave.Disable(true);
+        this.winAdd.Show();
+    }
+
+
+    /// <summary>
+    /// 点击修改激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    [Ext.Net.DirectMethod()]
+    public void commandcolumn_direct_edit(string objID, String EquipCode)
+    {
+
+        //X.Msg.Notify(objID, EquipCode).Show();
+        //return;
+        //BasEquipPartRelation relation = manager.GetById(objID);
+        BasEquipPartRelation relation = manager.GetListByWhere(BasEquipPartRelation._.EquipCode == EquipCode && BasEquipPartRelation._.ObjID == objID)[0];
+
+        modify_obj_id.Text = objID;
+        modify_part_code.Text = partInfomanager.GetById(relation.PartCode).PartName;
+        hidden_part_code.Value = relation.PartCode;
+        hidden_part_name.Value = relation.PartCode;
+        modify_equip_code.Text = equipManager.GetListByWhere(BasEquip._.EquipCode == relation.EquipCode)[0].EquipName;
+        hidden_equip_code.Value = relation.EquipCode;
+        //modify_equip_type.Text = equipTypeManager.GetById(relation.EquipType).EquipTypeName;
+        hidden_equip_type.Value = relation.EquipType;
+        modify_equip_address.Text = relation.EquipAddress;
+        modify_remark.Text = relation.Remark;
+        this.winModify.Show();
+    }
+
+    /// <summary>
+    /// 点击恢复激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_recover(string obj_id)
+    {
+        try
+        {
+            BasEquipPartRelation relation = manager.GetById(obj_id);
+            BasEquipType equipType = equipTypeManager.GetById(relation.EquipType);
+            if (equipType != null && equipType.DeleteFlag.Equals("1"))
+            {
+                return "恢复失败：请先恢复设备类型[" + equipType.EquipTypeName + "]";
+            }
+            EntityArrayList<BasEquip> equipList = equipManager.GetListByWhere(BasEquip._.EquipCode == relation.EquipCode && BasEquip._.DeleteFlag == "1");
+            if (equipList.Count > 0)
+            {
+                return "恢复失败：请先恢复设备[" + equipList[0].EquipName + "]";
+            }
+            BasEquipPartInfo part = partInfomanager.GetById(relation.PartCode);
+            if (part != null && part.DeleteFlag.Equals("1"))
+            {
+                return "恢复失败：请先恢复部件[" + part.PartName + "]";
+            }
+
+            relation.DeleteFlag = "0";
+            manager.Update(relation);
+            this.AppendWebLog("设备部件关联恢复", "设备部件关联编号：" + relation.ObjID);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "恢复失败：" + e;
+        }
+        return "恢复成功";
+    }
+
+    /// <summary>
+    /// 点击删除触发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="unit_num"></param>
+    /// <returns></returns>
+    [Ext.Net.DirectMethod()]
+    public string commandcolumn_direct_delete(string objID, String EquipCode)
+    {
+        try
+        {
+            //BasEquipPartRelation relation = manager.GetById(objID);
+            //relation.DeleteFlag = "1";
+            //manager.Update(relation);
+
+            string sql = "delete Ppt_pmparts where Mp_code ='" + objID + "'  and Equip_code = '" + EquipCode + "'";
+            manager.GetBySql(sql).ToDataSet();
+            this.AppendWebLog("设备部件关联删除", "设备部件关联编号：" + objID);
+            pageToolBar.DoRefresh();
+        }
+        catch (Exception e)
+        {
+            return "删除失败：" + e;
+        }
+        return "删除成功";
+    }
+
+    
+    /// <summary>
+    /// 点击取消按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAdd.Close();
+        this.winModify.Close();
+    }
+
+    /// <summary>
+    /// 点击添加信息中保存按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    public void BtnAddSave_Click(object sender, DirectEventArgs e)
+    {
+        try
+        {
+            if (!CheckPartName())
+            {
+                X.Msg.Alert("提示", "此设备已包含此部件！").Show();
+                return;
+            }
+
+
+
+            string sql = "insert into Ppt_pmparts values('" + hidden_part_code.Text + "','" + hidden_equip_code.Text + "','" + hidden_equip_type.Value.ToString() + "','" + add_part_code.Text + "','','" + add_remark.Text + "','" + add_equip_address.Text + "')";
+            //add_remark.Text = sql;
+            //return;
+            manager.GetBySql(sql).ToDataSet();
+    
+            this.AppendWebLog("设备部件关联添加", "设备部件关联编号：" + hidden_part_code.Text);
+            pageToolBar.DoRefresh();
+            this.winAdd.Close();
+            msg.Alert("操作", "保存成功");
+            msg.Show();
+        }
+        catch (Exception ex)
+        {
+            msg.Alert("操作", "保存失败：" + ex);
+            msg.Show();
+        }
+    }
+
+    /// <summary>
+    /// 点击修改信息中保存按钮激发的事件
+    /// yuany   2013年1月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void BtnModifySave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!CheckPartName())
+            {
+                X.Msg.Alert("提示", "此设备已包含此部件！").Show();
+                return;
+            }
+       
+            string sql = "update Ppt_pmparts set equip_ip='" + modify_equip_address.Text + "',MP_Memo='" + modify_remark.Text +
+                "' where Mp_code='" + modify_obj_id.Text + "' and Equip_code = '" + hidden_equip_code.Text + "'";
+
+            //modify_remark.Text = sql;
+            //return;
+            manager.GetBySql(sql).ToDataSet();
+
+            this.AppendWebLog("设备部件关联修改", "设备部件关联编号：" + hidden_part_code.Value.ToString());
+            pageToolBar.DoRefresh();
+            this.winModify.Close();
+            msg.Alert("操作", "更新成功");
+            msg.Show();
+        }
+        catch (Exception ex)
+        {
+            msg.Alert("操作", "更新失败：" + ex);
+            msg.Show();
+        }
+    }
+    #endregion
+
+    #region 校验方法
+    /// <summary>
+    /// 检查部件名称是否重复
+    /// yuany
+    /// 2013年1月31日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected bool CheckPartName()
+    {
+        string partcode = hidden_part_code.Value.ToString();
+        string equipcode = hidden_equip_code.Value.ToString();
+        EntityArrayList<BasEquipPartRelation> partList = manager.GetListByWhere(BasEquipPartRelation._.PartCode == partcode && BasEquipPartRelation._.EquipCode == equipcode );
+        if (partList.Count == 0)
+        {
+            return true;
+        }
+        else
+        {
+            if (partList[0].PartCode.ToString() == hidden_part_name.Value.ToString())
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 验证设备IP及外挂LEDIP
+    /// huiw
+    /// 2013年10月22日
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void CheckEquipIP(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+        string equipip = field.Text.Trim();
+        if (Regex.IsMatch(equipip, @"^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$"))
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = true;
+            //e.ErrorMessage = "IP输入不符合要求!";
+        }
+
+    }
+    #endregion
+}

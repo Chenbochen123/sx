@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="09/14/2013 21:01:03" ReportInfo.Modified="03/25/2014 15:39:16" ReportInfo.CreatorVersion="1.9.9.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqAFHGp6KQj27H4qUwAIR20hSnyrpNtgmeY+I5zyTmYE0HuZfX1hs9fAqnt4DRtzHmabOsETFu8uBcY3tAnpVWBTTAdBw7JTBCtzSX8xSQMNVNNe0oRSMlmPwJJUBb3zDgZKPcDdrCWsDxM9qWsy6hliWiTerGcgzrd2bOfloaDI2bFQceynEmN9imIaJFjmN8">
+      <TableDataSource Name="Table" Alias="EquipRubTime" DataType="System.Int32" Enabled="true" SelectCommand="select PlanDate, B.EquipName, A.MaterCode, C.MaterialName, SUM(SerialCount) TotalCount, SUM(DoneAllRTime) TotalTime&#13;&#10;from PptEquipRubTime A&#13;&#10;    left join BasEquip B on A.EquipCode = B.EquipCode&#13;&#10;    left join BasMaterial C on A.MaterCode = C.MaterialCode&#13;&#10;where PlanDate &gt;= '2014-01-01 00:00:00' and PlanDate &lt;= '2014-01-01 00:00:00' group by PlanDate, B.EquipName, A.MaterCode, C.MaterialName">
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="PlanDate" DataType="System.String"/>
+        <Column Name="MaterialName" DataType="System.String"/>
+        <Column Name="TotalCount" DataType="System.String"/>
+        <Column Name="TotalTime" DataType="System.String"/>
+        <Column Name="MaterCode" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="4000" PaperHeight="4000">
+    <DataBand Name="Data1" Width="15044.4" Height="349.65">
+      <TextObject Name="txtTitle" Top="9.45" Width="718.2" Height="28.35" Text="配方各机台加工时间表" HorzAlign="Center" VertAlign="Center" Font="宋体, 14pt, style=Bold"/>
+      <MatrixObject Name="Matrix1" Left="9.45" Top="56.7" Width="372.79" Height="81.19" FixedRows="2" FixedColumns="1" CellsSideBySide="true" DataSource="Table">
+        <MatrixColumns>
+          <Header Expression="[EquipRubTime.EquipName]"/>
+        </MatrixColumns>
+        <MatrixRows>
+          <Header Expression="[EquipRubTime.MaterialName]"/>
+        </MatrixRows>
+        <MatrixCells>
+          <Cell Expression="[EquipRubTime.TotalCount]"/>
+          <Cell Expression="[EquipRubTime.TotalTime]"/>
+        </MatrixCells>
+        <TableColumn Name="Column1" Width="95.62" AutoSize="true"/>
+        <TableColumn Name="Column2" Width="83.25" AutoSize="true"/>
+        <TableColumn Name="Column3" Width="77.06" AutoSize="true"/>
+        <TableColumn Name="Column4" Width="58.43" AutoSize="true"/>
+        <TableColumn Name="Column5" Width="58.43" AutoSize="true"/>
+        <TableRow Name="Row1" Height="23.25" AutoSize="true">
+          <TableCell Name="Cell1" Border.Lines="All" Text="物料名称" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" RowSpan="2"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="[EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" ColSpan="2"/>
+          <TableCell Name="Cell5"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold" ColSpan="2"/>
+          <TableCell Name="Cell11"/>
+        </TableRow>
+        <TableRow Name="Row2" Height="18.19" AutoSize="true">
+          <TableCell Name="Cell3"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell6" Border.Lines="All" Text="时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="合计车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="合计时间" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row3" Height="16.5" AutoSize="true">
+          <TableCell Name="Cell7" Border.Lines="All" Text="[MaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[TotalCount]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[TotalTime]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell14" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row4" Height="23.25" AutoSize="true">
+          <TableCell Name="Cell16" Border.Lines="All" Text="合计" HorzAlign="Center" VertAlign="Center" Font="宋体, 12pt, style=Bold"/>
+          <TableCell Name="Cell17" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell18" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell19" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell20" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </MatrixObject>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="353.65" Width="15044.4" Height="18.9"/>
+  </ReportPage>
+</Report>

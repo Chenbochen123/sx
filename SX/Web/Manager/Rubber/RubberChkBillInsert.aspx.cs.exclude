@@ -1,0 +1,351 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Reflection;
+using System.Collections;
+
+using Ext.Net;
+using NBear.Common;
+using Mesnac.Business.Implements;
+using Mesnac.Entity;
+using Mesnac.Data.Components;
+using Mesnac.Business.Interface;
+using Mesnac.Data.Implements;
+
+public partial class Manager_Rubber_RubberChkBillInsert : Mesnac.Web.UI.Page
+{
+    protected PpmRubberChkManager chkManager = new PpmRubberChkManager();
+    protected PpmRubberChkDetailManager chkdetailManager = new PpmRubberChkDetailManager();
+    protected BasUserManager userManager = new BasUserManager();
+    protected BasMaterialManager materManager = new BasMaterialManager();
+    protected BasFactoryInfoManager facManager = new BasFactoryInfoManager();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!X.IsAjaxRequest && !IsPostBack)
+        {
+            this.Session["TempChkDetail"] = null;
+            txtSendChkDate.Text = DateTime.Now.ToString();
+            txtMakerPerson.Text = userManager.GetListByWhere(BasUser._.WorkBarcode == this.UserID)[0].UserName;//this.User.Identity.Name
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                BindData(Request.QueryString["BillNo"].ToString());
+            }
+            else
+            {
+                hiddenBillNo.Text = Guid.NewGuid().ToString();
+            }
+        }
+    }
+
+    private PageResult<PpmRubberChkDetail> GetPageResultData(PageResult<PpmRubberChkDetail> pageParams)
+    {
+        PpmRubberChkDetailManager.QueryParams queryParams = new PpmRubberChkDetailManager.QueryParams();
+        queryParams.pageParams = pageParams;
+        queryParams.billNo = hiddenBillNo.Text;
+
+        return chkdetailManager.GetTablePageDataBySql(queryParams);
+    }
+
+    [DirectMethod]
+    public object GridPanelBindDetail(string action, Dictionary<string, object> extraParams)
+    {
+        StoreRequestParameters prms = new StoreRequestParameters(extraParams);
+        PageResult<PpmRubberChkDetail> pageParams = new PageResult<PpmRubberChkDetail>();
+        pageParams.PageIndex = prms.Page;
+        pageParams.PageSize = prms.Limit;
+        pageParams.Orderfld = "RecordDate desc";
+
+        PageResult<PpmRubberChkDetail> lst = GetPageResultData(pageParams);
+        DataTable data = lst.DataSet.Tables[0];
+
+        int total = lst.RecordCount;
+        return new { data, total };
+    }
+
+    public void BindData(string billNo)
+    {
+        PpmRubberChk chkBill = chkManager.GetById(billNo);
+        PpmRubberChkDetail chkDetail1 = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == billNo && PpmRubberChkDetail._.DeleteFlag == "0")[0];
+        txtBillNo.Text = chkBill.BillNo;
+        hiddenBillNo.Text = chkBill.BillNo;
+        txtNoticeNo.Text = chkBill.NoticeNo;
+        txtFactoryID.Text = facManager.GetById(chkBill.FactoryID).FacName;
+        hiddenFactoryID.Text = chkBill.FactoryID.ToString();
+        txtSendChkDate.Text = chkDetail1.SendChkDate.ToString();
+        txtRemark.Text = chkBill.Remark;
+        btnSave.Disabled = false;
+
+        EntityArrayList<PpmRubberChkDetail> chkDetail = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == billNo);
+        //DataSet ds = chkdetailManager.GetByBillNo(billNo);
+
+        this.Session["TempChkDetail"] = chkDetail;
+        List<Dictionary<string, object>> data = new List<Dictionary<string, object>>();
+        data = new Mesnac.Util.BaseInfo.DictionaryList().GenericListTo(chkDetail.ToArray());
+        for (int i = 0; i < data.Count; i++)
+        {
+            Dictionary<string, object> dic = data[i];
+            dic.Add("MaterName", GetMaterName(chkDetail[i].MaterCode));
+        }
+
+        this.store.DataSource = data;
+        this.store.DataBind();
+    }
+
+    public string GetMaterName(string materCode)
+    {
+        return materManager.GetMaterName(materCode);
+    }
+
+    protected void btnAddDetail_Click(object sender, EventArgs e)
+    {
+        ////允许批次条码在一个单据下重复，如果不允许将下列代码注释去掉即可
+        //EntityArrayList<PpmRubberChkDetail> chkDetails = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == hiddenBillNo.Text && PpmRubberChkDetail._.Barcode == txtBarcode3.Text);
+        //if (chkDetails.Count > 0)
+        //{
+        //    X.MessageBox.Alert("操作", "列表中已存在" + txtBarcode3.Text + "的条码,不能重复！").Show();
+        //    return;
+        //}
+        EntityArrayList<PpmRubberChkDetail> details = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.Barcode == txtBarcode3.Text && PpmRubberChkDetail._.DeleteFlag == "0");
+        foreach (PpmRubberChkDetail chkDetail1 in details)
+        {
+            if (chkDetail1.MaterCode != hiddenMaterCode.Text)
+            {
+                X.MessageBox.Alert("操作", "其他单据已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                return;
+            }
+        }
+
+        PpmRubberChkDetail chkDetail = new PpmRubberChkDetail();
+        chkDetail.BillNo = hiddenBillNo.Text;
+        chkDetail.Barcode = txtBarcode3.Text;
+        EntityArrayList<PpmRubberChkDetail> chkDetails = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == hiddenBillNo.Text && PpmRubberChkDetail._.DeleteFlag == "0");
+        int maxOrder = 0;
+        for (int i = 0; i < chkDetails.Count; i++)
+        {
+            if (chkDetails[i].OrderID > maxOrder)
+                maxOrder = chkDetails[i].OrderID;
+        }
+        maxOrder++;
+        chkDetail.OrderID = maxOrder;
+        chkDetail.ProductNo = txtProductNo3.Text;
+        chkDetail.MaterCode = hiddenMaterCode.Text;
+        chkDetail.ProcDate = Convert.ToDateTime(txtProcDate3.Text);
+        chkDetail.SendNum = Convert.ToInt32(txtSendNum3.Text);
+        chkDetail.PieceWeight = Convert.ToDecimal(txtPieceWeight3.Text);
+        chkDetail.SendWeight = Convert.ToDecimal(txtSendWeight3.Text);
+        chkDetail.RecordDate = DateTime.Now;
+        chkDetail.StoreInNum = 0;
+        chkDetail.DeleteFlag = "0";
+        chkDetail.Remark = txtRemark3.Text;
+
+        chkdetailManager.Insert(chkDetail);
+        pageToolBar.DoRefresh();
+
+        txtBarcode3.Text = string.Empty;
+        txtProductNo3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        txtProcDate3.Text = Convert.ToString(DateTime.Now);
+        txtSendNum3.Text = string.Empty;
+        txtPieceWeight3.Text = string.Empty;
+        txtSendWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void commandcolumndetail_direct_edit(string barcode, string orderID)
+    {
+        PpmRubberChkDetail chkDetail = chkdetailManager.GetEntity(hiddenBillNo.Text, barcode, orderID);
+
+        txtBarcode2.Text = chkDetail.Barcode;
+        txtProductNo2.Text = chkDetail.ProductNo;
+        hiddenBarcode.Text = chkDetail.Barcode;
+        hiddenOrderID.Text = orderID;
+        txtMaterialName2.Text = materManager.GetMaterName(chkDetail.MaterCode);
+        hiddenMaterCode.Text = chkDetail.MaterCode;
+        txtProcDate2.Text = chkDetail.ProcDate.ToString();
+        txtSendNum2.Text = chkDetail.SendNum.ToString();
+        txtPieceWeight2.Text = chkDetail.PieceWeight.ToString();
+        txtSendWeight2.Text = chkDetail.SendWeight.ToString();
+        txtRemark2.Text = chkDetail.Remark;
+
+        this.winModifyDetail.Show();
+    }
+
+    protected void btnModifyDetailSave_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            EntityArrayList<PpmRubberChkDetail> chkDetails = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == hiddenBillNo.Text && PpmRubberChkDetail._.DeleteFlag == "0");
+
+            PpmRubberChkDetail chkDetail = chkdetailManager.GetEntity(hiddenBillNo.Text, hiddenBarcode.Text, hiddenOrderID.Text);
+            foreach (PpmRubberChkDetail chkDetail1 in chkDetails)
+            {
+                if (hiddenBarcode.Text != txtBarcode2.Text && chkDetail1.Barcode == txtBarcode2.Text)
+                {
+                    X.MessageBox.Alert("操作", "列表中已存在" + txtBarcode2.Text + "的条码,不能重复！").Show();
+                    return;
+                }
+            }
+            //判断其他单据是否有相同的条码和物料
+            EntityArrayList<PpmRubberChkDetail> details = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.Barcode == txtBarcode2.Text && PpmRubberChkDetail._.DeleteFlag == "0");
+            foreach (PpmRubberChkDetail chkDetail1 in details)
+            {
+                if (chkDetail1.MaterCode != hiddenMaterCode.Text)
+                {
+                    X.MessageBox.Alert("操作", "其他单据已存在" + txtBarcode2.Text + "的条码，物料为" + materManager.GetMaterName(details[0].MaterCode)).Show();
+                    return;
+                }
+            }
+
+            chkDetail.Barcode = hiddenBarcode.Text;//txtBarcode2.Text如果修改之后因为是主键，必须用hiddenBarcode.Text
+            chkDetail.ProductNo = txtProductNo2.Text;
+            chkDetail.MaterCode = hiddenMaterCode.Text;
+            chkDetail.ProcDate = Convert.ToDateTime(txtProcDate2.Text);
+            chkDetail.SendNum = Convert.ToInt32(txtSendNum2.Text);
+            chkDetail.PieceWeight = Convert.ToDecimal(txtPieceWeight2.Text);
+            chkDetail.SendWeight = Convert.ToDecimal(txtSendWeight2.Text);
+            chkDetail.RecordDate = DateTime.Now;
+            chkDetail.Remark = txtRemark2.Text;
+
+            chkdetailManager.Update(chkDetail);
+            if (txtBarcode2.Text != hiddenBarcode.Text)
+                chkdetailManager.Update(new PropertyItem[] { PpmRubberChkDetail._.Barcode }, new object[] { txtBarcode2.Text }, PpmRubberChkDetail._.BillNo == hiddenBillNo.Text && PpmRubberChkDetail._.Barcode == hiddenBarcode.Text);
+
+            pageToolBar.DoRefresh();
+            this.winModifyDetail.Close();
+        }
+        catch (Exception ex)
+        {
+            X.MessageBox.Alert("操作", "更新失败：" + ex).Show();
+        }
+    }
+
+    [Ext.Net.DirectMethod()]
+    public void DeleteChkDetail(string barcode, string orderID)
+    {
+        PpmRubberChkDetail chkDetail = chkdetailManager.GetEntity(hiddenBillNo.Text, barcode, orderID);
+
+        chkdetailManager.Delete(chkDetail);
+    }
+
+    protected void btnAdd_Click(object sender, EventArgs e)
+    {
+        txtBarcode3.Text = string.Empty;
+        txtProductNo3.Text = string.Empty;
+        txtMaterialName3.Text = string.Empty;
+        txtProcDate3.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        txtSendNum3.Text = string.Empty;
+        txtPieceWeight3.Text = string.Empty;
+        txtSendWeight3.Text = string.Empty;
+        txtRemark3.Text = string.Empty;
+
+        this.winAddDetail.Show();
+    }
+
+    [Ext.Net.DirectMethod()]
+    public string btnSave_Click()
+    {
+        EntityArrayList<PpmRubberChkDetail> chkDetails = chkdetailManager.GetListByWhere(PpmRubberChkDetail._.BillNo == hiddenBillNo.Text && PpmRubberChkDetail._.DeleteFlag == "0");
+        if (chkDetails.Count == 0)
+        {
+            return "false";
+        }
+
+        try
+        {
+            if (!string.IsNullOrEmpty(Request.QueryString["BillNo"]))
+            {
+                PpmRubberChk chkBill = chkManager.GetById(Request.QueryString["BillNo"].ToString());
+                chkBill.NoticeNo = txtNoticeNo.Text;
+                chkBill.FactoryID = Convert.ToInt32(hiddenFactoryID.Text);
+                chkBill.MakerPerson = userManager.UserID;
+                chkBill.Remark = txtRemark.Text;
+
+                chkManager.Update(chkBill);
+                chkdetailManager.Update(new PropertyItem[] { PpmRubberChkDetail._.SendChkDate }, new object[] { Convert.ToDateTime(txtSendChkDate.Text) }, PpmRubberChkDetail._.BillNo == chkDetails[0].BillNo);
+            }
+            else
+            {
+                PpmRubberChk chkBill = new PpmRubberChk();
+                chkBill.BillNo = chkManager.GetBillNo();
+                chkBill.NoticeNo = txtNoticeNo.Text;
+                chkBill.FactoryID = Convert.ToInt32(hiddenFactoryID.Text);
+                chkBill.MakerPerson = userManager.UserID;
+                chkBill.SendChkFlag = "0";
+                chkBill.FiledFlag = "0";
+                chkBill.DeleteFlag = "0";
+                chkBill.Remark = txtRemark.Text;
+
+                chkManager.Insert(chkBill);
+
+                chkdetailManager.Update(new PropertyItem[] { PpmRubberChkDetail._.BillNo, PpmRubberChkDetail._.SendChkDate }, new object[] { chkBill.BillNo, Convert.ToDateTime(txtSendChkDate.Text) }, PpmRubberChkDetail._.BillNo == chkDetails[0].BillNo);
+            }
+
+            //将控件清空还原
+            BackControl();
+            return "添加成功！";
+        }
+        catch (Exception ex)
+        {
+            return "不能添加失败：" + ex.ToString();
+        }
+    }
+
+    public void BackControl()
+    {
+        txtNoticeNo.Text = string.Empty;
+        txtFactoryID.Text = string.Empty;
+        txtRemark.Text = string.Empty;
+
+        store.Data = null;
+        store.DataBind();
+    }
+
+    public void btnCancel_Click(object sender, DirectEventArgs e)
+    {
+        this.winAddDetail.Close();
+        this.winModifyDetail.Close();
+    }
+
+    public void txtSend_Change(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(txtSendNum3.Text) && !string.IsNullOrEmpty(txtSendWeight3.Text))
+                txtPieceWeight3.Text = String.Format("{0:N3}", Convert.ToDecimal(txtSendWeight3.Text) / Convert.ToInt32(txtSendNum3.Text));
+        }
+        catch
+        { }
+    }
+
+    public void txtSend2_Change(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(txtSendNum2.Text) && !string.IsNullOrEmpty(txtSendWeight2.Text))
+                txtPieceWeight2.Text = String.Format("{0:N3}", Convert.ToDecimal(txtSendWeight2.Text) / Convert.ToInt32(txtSendNum2.Text));
+        }
+        catch
+        { }
+    }
+
+    protected void CheckField(object sender, RemoteValidationEventArgs e)
+    {
+        TextField field = (TextField)sender;
+
+        if (field.Text != "")
+        {
+            e.Success = true;
+        }
+        else
+        {
+            e.Success = false;
+            e.ErrorMessage = "此属性必须填写！";
+        }
+    }
+}

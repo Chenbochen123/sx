@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Microsoft Visual Studio 2010 Web Deployment Project 
+  http://go.microsoft.com/fwlink/?LinkID=104956
+
+-->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.30319</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D90A43A5-9895-4AD8-8E9F-345CC69A5AA5}</ProjectGuid>
+    <SourceWebPhysicalPath>..\Web</SourceWebPhysicalPath>
+    <SourceWebProject>{2198CFB5-16F4-4614-A63C-B3B09BC58350}|F:\工作\信息工程\格锐达密炼\配置库\01工程域\04系统实现\02网络系统\MENS.vs2010.root\MENS.vs2010\Web</SourceWebProject>
+    <SourceWebVirtualPath>/Web</SourceWebVirtualPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <SccProjectName>"%24/01工程域/04系统实现/02网络系统/MENS.vs2010.root/MENS.vs2010", CCAAAAAA</SccProjectName>
+    <SccLocalPath>..</SccLocalPath>
+    <SccAuxPath />
+    <SccProvider>MSSCCI:Microsoft Visual SourceSafe</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>.\Debug</OutputPath>
+    <EnableUpdateable>true</EnableUpdateable>
+    <UseMerge>true</UseMerge>
+    <SingleAssemblyName>Web_deploy</SingleAssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <OutputPath>.\Release</OutputPath>
+    <EnableUpdateable>true</EnableUpdateable>
+    <UseMerge>true</UseMerge>
+    <SingleAssemblyName>Web_deploy</SingleAssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mesnac.Business\Mesnac.Business.csproj">
+      <Project>{E430A99D-6AEA-4AF0-832D-71B04E4A33C4}</Project>
+      <Name>Mesnac.Business</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mesnac.Data\Mesnac.Data.csproj">
+      <Project>{4D4DEE77-212A-43CE-B4FA-831C542BE989}</Project>
+      <Name>Mesnac.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mesnac.Entity\Mesnac.Entity.csproj">
+      <Project>{C06E061F-F9D2-4B34-B18A-513685CB874C}</Project>
+      <Name>Mesnac.Entity</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mesnac.Util\Mesnac.Util.csproj">
+      <Project>{1275E931-F8B7-4EA2-B117-3F4DAA19AC7A}</Project>
+      <Name>Mesnac.Util</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WebDeployment\v10.0\Microsoft.WebDeployment.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.WebDeployment.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="BeforeMerge">
+  </Target>
+  <Target Name="AfterMerge">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

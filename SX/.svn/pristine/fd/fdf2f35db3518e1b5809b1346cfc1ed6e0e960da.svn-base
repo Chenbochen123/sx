@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="GetData">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Barcode" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetDataResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDataResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:element ref="s:schema" />
+                  <s:any />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Barcodevalidation">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Barcode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="EquipCode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="RecipeCode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="PlanID" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="LotNum" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="MaterCode" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="BarcodevalidationResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="BarcodevalidationResult" type="tns:MesResult" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="MesResult">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Result" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Message" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="Remainingvalidation">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="EquipCode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="RecipeCode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="PlanID" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="LotNum" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="MaterCode" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RemainingvalidationResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RemainingvalidationResult" type="tns:MesResult" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="DataSet" nillable="true">
+        <s:complexType>
+          <s:sequence>
+            <s:element ref="s:schema" />
+            <s:any />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="MesResult" nillable="true" type="tns:MesResult" />
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetDataSoapIn">
+    <wsdl:part name="parameters" element="tns:GetData" />
+  </wsdl:message>
+  <wsdl:message name="GetDataSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationSoapIn">
+    <wsdl:part name="parameters" element="tns:Barcodevalidation" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationSoapOut">
+    <wsdl:part name="parameters" element="tns:BarcodevalidationResponse" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationSoapIn">
+    <wsdl:part name="parameters" element="tns:Remainingvalidation" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationSoapOut">
+    <wsdl:part name="parameters" element="tns:RemainingvalidationResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDataHttpGetIn">
+    <wsdl:part name="Barcode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetDataHttpGetOut">
+    <wsdl:part name="Body" element="tns:DataSet" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationHttpGetIn">
+    <wsdl:part name="Barcode" type="s:string" />
+    <wsdl:part name="EquipCode" type="s:string" />
+    <wsdl:part name="RecipeCode" type="s:string" />
+    <wsdl:part name="PlanID" type="s:string" />
+    <wsdl:part name="LotNum" type="s:string" />
+    <wsdl:part name="MaterCode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationHttpGetOut">
+    <wsdl:part name="Body" element="tns:MesResult" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationHttpGetIn">
+    <wsdl:part name="EquipCode" type="s:string" />
+    <wsdl:part name="RecipeCode" type="s:string" />
+    <wsdl:part name="PlanID" type="s:string" />
+    <wsdl:part name="LotNum" type="s:string" />
+    <wsdl:part name="MaterCode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationHttpGetOut">
+    <wsdl:part name="Body" element="tns:MesResult" />
+  </wsdl:message>
+  <wsdl:message name="GetDataHttpPostIn">
+    <wsdl:part name="Barcode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetDataHttpPostOut">
+    <wsdl:part name="Body" element="tns:DataSet" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationHttpPostIn">
+    <wsdl:part name="Barcode" type="s:string" />
+    <wsdl:part name="EquipCode" type="s:string" />
+    <wsdl:part name="RecipeCode" type="s:string" />
+    <wsdl:part name="PlanID" type="s:string" />
+    <wsdl:part name="LotNum" type="s:string" />
+    <wsdl:part name="MaterCode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="BarcodevalidationHttpPostOut">
+    <wsdl:part name="Body" element="tns:MesResult" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationHttpPostIn">
+    <wsdl:part name="EquipCode" type="s:string" />
+    <wsdl:part name="RecipeCode" type="s:string" />
+    <wsdl:part name="PlanID" type="s:string" />
+    <wsdl:part name="LotNum" type="s:string" />
+    <wsdl:part name="MaterCode" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="RemainingvalidationHttpPostOut">
+    <wsdl:part name="Body" element="tns:MesResult" />
+  </wsdl:message>
+  <wsdl:portType name="ServiceSoap">
+    <wsdl:operation name="GetData">
+      <wsdl:input message="tns:GetDataSoapIn" />
+      <wsdl:output message="tns:GetDataSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <wsdl:input message="tns:BarcodevalidationSoapIn" />
+      <wsdl:output message="tns:BarcodevalidationSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <wsdl:input message="tns:RemainingvalidationSoapIn" />
+      <wsdl:output message="tns:RemainingvalidationSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="ServiceHttpGet">
+    <wsdl:operation name="GetData">
+      <wsdl:input message="tns:GetDataHttpGetIn" />
+      <wsdl:output message="tns:GetDataHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <wsdl:input message="tns:BarcodevalidationHttpGetIn" />
+      <wsdl:output message="tns:BarcodevalidationHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <wsdl:input message="tns:RemainingvalidationHttpGetIn" />
+      <wsdl:output message="tns:RemainingvalidationHttpGetOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="ServiceHttpPost">
+    <wsdl:operation name="GetData">
+      <wsdl:input message="tns:GetDataHttpPostIn" />
+      <wsdl:output message="tns:GetDataHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <wsdl:input message="tns:BarcodevalidationHttpPostIn" />
+      <wsdl:output message="tns:BarcodevalidationHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <wsdl:input message="tns:RemainingvalidationHttpPostIn" />
+      <wsdl:output message="tns:RemainingvalidationHttpPostOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServiceSoap" type="tns:ServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetData">
+      <soap:operation soapAction="http://tempuri.org/GetData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <soap:operation soapAction="http://tempuri.org/Barcodevalidation" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <soap:operation soapAction="http://tempuri.org/Remainingvalidation" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceSoap12" type="tns:ServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetData">
+      <soap12:operation soapAction="http://tempuri.org/GetData" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <soap12:operation soapAction="http://tempuri.org/Barcodevalidation" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <soap12:operation soapAction="http://tempuri.org/Remainingvalidation" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceHttpGet" type="tns:ServiceHttpGet">
+    <http:binding verb="GET" />
+    <wsdl:operation name="GetData">
+      <http:operation location="/GetData" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <http:operation location="/Barcodevalidation" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <http:operation location="/Remainingvalidation" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ServiceHttpPost" type="tns:ServiceHttpPost">
+    <http:binding verb="POST" />
+    <wsdl:operation name="GetData">
+      <http:operation location="/GetData" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Barcodevalidation">
+      <http:operation location="/Barcodevalidation" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Remainingvalidation">
+      <http:operation location="/Remainingvalidation" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Service">
+    <wsdl:port name="ServiceSoap" binding="tns:ServiceSoap">
+      <soap:address location="http://localhost/tohf/Service.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceSoap12" binding="tns:ServiceSoap12">
+      <soap12:address location="http://localhost/tohf/Service.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceHttpGet" binding="tns:ServiceHttpGet">
+      <http:address location="http://localhost/tohf/Service.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ServiceHttpPost" binding="tns:ServiceHttpPost">
+      <http:address location="http://localhost/tohf/Service.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

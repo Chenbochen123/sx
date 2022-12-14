@@ -1,0 +1,735 @@
+﻿using System;
+using System.Collections.Generic;
+using Ext.Net;
+using Mesnac.Business.Implements;
+using Mesnac.Business.Interface;
+using Mesnac.Entity;
+using NBear.Common;
+using Mesnac.Data.Components;
+using System.Data;
+using Newtonsoft.Json;
+using Mesnac.Data.Interface;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using System.IO;
+using NPOI.HSSF.Util;
+using NPOI.SS.Util;
+
+public partial class Manager_Technology_ProductReview_ForwardSearch : Mesnac.Web.UI.Page
+{
+    #region 属性注入
+    private IPptBarBomDataManager pptBarBomDataManager = new PptBarBomDataManager();
+    private IBasMaterialManager basMaterialManager = new BasMaterialManager();
+    private IPptLotDataManager pptLotDataManager = new PptLotDataManager();
+    private IPptWeighDataManager pptWeighDataManager = new PptWeighDataManager();
+    private IPptMixingDataManager pptMixingDataManager = new PptMixingDataManager();
+    private IBasMainHanderManager basMainHandlerManager = new BasMainHanderManager();
+    private IPptCurveDataManager curveManager = new PptCurveDataManager("Curve");
+    private IQmtCheckLotManager qmtCheckLotManager = new QmtCheckLotManager();
+    private int count = 0;
+    private List<ExtTreeNode> treeNodeSourceList = new List<ExtTreeNode>();
+    private List<ExtTreeNode> treeNodeTargetList = new List<ExtTreeNode>();
+    private List<ExtTreeNode> treeNodeDetailList = new List<ExtTreeNode>();
+    private static DataSet tempDs = new DataSet();
+    private static DataTable batchDt = new DataTable();
+    #endregion
+
+    #region 权限定义
+    protected __ _ = new __();
+    public class __ : ___  //必须继承___   //Action不能重复，重复会被覆盖
+    {
+        public __()
+        {
+            查询 = new SysPageAction() { ActionID = 1, ActionName = "btnSearch" };
+            详细信息查看 = new SysPageAction() { ActionID = 2 };
+        }
+        public SysPageAction 查询 { get; private set; } //必须为 public
+        public SysPageAction 详细信息查看 { get; private set; } //必须为 public
+    }
+    #endregion
+
+    #region 页面初始化
+    /// <summary>
+    /// 页面初始化
+    /// 孙本强 @ 2013-04-03 13:39:51
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+    /// <remarks></remarks>
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (X.IsAjaxRequest)
+        {
+            return;
+        }
+        if (!X.IsAjaxRequest)
+        {    IPptShiftManager pptShiftManaer = new PptShiftManager();
+            EntityArrayList<PptShift> lstShift = pptShiftManaer.GetListByWhere(PptShift._.UseFlag == 1);
+            if (lstShift.Count >= 0)
+            {
+                foreach (PptShift shift in lstShift)
+                {
+                    Ext.Net.ListItem item = new Ext.Net.ListItem();
+                    item.Text = shift.ShiftName;
+                    item.Value = shift.ObjID.ToString();
+                    //cboShift.Items.Add(item);
+                }
+            }
+            string barcode = Request.QueryString["barcode"] == null ? "" : Request.QueryString["barcode"].ToString();
+            if (!string.IsNullOrEmpty(barcode))
+            {
+                this.txtCurrentBarcode.Text = barcode;
+                treePanelSourceBarcode.GetRootNode().RemoveAll();
+                Node rootNode = new Node();
+                rootNode.NodeID = txtCurrentBarcode.Text;
+                try
+                {
+                    WhereClip wc = new WhereClip();
+                    OrderByClip obc = new OrderByClip();
+                    wc.And(PptBarBomData._.CurrentBarcode == txtCurrentBarcode.Text);
+                    PptBarBomData pptBarBomData = pptBarBomDataManager.GetTopNListWhereOrder(1, wc, obc)[0];
+                    BasMaterial rootMater = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == pptBarBomData.CurrentMaterCode)[0];
+                    rootNode.IconFile = getIconByMaterCode(pptBarBomData.CurrentMaterCode);
+                    rootNode.Text = rootMater.MaterialName + "[" + pptBarBomData.CurrentBarcode + "]";
+                    treePanelSourceBarcode.SetRootNode(rootNode);
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 去掉重复的批次信息
+    /// </summary>
+    private void ClearRepeatedBatchInfo()
+    {
+        List<DataRow> rowList = new List<DataRow>();
+        foreach (DataRow row1 in batchDt.Rows)
+        {
+            foreach (DataRow row2 in batchDt.Rows)
+            {
+                String firstMaterialName = row1["MaterialName"].ToString();
+                String secondMaterialName = row2["MaterialName"].ToString();
+                String firstProductNo = row1["ProductNo"].ToString();
+                String secondProductNo = row2["ProductNo"].ToString();
+                String firstBillNo = row1["BillNo"].ToString();
+                String secondBillNo = row2["BillNo"].ToString();
+                if (firstBillNo.Length > 2)
+                {
+                    firstBillNo = firstBillNo.Remove(0, 2);
+                }
+                if (secondBillNo.Length > 2)
+                {
+                    secondBillNo = secondBillNo.Remove(0, 2);
+                }
+                int firstBillNum = 0;
+                int secondBillNum = 0;
+                try
+                {
+                    firstBillNum = Convert.ToInt32(firstBillNo);
+                    secondBillNum = Convert.ToInt32(secondBillNo);
+                }
+                catch (Exception)
+                {
+
+                }
+                if ((firstMaterialName == secondMaterialName) && (firstProductNo == secondProductNo))
+                {
+                    if (firstBillNum < secondBillNum)
+                    {
+                        rowList.Add(row1);
+                    }
+                }
+            }
+        }
+        if (rowList.Count > 0)
+        {
+            foreach (DataRow row in rowList)
+            {
+                try
+                {
+                    batchDt.Rows.Remove(row);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+        }
+    }
+    #endregion
+    #region 基本信息
+
+    private void IniDetailForm(string barcode)
+    {
+        txtShowDetailBarcode.Text = "";
+        txtShowDetailMaterName.Text = "";
+        txtShowDetailEquipName.Text = "";
+        txtShowDetailShiftName.Text = "";
+        txtShowDetailClassName.Text = "";
+        txtShowDetailPlanNum.Text = "";
+        txtShowDetailSetWeight.Text = "";
+        txtShowDetailRealWeight.Text = "";
+        txtShowDetailShelfnum.Text = "";
+        txtShowDetailSerialID.Text = "";
+        txtShowDetail2.Text = "";
+        txtShowDetail3.Text = "";
+        txtShowDetailLotEnergy.Text = "";
+        txtShowDetailPjTemp.Text = "";
+        txtShowDetailPjPower.Text = "";
+        txtShowDetailPjEner.Text = "";
+        txtShowDetailMixStatusName.Text = "";
+        txtShowDetailSerialBatchID.Text = "";
+        txtShowDetailDoneRtime.Text = "";
+        txtShowDetailDoneAllRtime.Text = "";
+        txtShowDetailBwbTime.Text = "";
+        txtShowDetailStartDatetime.Text = "";
+        txtShowDetailWorkerbarcode.Text = "";
+        txtShowDetailMemNote.Text = "";
+        DataSet ds = pptLotDataManager.GetLotInfoByBarcode(barcode);
+        if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+        {
+            DataRow row = ds.Tables[0].Rows[0];
+            txtShowDetailBarcode.Text = row["ShelfBarcode"].ToString();//架子条码
+            txtShowDetailMaterName.Text = row["MaterName"].ToString();//物料名称
+            txtShowDetailEquipName.Text = row["EquipName"].ToString();//机台
+            txtShowDetailShiftName.Text = row["ShiftName"].ToString();//班次
+            txtShowDetailClassName.Text = row["ClassName"].ToString();//班组
+            txtShowDetailPlanNum.Text = row["PlanNum"].ToString();//计划数量
+            txtShowDetailSetWeight.Text = row["SetWeight"].ToString();//设重
+            txtShowDetailRealWeight.Text = row["RealWeight"].ToString();//实重
+            txtShowDetailShelfnum.Text = row["Shelfnum"].ToString();//托盘车数
+            txtShowDetailSerialID.Text = row["SerialID"].ToString();//密炼车次
+            txtShowDetail2.Text = row["WarningSgn"].ToString();//超时报警
+            txtShowDetail3.Text = row["ErrorSgn"].ToString();//超差报警
+            txtShowDetailLotEnergy.Text = row["LotEnergy"].ToString();//每车能量
+            txtShowDetailPjTemp.Text = row["PjTemp"].ToString();//排胶温度
+            txtShowDetailPjPower.Text = row["PjPower"].ToString();//排胶功率
+            txtShowDetailPjEner.Text = row["PjEner"].ToString();//排胶能量
+            txtShowDetailMixStatusName.Text = row["MixStatusName"].ToString();//密炼状态
+            txtShowDetailSerialBatchID.Text = row["SerialBatchID"].ToString();//累计车次
+            txtShowDetailDoneRtime.Text = row["DoneRtime"].ToString();//混炼时间
+            txtShowDetailDoneAllRtime.Text = row["DoneAllRtime"].ToString();//消耗时间
+            txtShowDetailBwbTime.Text = row["BwbTime"].ToString();//间隔时间
+            txtShowDetailStartDatetime.Text = row["StartDatetime"].ToString();//开始生产时间
+            txtShowDetailWorkerbarcode.Text = row["UserName"].ToString();//操作工
+            txtShowDetailMemNote.Text = row["MemNote"].ToString();//备注
+        }
+    }
+    #endregion
+    #region 称量信息
+    private string GetWeightType(string type)
+    {
+        string Result = type;
+        return Result;
+    }
+    private string GetWeighState(string type)
+    {
+        string Result = type;
+        return Result;
+    }
+    private void IniWeightInfo(string barcode)
+    {
+        EntityArrayList<PptWeighData> lst = pptWeighDataManager.GetListByWhereAndOrder(PptWeighData._.Barcode == barcode, PptWeighData._.WeightID.Asc);
+        foreach (PptWeighData m in lst)
+        {
+            m.WeighType = GetWeightType(m.WeighType);
+            m.WeighState = GetWeighState(m.WeighState);
+        }
+        pnlWeight.GetStore().DataSource = lst;
+        pnlWeight.GetStore().DataBind();
+    }
+    #endregion
+    #region 混炼信息
+    private void IniMixingInfo(string barcode)
+    {
+        DataSet ds = pptMixingDataManager.GetMixDataByBarCode(barcode);
+        tempDs = ds;
+        pnlMixing.GetStore().DataSource = ds;
+        pnlMixing.GetStore().DataBind();
+    }
+    #endregion
+    #region 历史曲线
+    private void IniChartInfo(string barcode)
+    {
+        List<PptCurve> data = new List<PptCurve>();
+        if (!string.IsNullOrWhiteSpace(barcode))
+        {
+            EntityArrayList<PptCurveData> lst = curveManager.GetTopNListWhereOrder(1, PptCurveData._.Barcode == barcode, PptCurveData._.Barcode.Asc);
+            if (lst.Count > 0)
+            {
+                PptCurveData m = lst[0];
+                data = IniPptCurveList(m);
+            }
+        }
+        Store store = this.Chart1.GetStore();
+        store.DataSource = data;
+        store.DataBind();
+    }
+
+    public List<PptCurve> IniPptCurveList(PptCurveData data)
+    {
+        List<PptCurve> Result = new List<PptCurve>();
+        string ss = data.MixingTime;
+        int count = ss.Split(':').Length;
+
+        for (int i = 0; i < count; i++)
+        {
+            try
+            {
+                PptCurve p = new PptCurve();
+                p.Barcode = data.Barcode;
+                p.CurveData = data.CurveData;
+                p.PlanDate = data.PlanDate;
+                p.PlanID = data.PlanID;
+                p.SerialID = data.SerialID == null ? string.Empty : ((int)data.SerialID).ToString();
+                p.IfSubed = data.IfSubed == null ? string.Empty : data.IfSubed;
+                p.SecondSpan = Convert.ToInt32(data.MixingTime.Split(':')[i]);
+                p.MixingTime = ((DateTime)data.StartDateTime).AddSeconds(p.SecondSpan);
+                if (!String.IsNullOrEmpty(data.MixingTemp))
+                {
+                    p.MixingTemp = Convert.ToDecimal(data.MixingTemp.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingTemp = 0;
+                }
+                if (!String.IsNullOrEmpty(data.MixingPower))
+                {
+                    p.MixingPower = Convert.ToDecimal(data.MixingPower.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingPower = 0;
+                }
+                if (!String.IsNullOrEmpty(data.MixingEnergy))
+                {
+                    p.MixingEnergy = Convert.ToDecimal(data.MixingEnergy.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingEnergy = 0;
+                }
+                if (!String.IsNullOrEmpty(data.MixingPress))
+                {
+                    p.MixingPress = Convert.ToDecimal(data.MixingPress.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingPress = 0;
+                }
+                if (!String.IsNullOrEmpty(data.MixingSpeed))
+                {
+                    p.MixingSpeed = Convert.ToDecimal(data.MixingSpeed.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingSpeed = 0;
+                }
+                if (!String.IsNullOrEmpty(data.MixingPosition))
+                {
+                    p.MixingPosition = Convert.ToDecimal(data.MixingPosition.Split(':')[i]);
+                }
+                else
+                {
+                    p.MixingPosition = 0;
+                }
+                //
+                if (!String.IsNullOrEmpty(data.Mixing_MixT))
+                {
+                    p.L1 = Convert.ToDecimal(data.Mixing_MixT.Split(':')[i]);
+                }
+                else
+                {
+                    p.L1 = 0;
+                }
+                if (!String.IsNullOrEmpty(data.Mixing_RotorT))
+                {
+                    p.L2 = Convert.ToDecimal(data.Mixing_RotorT.Split(':')[i]);
+                }
+                else
+                {
+                    p.L2 = 0;
+                }
+                if (!String.IsNullOrEmpty(data.Mixing_DumpT))
+                {
+                    p.L3 = Convert.ToDecimal(data.Mixing_DumpT.Split(':')[i]);
+                }
+                else
+                {
+                    p.L3 = 0;
+                }
+                Result.Add(p);
+            }
+            catch
+            (Exception ex)
+            {
+                //X.Js.Alert(ex.Message.ToString()); 
+
+            }
+        }
+        return Result;
+    }
+    #endregion
+    #region 质量检验信息
+    private void InitCheckInfo(string barcode)
+    {
+        if (cgCheck.Items.Count > 0)
+        {
+            cgCheck.Items.Clear();
+        }
+        DataSet ds = new DataSet();
+        EntityArrayList<PptLotData> lst = pptLotDataManager.GetListByWhere(PptLotData._.Barcode == barcode);
+        if (lst.Count > 0)
+        {
+            EntityArrayList<BasMainHander> mainHander = basMainHandlerManager.GetListByWhere(BasMainHander._.UserCode == lst[0].Workerbarcode);
+            if (mainHander.Count > 0)
+            {
+                IQmtCheckLotManager qmtCheckLotManager = new QmtCheckLotManager();
+                IQmtCheckLotParams paras = new Mesnac.Data.Implements.QmtCheckLotService.QmtCheckLotParams();
+                paras.EquipCode = lst[0].EquipCode;
+                paras.MaterCode = lst[0].MaterCode;
+                paras.PlanDate = Convert.ToDateTime(lst[0].PlanDate).ToString("yyyy-MM-dd");
+                paras.ShiftId = lst[0].ShiftID.ToString();
+                paras.ZJSID = mainHander[0].MainHanderCode;
+                IQmtCheckStandTypeManager qmtstardmanager = new QmtCheckStandTypeManager();
+                BasEquipManager be = new BasEquipManager();
+                BasEquip emodel = be.GetListByWhere(BasEquip._.EquipCode == lst[0].EquipCode && BasEquip._.DeleteFlag == "0")[0];
+                if (emodel != null)
+                {
+                    QmtCheckStandType qmodel = qmtstardmanager.GetListByWhere(QmtCheckStandType._.DeleteFlag == "0" && QmtCheckStandType._.CheckTypeName == "检验标准" && QmtCheckStandType._.WorkShopId == emodel.WorkShopCode)[0];
+                    if (qmodel != null)
+                    {
+                        paras.StandCode = qmodel.ObjID.ToString();
+                        ds = qmtCheckLotManager.GetCheckLotResultByParas(paras);
+                        DataTable dt = ds.Tables[0];
+                        foreach (DataRow row in dt.Rows)
+                        {
+                            var str = row[4].ToString();
+                            if (str == lst[0].SerialID.ToString())
+                            {
+                                int i = 0;
+                                foreach (DataColumn dc in dt.Columns)
+                                {
+                                    if ((!dc.ColumnName.Contains("等级")) && (dc.ColumnName != "是否可打印") && (dc.ColumnName != "打印标志") && (dc.ColumnName != "技术标志") && (dc.ColumnName != "时间标识"))
+                                    {
+                                        TextField tf = new TextField();
+                                        tf.ID = "txtCheckRow" + barcode + i;
+                                        tf.Name = "txtCheckRowName" + barcode + i;
+                                        tf.ReadOnly = true;
+                                        tf.Flex = 1;
+                                        tf.LabelAlign = LabelAlign.Right;
+                                        tf.FieldLabel = dc.ColumnName;
+                                        tf.Text = row[i].ToString();
+                                        cgCheck.Items.Add(tf);
+                                    }
+                                    i++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        cgCheck.Render();
+    }
+    #endregion
+    #region 批次信息
+    private void InitBatchInfo(string barcode)
+    {
+        EntityArrayList<PptWeighData> weightList = pptWeighDataManager.GetListByWhere(PptWeighData._.Barcode == barcode);
+        if (weightList.Count > 0)
+        {
+            foreach (PptWeighData weigh in weightList)
+            {
+                EntityArrayList<PptBarBomData> barBomList = pptBarBomDataManager.GetListByWhere(PptBarBomData._.SourceBarcode == barcode && PptBarBomData._.CurrentMaterCode == weigh.MaterCode);
+                if (barBomList.Count > 0)
+                {
+                    foreach (PptBarBomData barBom in barBomList)
+                    {
+                        DataTable dt = pptBarBomDataManager.GetBatchInfo(barBom.TargetBarcode.Trim());
+                        if (batchDt.Columns.Count > 0)
+                        {
+                            if (dt.Rows.Count > 0)
+                            {
+                                foreach (DataRow row in dt.Rows)
+                                {
+                                    bool repeatFlag = false;
+                                    foreach (DataRow row0 in batchDt.Rows)
+                                    {
+                                        if ((row["MaterialName"].ToString() == row0["MaterialName"].ToString()) && (row["ProductNo"].ToString() == row0["ProductNo"].ToString()) && (row["BillNo"].ToString() == row0["BillNo"].ToString()))
+                                        {
+                                            repeatFlag = true;
+                                        }
+                                    }
+                                    if (!repeatFlag)
+                                    {
+                                        batchDt.Rows.Add(row.ItemArray);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            batchDt = dt;
+                        }
+                        InitBatchInfo(barBom.TargetBarcode.Trim());
+                    }
+                }
+            }
+        }
+        else
+        {
+            EntityArrayList<PptBarBomData> barBomList = pptBarBomDataManager.GetListByWhere(PptBarBomData._.SourceBarcode == barcode);
+            if (barBomList.Count > 0)
+            {
+                foreach (PptBarBomData barBom in barBomList)
+                {
+                    DataTable dt = pptBarBomDataManager.GetBatchInfo(barBom.TargetBarcode);
+
+                    if (batchDt.Columns.Count > 0)
+                    {
+                        if (dt.Rows.Count > 0)
+                        {
+                            foreach (DataRow row in dt.Rows)
+                            {
+                                bool repeatFlag = false;
+                                foreach (DataRow row0 in batchDt.Rows)
+                                {
+                                    if ((row["MaterialName"].ToString() == row0["MaterialName"].ToString()) && (row["ProductNo"].ToString() == row0["MaterialName"].ToString()) && (row["BillNo"].ToString() == row0["BillNo"].ToString()))
+                                    {
+                                        repeatFlag = true;
+                                    }
+                                }
+                                if (!repeatFlag)
+                                {
+                                    batchDt.Rows.Add(row.ItemArray);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        batchDt = dt;
+                    }
+                }
+            }
+        }
+    }
+    #endregion
+    #region Icon区分方法
+
+    private string getIconByMaterCode(string MaterCode)
+    {
+        string Result = "../../../resources/icons/Recipe/";
+        string startStr = MaterCode.Substring(0, 1);
+        switch (startStr)
+        {
+            case "1": Result = Result + "返回胶和原材料.ico";//原材料
+                break;
+            case "2": Result = Result + "硫磺.ico"; ;//小料
+                break;
+            case "3": Result = Result + "塑炼胶.ico"; ;//母炼胶
+                break;
+            case "4": Result = Result + "无S胶.ico"; ;//母炼胶
+                break;
+            case "5": Result = Result + "加S胶.ico";
+                break;
+            default: Result = Result + "细料.ico";
+                break;
+        }
+
+        return Result;
+    }
+    #endregion
+    #region 点击树节点刷新方法
+    [DirectMethod]
+    protected void treeNodeClick(object sender, DirectEventArgs e)
+    {
+        string barcode = e.ExtraParams["value"];
+        barcode = barcode.Replace("\"", "");
+        try
+        {
+            IniDetailForm(barcode);
+            IniWeightInfo(barcode);
+            IniMixingInfo(barcode);
+            IniChartInfo(barcode);
+            InitCheckInfo(barcode);
+            batchDt.Rows.Clear();
+            InitBatchInfo(barcode);
+            pnlBatch.GetStore().DataSource = batchDt;
+            pnlBatch.GetStore().DataBind();
+        }
+        catch (Exception)
+        {
+        }
+    }
+    #endregion
+    #region 导出
+    /// <summary>
+    /// 导出
+    /// 孙本强 @ 2013-04-03 13:17:25
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnExportDetailSubmit_Click(object sender, EventArgs e)
+    {
+        DataSet ds = tempDs;
+        new Mesnac.Util.Excel.ExcelDownload().ExcelFileDown(ds, "混炼信息");
+    }
+
+    /// <summary>
+    /// 导出条码追溯明细信息
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    protected void btnExportSubmit_Click(object sender, EventArgs e)
+    {
+       
+    }
+
+    /// <summary>
+    /// ExtTreeNode的内部类
+    /// </summary>
+    private class ExtTreeNode
+    {
+        public string nodeId { get; set; }
+        public string nodeText { get; set; }
+        public int nodeLevel { get; set; }
+    }
+    /// <summary>
+    /// ExtTreeNode的三参数构造方法
+    /// </summary>
+    /// <param name="nodeId"></param>
+    /// <param name="nodeText"></param>
+    /// <param name="nodeLevel"></param>
+    /// <returns></returns>
+    private ExtTreeNode CreateExtTreeNode(string nodeId, string nodeText, int nodeLevel)
+    {
+        ExtTreeNode treeNode = new ExtTreeNode();
+        treeNode.nodeId = nodeId;
+        treeNode.nodeText = nodeText;
+        treeNode.nodeLevel = nodeLevel;
+        return treeNode;
+    }
+    #endregion
+    #region Ajax Task任务
+    [Ext.Net.DirectMethod]
+    public void Lazy_Delay_Load()
+    {
+        //IniSourceBarcodeTree(barcode, treePanelSourceBarcode);
+    }
+    #endregion
+
+    #region 点击查询条码按钮触发事件
+    protected void btn_query_barcode(object sender, EventArgs e)
+    {
+        treePanelSourceBarcode.GetRootNode().RemoveAll();
+        Node rootNode = new Node();
+        rootNode.NodeID = txtCurrentBarcode.Text;
+        try
+        {
+            WhereClip wc = new WhereClip();
+            OrderByClip obc = new OrderByClip();
+            wc.And(PptBarBomData._.CurrentBarcode == txtCurrentBarcode.Text);
+            EntityArrayList<PptBarBomData> list = pptBarBomDataManager.GetTopNListWhereOrder(1, wc, obc);
+
+            if (list.Count > 0)
+            {
+                PptBarBomData pptBarBomData = list[0];
+                BasMaterial rootMater = basMaterialManager.GetListByWhere(BasMaterial._.MaterialCode == pptBarBomData.CurrentMaterCode)[0];
+
+                rootNode.IconFile = getIconByMaterCode(pptBarBomData.CurrentMaterCode);
+                rootNode.Text = rootMater.MaterialName + "[" + pptBarBomData.CurrentBarcode + "]";
+                treePanelSourceBarcode.SetRootNode(rootNode);
+            }
+            else
+            {
+                treePanelSourceBarcode.GetRootNode().RemoveAll();
+                X.Msg.Alert("提示", "没有该条码的任何信息！").Show();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            treePanelSourceBarcode.GetRootNode().RemoveAll();
+            return;
+        }
+    }
+
+    [DirectMethod]
+    public string NodeLoad(string nodeID)
+    {
+        NodeCollection nodes = new Ext.Net.NodeCollection();
+        if (!string.IsNullOrEmpty(this.txtCurrentBarcode.Text))
+        {
+            if (!string.IsNullOrEmpty(nodeID))
+            {
+                DataTable dt = GetUseNodeByCurrentBarcode(nodeID);
+                foreach (DataRow row in dt.Rows)
+                {
+                    Node node = new Node();
+                    node.Text = row["MaterName"] + "[" + row["Barcode"] + "]";
+                    node.NodeID = row["Barcode"].ToString();
+                    node.IconFile = getIconByMaterCode(row["CurrentMaterCode"].ToString());
+                    nodes.Add(node);
+                }
+            }
+        }
+        if (nodes.Count == 0)
+        {
+            Node node = new Node();
+            node.Text = "已无追溯信息";
+            node.NodeID = DateTime.Now.ToString("yyyyMMdd hh:mm:ss");
+            node.Leaf = true;
+            node.Icon = Icon.Hourglass;
+            nodes.Add(node);
+        }
+        return nodes.ToJson();
+    }
+
+
+    public DataTable GetUseNodeByCurrentBarcode(string currentBarcode)
+    {
+        string sqlstr = @"  SELECT top 200 * FROM PptBarBomData barbom
+                                LEFT JOIN PptLotData lot ON lot.Barcode = barbom.sourceBarcode
+                                WHERE barbom.CurrentBarcode = '" + currentBarcode + "' ";
+        string sqlstr2 = sqlstr;
+        if (!String.IsNullOrEmpty(TextField1.Text))
+        { sqlstr = sqlstr + " and MaterName like '%" + TextField1.Text + "%'"; }
+        if (!String.IsNullOrEmpty(TextField2.Text))
+        { sqlstr = sqlstr + " and Barcode like '%" + TextField2.Text + "%'"; }
+        if (!String.IsNullOrEmpty(hidden_select_equip_code.Text))
+        {
+          
+            sqlstr = sqlstr + " and equipcode like '%" + hidden_select_equip_code.Text + "%'"; 
+        }
+        //if (txtStratShiftDate.Text.IndexOf("0001")<0)
+        //{
+        //    //X.Msg.Alert("提示", DateTime.Parse(txtStratShiftDate.Text).ToString("yyyy-MM-dd HH:mm:ss")).Show();
+        //    //sqlstr = sqlstr + " and startdatetime > '" + DateTime.Parse(txtStratShiftDate.Text).ToString("yyyy-MM-dd HH:mm:ss")+ "'";
+        //}
+
+        //if (txtEndShiftDate.Text.IndexOf("0001") < 0)
+        //{
+        //    //X.Msg.Alert("提示", txtEndShiftDate.Text).Show();
+        //    //sqlstr = sqlstr + " and startdatetime < '" + txtEndShiftDate.Text.Replace("/", "-") + "'";
+        //}
+        sqlstr = sqlstr + " order by UsedDatetime desc";
+        //X.Msg.Alert("提示", sqlstr).Show();
+      
+        NBear.Data.CustomSqlSection css = pptBarBomDataManager.GetBySql(sqlstr.ToString());
+        DataSet ds = css.ToDataSet();
+        if (ds != null && ds.Tables.Count > 0)
+        {
+            return ds.Tables[0];
+        }
+        return new DataTable();
+    }
+    #endregion
+}

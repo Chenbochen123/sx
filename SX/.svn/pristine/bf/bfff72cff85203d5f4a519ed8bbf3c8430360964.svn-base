@@ -1,0 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Mesnac.Business.Implements
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Data.Interface;
+    using Mesnac.Data.Implements;
+    using Mesnac.Business.Interface;
+    using NBear.Common;
+    public class Pmt_RecipeManager : BaseManager<Pmt_Recipe>, IPmt_RecipeManager
+    {
+		#region 属性注入与构造方法
+		
+        private IPmt_RecipeService service;
+
+        public Pmt_RecipeManager()
+        {
+            this.service = new Pmt_RecipeService();
+            base.BaseService = this.service;
+        }
+
+		public Pmt_RecipeManager(string connectStringKey)
+        {
+			this.service = new Pmt_RecipeService(connectStringKey);
+            base.BaseService = this.service;
+        }
+
+        public Pmt_RecipeManager(NBear.Data.Gateway way)
+        {
+			this.service = new Pmt_RecipeService(way);
+            base.BaseService = this.service;
+        }
+
+        #endregion
+    }
+}

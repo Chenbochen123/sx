@@ -1,0 +1,744 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="MaterialStoreOutInsert.aspx.cs" Inherits="Manager_Storage_MaterialStoreOutInsert" %>
+<%@ Register Assembly="Ext.Net" Namespace="Ext.Net" TagPrefix="ext" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1" runat="server">
+    <title></title>
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/ext-chinese-font.css" />
+    <link rel="Stylesheet" type="text/css" href="<%= Page.ResolveUrl("~/") %>resources/css/main.css" />
+    <script type="text/javascript">
+        var refreshMain = function () {
+            //alert("qq");
+            App.direct.btnSave_Click({
+                success: function (result) {
+                    if (result == "false")
+                        Ext.Msg.alert('操作', "您没有添加明细数据，不能添加！");
+                    else {
+                        var tabid = "id=51";
+                        var tabp = parent.App.mainTabPanel;
+                        var tab = tabp.getComponent(tabid);
+                        if (tab) {
+                            tab.reload();
+                            tabp.activeTab.close();
+//                            parent.refresh("");
+//                            tabp.setActiveTab(tab);
+//                            parent.refresh("");
+                        }
+                        else {
+                            parent.OpenMenu(tabid);
+                        }
+                    }
+                    return false;
+                },
+
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+
+        Ext.apply(Ext.form.VTypes, {
+            integer: function (val, field) {
+                if (!val) {
+                    return true;
+                }
+                try {
+                    if (/^[\d]+$/.test(val)) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                catch (e) {
+                    return false;
+                }
+            },
+            integerText: "此填入项格式为正整数",
+            decimal: function (val, field) {
+                if (!val) {
+                    return true;
+                }
+                try {
+                    if (/^[\d.\d]+$/.test(val)) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                catch (e) {
+                    return false;
+                }
+            },
+            decimalText: "此填入项格式为浮点数"
+        });
+
+        var pnlListFresh = function () {
+            App.store.currentPage = 1;
+            App.pageToolBar.doRefresh();
+            return false;
+        }
+
+        var startTrack = function () {
+            this.checkboxes = [];
+            var cb;
+
+            Ext.select(".x-form-item", false).each(function (checkEl) {
+                cb = Ext.getCmp(checkEl.dom.id.selected);
+                cb.setValue(false);
+                this.rowselect.push(cb);
+            }, this);
+        };
+
+        //--查询带弹出框--BEGIN
+        var Manager_BasicInfo_CommonPage_QueryBasStorage_Request = function (record) {//库房信息返回值处理
+            if (!App.winAdd.hidden) {
+                App.txtStorageName.getTrigger(0).show();
+                App.txtStorageName.setValue(record.data.StorageName);
+                App.hiddenStorageID.setValue(record.data.StorageID);
+            }
+            else {
+                App.txtStorageName1.setValue(record.data.StorageName);
+                App.hiddenStorageID.setValue(record.data.StorageID);
+                App.txtStoragePlaceName1.setValue(record.data.StoragePlaceName);
+                App.hiddenStoragePlaceID.setValue(record.data.StoragePlaceID);
+            }
+        }
+        var Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Request = function (record) {//库位信息返回值处理
+            if (!App.winAdd.hidden) {
+                App.txtStoragePlaceName.getTrigger(0).show();
+                App.txtStoragePlaceName.setValue(record.data.StoragePlaceName);
+                App.hiddenStoragePlaceID.setValue(record.data.StoragePlaceID);
+            }
+            else {
+                App.txtStorageName1.setValue(record.data.StorageName);
+                App.hiddenStorageID.setValue(record.data.StorageID);
+                App.txtStoragePlaceName1.setValue(record.data.StoragePlaceName);
+                App.hiddenStoragePlaceID.setValue(record.data.StoragePlaceID);
+            }
+        }
+        var Manager_BasicInfo_CommonPage_QueryMaterial_Request = function (record) {//物料信息返回值处理
+            App.txtMaterCode.getTrigger(0).show();
+            App.txtMaterCode.setValue(record.data.MaterialName);
+            App.hiddenMaterCode.setValue(record.data.MaterialCode);
+        }
+
+        var Manager_BasicInfo_CommonPage_QueryFactory_Request = function (record) {//生产厂家信息返回值处理
+            App.txtFactoryID1.setValue(record.data.FacName);
+            App.hiddenFactoryID.setValue(record.data.ObjID);
+        }
+
+        var AddFactory = function () {//厂家添加
+            App.Manager_BasicInfo_CommonPage_QueryFactory_Window.show();
+        }
+
+        var QueryMaterial = function (field, trigger, index) {
+            switch (index) {
+                case 0:
+                    field.getTrigger(0).hide();
+                    field.setValue('');
+                    App.hiddenMaterCode.setValue("");
+                    field.getEl().down('input.x-form-text').setStyle('background', "white");
+                    break;
+                case 1:
+                    App.Manager_BasicInfo_CommonPage_QueryMaterial_Window.show();
+                    break;
+            }
+        }
+        var AddStorage = function (field, trigger, index) {//库房添加
+            switch (index) {
+                case 0:
+                    field.getTrigger(0).hide();
+                    field.setValue('');
+                    App.hiddenStorageID.setValue("");
+                    field.getEl().down('input.x-form-text').setStyle('background', "white");
+                    break;
+                case 1:
+                    App.Manager_BasicInfo_CommonPage_QueryBasStorage_Window.show();
+                    break;
+            }
+        }
+        var AddStoragePlace = function (field, trigger, index) {//库位添加
+            var url = "../BasicInfo/CommonPage/QueryBasStoragePlace.aspx?StorageID=" + App.hiddenStorageID.getValue();
+            var html = "<iframe src='" + url + "' width=100% height=100% scrolling=no  frameborder=0></iframe>";
+            if (App.Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Window.getBody()) {
+                App.Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Window.getBody().update(html);
+            } else {
+                App.Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Window.html = html;
+            }
+            switch (index) {
+                case 0:
+                    field.getTrigger(0).hide();
+                    field.setValue('');
+                    App.hiddenStoragePlaceID.setValue("");
+                    field.getEl().down('input.x-form-text').setStyle('background', "white");
+                    break;
+                case 1:
+                    App.Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Window.show();
+                    break;
+            }
+        }
+
+        var EditMaterial = function () {//物料修改
+            App.Manager_BasicInfo_CommonPage_QueryMaterial_Window.show();
+        }
+
+        Ext.create("Ext.window.Window", {//生产厂家带窗体
+            id: "Manager_BasicInfo_CommonPage_QueryFactory_Window",
+            height: 460,
+            hidden: true,
+            width: 360,
+            html: "<iframe src='../BasicInfo/CommonPage/QueryFactory.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "请选择生产厂家",
+            modal: true
+        })
+
+        Ext.create("Ext.window.Window", {//库房带窗体
+            id: "Manager_BasicInfo_CommonPage_QueryBasStorage_Window",
+            height: 460,
+            hidden: true,
+            width: 360,
+            html: "<iframe src='../BasicInfo/CommonPage/QueryBasStorage.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "请选择库房名称",
+            modal: true
+        })
+
+        Ext.create("Ext.window.Window", {//库位带窗体
+            id: "Manager_BasicInfo_CommonPage_QueryBasStoragePlace_Window",
+            height: 460,
+            hidden: true,
+            width: 360,
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "请选择库位",
+            modal: true
+        })
+
+        Ext.create("Ext.window.Window", {//物料带窗体
+            id: "Manager_BasicInfo_CommonPage_QueryMaterial_Window",
+            height: 460,
+            hidden: true,
+            width: 360,
+            html: "<iframe src='../BasicInfo/CommonPage/QueryMaterial.aspx' width=100% height=100% scrolling=no  frameborder=0></iframe>",
+            bodyStyle: "background-color: #fff;",
+            closable: true,
+            title: "请选择物料",
+            modal: true
+        })
+
+//        var AddStoreIn = function () {
+//            var section = App.pnlList.getView().getSelectionModel().getSelection();
+
+//            if (section && section.length == 0) {
+//                Ext.Msg.alert("提示", '您没有选择任何项，请选择！');
+//            }
+//            else {
+//                var barcodes = "";
+//                for (var i = 0; i < section.length; i++) {
+//                    var bc = App.store.data.get(section[i].index).data.Barcode;
+//                    barcodes = barcodes == "" ? bc : barcodes + "," + bc;
+//                }
+//                App.direct.btnAddSave_Click(barcodes, {
+//                    success: function (result) { },
+//                    failure: function (err) { Ext.Msg.alert("错误", err); }
+//                });
+//            }
+//        }
+
+        var commandcolumn_click = function (command, record) {
+            commandcolumn_click_confirm(command, record);
+            return false;
+        };
+
+        //区分删除操作，并进行二次确认操作
+        var commandcolumn_click_confirm = function (command, record) {
+            if (command.toLowerCase() == "reject") {
+                record.reject();
+            }
+            if (command.toLowerCase() == "edit") {
+                commandcolumndetail_direct_edit(record);
+            }
+            if (command.toLowerCase() == "delete") {
+                Ext.Msg.confirm("提示", '您确定要删除此条信息吗？', function (btn) { commandcolumn_direct_delete(btn, record) });
+            }
+            return false;
+        };
+
+        var commandcolumndetail_direct_edit = function (record) {
+            var Barcode = record.data.Barcode;
+            App.direct.commandcolumndetail_direct_edit(Barcode, {
+                success: function (result) {
+                },
+
+                failure: function (errorMsg) {
+                    Ext.Msg.alert('操作', errorMsg);
+                }
+            });
+        }
+
+        var commandcolumn_direct_delete = function (btn, record) {
+            if (btn != "yes") {
+                return;
+            }
+            var Barcode = record.data.Barcode;
+            App.direct.DeleteStorage(Barcode, {
+                success: function (result) { App.store.remove(record); },
+                failure: function (err) { Ext.Msg.alert("错误提示", err); }
+            });
+        }
+
+        var edit = function (editor, e) {
+            if (e.value > e.record.data.Num) {
+                Ext.Msg.alert("提示", "您设置的数量超出当前库存数量，请重新设置！");
+                e.record.reject();
+            }
+        };
+
+        var edit2 = function (editor, e) {
+            if (e.value > e.record.data.Num) {
+                Ext.Msg.alert("提示", "您设置的数量超出当前库存数量，请重新设置！");
+                e.record.reject();
+            }
+        };
+    </script>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <ext:ResourceManager ID="rmChkBill" runat="server" />
+    <ext:Viewport ID="vpStoreoutBill" runat="server" Layout="border">
+        <Items>
+            <ext:Panel ID="pnStoreoutBill" runat="server" Region="North" Height="90">
+                <TopBar>
+                    <ext:Toolbar runat="server" ID="tbStoreoutBill">
+                        <Items>
+                            <ext:ToolbarSeparator ID="tsBegin" />
+                            <ext:Button runat="server" Icon="TableEdit" Text="生成出库单" ID="GenStorageOut" Disabled="true">
+                                <Listeners>
+                                    <Click Fn="refreshMain" />
+                                </Listeners>
+                                <%--<DirectEvents>
+                                    <Click OnEvent="SaveClick">
+                                        <ExtraParams>
+                                            <ext:Parameter Name="data" Value="#{store1}.getChangedData({skipIdForNewRecords : false})" Mode="Raw" Encode="true" />
+                                        </ExtraParams>
+                                    </Click>
+                                </DirectEvents>--%>
+                            </ext:Button>
+                            <ext:ToolbarSeparator ID="tsMiddle" />
+                            <ext:Button runat="server" Icon="Find" Text="导入库存" ID="btnInport">
+                                <%--<Listeners>
+                                    <Click Handler="App.winAdd.show();" />
+                                </Listeners>--%>
+                                <DirectEvents>
+                                    <Click OnEvent="btnInport_Click" />
+                                </DirectEvents>
+                            </ext:Button>
+                            <ext:ToolbarSeparator ID="tsEnd" />
+                            <ext:ToolbarSpacer runat="server" ID="tspacerEnd" />
+                            <ext:ToolbarFill ID="tfEnd" />
+                        </Items>
+                    </ext:Toolbar>
+                </TopBar>
+                <Items>
+                    <ext:FormPanel ID="container_top" runat="server" Layout="ColumnLayout" AutoHeight="true">
+                        <Items>
+                            <ext:Container ID="container4" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                Padding="5">
+                                <Items>
+                                    <ext:TextField ID="txtBillNo1" runat="server" FieldLabel="出库单号" Text="(自动生成)" LabelAlign="Left" ReadOnly="true" />
+                                    <ext:TextField ID="txtMakerPerson1" runat="server" FieldLabel="制单人" LabelAlign="Left" ReadOnly="true" />
+                                </Items>
+                            </ext:Container>
+                            <ext:Container ID="container5" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                Padding="5">
+                                <Items>
+                                    
+                                    <ext:TriggerField ID="txtFactoryID1" runat="server" FieldLabel="发往厂家" LabelAlign="Left" IndicatorText="*" IndicatorCls="red-text" AllowBlank="false" Editable="false">
+                                        <Triggers>
+                                            <ext:FieldTrigger Icon="Search" />
+                                        </Triggers>
+                                        <Listeners>
+                                            <TriggerClick Fn="AddFactory" />
+                                        </Listeners>
+                                    </ext:TriggerField>
+                                    <ext:TextField ID="txtRemark1" runat="server" FieldLabel="备注" LabelAlign="Left" />
+                                    <%--<ext:TriggerField ID="txtStorageName1" runat="server" FieldLabel="库房名称" LabelAlign="Right"
+                                        Editable="false">
+                                        <Triggers>
+                                            <ext:FieldTrigger Icon="Search" />
+                                        </Triggers>
+                                        <RemoteValidation OnValidation="CheckField" />
+                                        <Listeners>
+                                            <TriggerClick Fn="AddStorage" />
+                                        </Listeners>
+                                    </ext:TriggerField>--%>
+                                </Items>
+                            </ext:Container>
+                            <ext:Container ID="container6" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                Padding="5">
+                                <Items>
+                                    <ext:DateField ID="txtOutputDate1" runat="server" FieldLabel="出库日期" LabelAlign="Left" IndicatorText="*" IndicatorCls="red-text" AllowBlank="false" />
+                                    <%--<ext:TriggerField ID="txtStoragePlaceName1" runat="server" FieldLabel="库位名称" LabelAlign="Right"
+                                        Editable="false">
+                                        <Triggers>
+                                            <ext:FieldTrigger Icon="Search" />
+                                        </Triggers>
+                                        <RemoteValidation OnValidation="CheckField" />
+                                        <Listeners>
+                                            <TriggerClick Fn="AddStoragePlace" />
+                                        </Listeners>
+                                    </ext:TriggerField>--%>
+                                </Items>
+                            </ext:Container>
+                        </Items>
+                        <Listeners>
+                            <ValidityChange Handler="#{GenStorageOut}.setDisabled(!valid);" />
+                        </Listeners>
+                    </ext:FormPanel>
+                </Items>
+            </ext:Panel>
+
+            <ext:Panel ID="Panel2" runat="server" Region="Center" Frame="true" Layout="Fit" MarginsSummary="0 5 0 5">
+                <Items>
+                    <ext:GridPanel ID="pnlTempList" runat="server">
+                        <Store>
+                            <ext:Store ID="store1" runat="server" PageSize="10">
+                                <Proxy>
+                                    <ext:PageProxy DirectFn="App.direct.GridPanelBindDataDetail" />
+                                </Proxy>
+                                <Model>
+                                    <ext:Model ID="model1" runat="server" IDProperty="Barcode">
+                                        <Fields>
+                                            <ext:ModelField Name="Barcode" />
+                                            <ext:ModelField Name="MaterCode" />
+                                            <ext:ModelField Name="MaterialName" />
+                                            <ext:ModelField Name="OutputNum" Type="Int" />
+                                            <ext:ModelField Name="OutputWeight" Type="Float" />
+                                            <ext:ModelField Name="ProcDate" Type="Date" />
+                                            <ext:ModelField Name="Remark" />
+                                        </Fields>
+                                    </ext:Model>
+                                </Model>
+                            </ext:Store>
+                        </Store>
+                        <ColumnModel ID="ColumnModel1" runat="server">
+                            <Columns>
+                                <ext:RowNumbererColumn ID="RowNumbererColumn1" runat="server" Width="35" />
+                                <ext:Column ID="Column1" runat="server" Text="条码号" DataIndex="Barcode" Flex="1" />
+                                <ext:Column ID="Column4" runat="server" Text="物料名称" DataIndex="MaterialName" Flex="1" />
+                                <ext:Column ID="Column5" runat="server" Text="当前数量" DataIndex="OutputNum" Flex="1" />
+                                <ext:Column ID="Column6" runat="server" Text="当前重量" DataIndex="OutputWeight" Flex="1" />
+                                <ext:DateColumn ID="ProcDate1" runat="server" Text="生产日期" DataIndex="ProcDate" Flex="1" Format="yyyy-MM-dd HH:mm:ss" />
+                                <ext:CommandColumn ID="CommandColumn1" runat="server" Width="110">
+                                    <Commands>
+                                        <ext:GridCommand CommandName="Edit" Icon="TableEdit" Text="修改" />
+                                        <ext:GridCommand CommandName="delete" Icon="Delete" Text="删除" />
+                                    </Commands>
+                                    <Listeners>
+                                        <Command Handler="return commandcolumn_click(command, record);" />
+                                    </Listeners>
+                                </ext:CommandColumn>
+                            </Columns>
+                        </ColumnModel>
+                        <SelectionModel>
+                            <ext:RowSelectionModel ID="RowSelectionModel1" runat="server" Mode="Single">
+                            </ext:RowSelectionModel>
+                        </SelectionModel>
+                        <BottomBar>
+                            <ext:PagingToolbar ID="PagingToolbar2" runat="server">
+                                <Items>
+                                    <ext:Label ID="Label2" runat="server" Text="每页条数:" />
+                                    <ext:ToolbarSpacer ID="ToolbarSpacer2" runat="server" Width="10" />
+                                    <ext:ComboBox ID="ComboBox2" runat="server" Width="80">
+                                        <Items>
+                                            <ext:ListItem Text="10" />
+                                            <ext:ListItem Text="50" />
+                                            <ext:ListItem Text="100" />
+                                            <ext:ListItem Text="200" />
+                                        </Items>
+                                        <SelectedItems>
+                                            <ext:ListItem Value="10" />
+                                        </SelectedItems>
+                                        <Listeners>
+                                            <Select Handler="#{pnlTempList}.store.pageSize = parseInt(this.getValue(), 10); #{PagingToolbar2}.doRefresh(); return false;" />
+                                        </Listeners>
+                                    </ext:ComboBox>
+                                </Items>
+                                <Plugins>
+                                    <ext:ProgressBarPager ID="ProgressBarPager2" runat="server" />
+                                </Plugins>
+                            </ext:PagingToolbar>
+                        </BottomBar>
+                    </ext:GridPanel>
+                </Items>
+            </ext:Panel>
+
+            <ext:Window ID="winModifyDetail" runat="server" Icon="MonitorEdit" Closable="true" Title="修改出库明细信息"
+                Width="320" Height="380" Resizable="false" Hidden="true" Modal="false" BodyStyle="background-color:#fff;"
+                BodyPadding="5" Layout="Form">
+                <Items>
+                    <ext:FormPanel ID="FormPanel1" runat="server" BodyPadding="5">
+                        <FieldDefaults>
+                            <CustomConfig>
+                                <ext:ConfigItem Name="LabelWidth" Value="80" Mode="Raw" />
+                                <ext:ConfigItem Name="PreserveIndicatorIcon" Value="true" Mode="Raw" />
+                            </CustomConfig>
+                        </FieldDefaults>
+                        <Items>
+                            <%--<ext:TextField ID="txtBillNo2" runat="server" FieldLabel="单据号" ReadOnly="true" LabelAlign="Left" />--%>
+                            <ext:TextField ID="txtBarcode2" runat="server" FieldLabel="条码号" ReadOnly="true" LabelAlign="Left">
+                            </ext:TextField>
+                            <ext:TextField ID="txtProductNo2" runat="server" FieldLabel="批次号" LabelAlign="Left" ReadOnly="true" />                            
+                            <ext:TriggerField ID="txtMaterialName2" runat="server" FieldLabel="物料名称" ReadOnly="true" LabelAlign="Left"
+                                Editable="false">
+                                <Triggers>
+                                    <ext:FieldTrigger Icon="Search" />
+                                </Triggers>
+                                <Listeners>
+                                    <TriggerClick Fn="EditMaterial" />
+                                </Listeners>
+                            </ext:TriggerField>
+                            <ext:DateField ID="txtProcDate2" runat="server" Format="yyyy-MM-dd" FieldLabel="生产日期" LabelAlign="Left" ReadOnly="true" />
+                            <ext:TextField ID="txtInputNum2" runat="server" Vtype="integer" FieldLabel="当前数量" LabelAlign="Left" OnDirectChange="txtStorein2_Change" IndicatorText="*" IndicatorCls="red-text" AllowBlank="false" >
+                                <RemoteValidation OnValidation="CheckField" />
+                            </ext:TextField>
+                            <ext:TextField ID="txtPieceWeight2" runat="server" FieldLabel="单重" OnDirectChange="txtStorein2_Change" LabelAlign="Left" ReadOnly="true" />
+                            <ext:TextField ID="txtInputWeight2" runat="server" Vtype="decimal" FieldLabel="实际重量" LabelAlign="Left" IndicatorText="*" IndicatorCls="red-text" AllowBlank="false" />
+                            <ext:TextField ID="txtRemark2" runat="server" FieldLabel="备注" LabelAlign="Left" />
+                        </Items>
+                        <Listeners>
+                            <ValidityChange Handler="#{btnModifyDetailSave}.setDisabled(!valid);" />
+                        </Listeners>
+                    </ext:FormPanel>
+                </Items>
+                <Buttons>
+                    <ext:Button ID="btnModifyDetailSave" runat="server" Text="确定" Icon="Accept" Disabled="false">
+                        <DirectEvents>
+                            <Click OnEvent="btnModifyDetailSave_Click">
+                            </Click>
+                        </DirectEvents>
+                    </ext:Button>
+                    <ext:Button ID="btnModifyDetailCancel" runat="server" Text="取消" Icon="Cancel">
+                        <DirectEvents>
+                            <Click OnEvent="btnCancel_Click">
+                            </Click>
+                        </DirectEvents>
+                    </ext:Button>
+                </Buttons>
+                <Listeners>
+                    <Show Handler="for(var i=0;i<#{vpStoreoutBill}.items.length;i++){#{vpStoreoutBill}.getComponent(i).disable(true);}" />
+                    <Hide Handler="for(var i=0;i<#{vpStoreoutBill}.items.length;i++){#{vpStoreoutBill}.getComponent(i).enable(true);}" />
+                </Listeners>
+            </ext:Window>
+
+            <ext:Window ID="winAdd" runat="server" Width="550" Height="550" Hidden="true" Title="库存查询"  Modal="false" Resizable="true" BodyStyle="background-color:#fff;"
+                BodyPadding="10" Layout="Form" Icon="MonitorAdd" Closable="true">
+                <Items>
+                    <ext:Panel ID="Panel1" runat="server" Region="North" AutoHeight="true">
+                        <TopBar>
+                            <ext:Toolbar runat="server" ID="Toolbar2">
+                                <Items>
+                                    <ext:Button runat="server" Icon="Find" Text="查询" ID="btnQuery" Disabled="true">
+                                        <Listeners>
+                                            <Click Fn="pnlListFresh" />
+                                        </Listeners>
+                                    </ext:Button>
+                                    <ext:ToolbarSpacer runat="server" ID="ToolbarSpacer1" />
+                                    <ext:ToolbarFill ID="ToolbarFill1" />
+                                </Items>
+                            </ext:Toolbar>
+                        </TopBar>
+                        <Items>
+                            <ext:FormPanel ID="FormPanel2" runat="server" Layout="ColumnLayout" AutoHeight="true">
+                                <Items>
+                                    <ext:Container ID="container1" runat="server" Layout="FormLayout" ColumnWidth=".33"
+                                        Padding="5">
+                                        <Items>
+                                            <ext:TriggerField ID="txtStorageName" runat="server" FieldLabel="库房名称" IndicatorText="*" IndicatorCls="red-text" AllowBlank="false" LabelWidth="55" LabelAlign="Right" Editable="false">
+                                                <Triggers>
+                                                    <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                                    <ext:FieldTrigger Icon="Search" />
+                                                </Triggers>
+                                                <RemoteValidation OnValidation="CheckField" />
+                                                <Listeners>
+                                                    <TriggerClick Fn="AddStorage" />
+                                                </Listeners>
+                                            </ext:TriggerField>
+                                            <ext:DateField ID="txtBeginTime" runat="server" FieldLabel="开始时间" LabelWidth="55" LabelAlign="Right" />
+                                        </Items>
+                                    </ext:Container>
+                                    <ext:Container ID="container2" runat="server" Layout="FormLayout" ColumnWidth=".33" Padding="5">
+                                        <Items>
+                                            <ext:TriggerField ID="txtStoragePlaceName" runat="server" FieldLabel="库位名称" LabelWidth="55" LabelAlign="Right"
+                                                Editable="false">
+                                                <Triggers>
+                                                    <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                                    <ext:FieldTrigger Icon="Search" />
+                                                </Triggers>
+                                                <Listeners>
+                                                    <TriggerClick Fn="AddStoragePlace" />
+                                                </Listeners>
+                                            </ext:TriggerField>
+                                            <ext:DateField ID="txtEndTime" runat="server" FieldLabel="结束时间" LabelWidth="55" LabelAlign="Right" />
+                                        </Items>
+                                    </ext:Container>
+                                    <ext:Container ID="container3" runat="server" Layout="FormLayout" ColumnWidth=".34" Padding="5">
+                                        <Items>
+                                            <ext:TriggerField ID="txtMaterCode" runat="server" FieldLabel="物料名称" LabelWidth="55" LabelAlign="Right"
+                                                Editable="false">
+                                                <Triggers>
+                                                    <ext:FieldTrigger Icon="Clear" HideTrigger="true" />
+                                                    <ext:FieldTrigger Icon="Search" />
+                                                </Triggers>
+                                                <Listeners>
+                                                    <TriggerClick Fn="QueryMaterial" />
+                                                </Listeners>
+                                            </ext:TriggerField>
+                                            <ext:ComboBox ID="cbxEmptyFlag" runat="server" FieldLabel="物料为空" LabelWidth="55" LabelAlign="Right">
+                                                <SelectedItems>
+                                                    <ext:ListItem Value="all">
+                                                    </ext:ListItem>
+                                                </SelectedItems>
+                                                <Items>
+                                                    <ext:ListItem Text="全部" Value="all" AutoDataBind="true">
+                                                    </ext:ListItem>
+                                                    <ext:ListItem Text="是" Value="1">
+                                                    </ext:ListItem>
+                                                    <ext:ListItem Text="否" Value="0">
+                                                    </ext:ListItem>
+                                                </Items>
+                                            </ext:ComboBox>
+                                        </Items>
+                                    </ext:Container>
+                                </Items>
+                                <Listeners>
+                                    <ValidityChange Handler="#{btnQuery}.setDisabled(!valid);" />
+                                </Listeners>
+                            </ext:FormPanel>
+                        </Items>
+                    </ext:Panel>
+                    <ext:GridPanel ID="pnlList" runat="server" Height="370">
+                        <Store>
+                            <ext:Store ID="store" runat="server" PageSize="10" AutoLoad="false">
+                                <Proxy>
+                                    <ext:PageProxy DirectFn="App.direct.GridPanelBindData" />
+                                </Proxy>
+                                <Model>
+                                    <ext:Model ID="model" runat="server" IDProperty="Barcode,StorageID,StoragePlaceID">
+                                        <Fields>
+                                            <ext:ModelField Name="Barcode" />
+                                            <ext:ModelField Name="StorageID" />
+                                            <ext:ModelField Name="StorageName" />
+                                            <ext:ModelField Name="StoragePlaceID" />
+                                            <ext:ModelField Name="StoragePlaceName" />
+                                            <ext:ModelField Name="MaterCode" />
+                                            <ext:ModelField Name="MaterialName" />
+                                            <ext:ModelField Name="Num" Type="Int" />
+                                            <ext:ModelField Name="RealWeight" Type="Float" />
+                                            <ext:ModelField Name="NewNum" Type="Int" />
+                                            <ext:ModelField Name="Remark" />
+                                        </Fields>
+                                    </ext:Model>
+                                </Model>
+                            </ext:Store>
+                        </Store>
+                        <ColumnModel ID="colModel" runat="server">
+                            <Columns>
+                                <ext:RowNumbererColumn ID="rowNumCol" runat="server" Width="25" />
+                                <ext:Column ID="Barcode" runat="server" Text="条码号" DataIndex="Barcode" Width="120" />
+                                <%--<ext:Column ID="StorageName" runat="server" Text="库房名称" DataIndex="StorageName" Width="75" />
+                                <ext:Column ID="StoragePlaceName" runat="server" Text="库位名称" DataIndex="StoragePlaceName" Flex="1" />--%>
+                                <ext:Column ID="MaterialName1" runat="server" Text="物料" DataIndex="MaterialName" Width="85" />
+                                <ext:Column ID="Num1" runat="server" Text="当前数量" DataIndex="Num" Flex="1" />
+                                <ext:Column ID="RealWeight" runat="server" Text="当前重量" DataIndex="RealWeight" Flex="1" />
+                                <ext:Column ID="NewNum" runat="server" Text="设置数量" DataIndex="NewNum" Flex="1">
+                                    <Editor>
+                                        <ext:NumberField ID="NumberField1" runat="server" MinValue="0" />
+                                    </Editor>
+                                </ext:Column>
+                                <ext:CommandColumn ID="CommandColumn2" runat="server" Width="50">
+                                    <Commands>
+                                        <ext:GridCommand Text="取消" ToolTip-Text="取消修改" CommandName="reject" Icon="ArrowUndo" />
+                                    </Commands>
+                                    <PrepareToolbar Handler="toolbar.items.get(0).setVisible(record.dirty);" />
+                                    <Listeners>
+                                        <Command Handler="return commandcolumn_click(command, record);" />
+                                    </Listeners>
+                                </ext:CommandColumn>
+                            </Columns>
+                        </ColumnModel>
+                        <SelectionModel>
+                            <%--<ext:CheckboxSelectionModel ID="CheckboxSelectionModel1" runat="server" Mode="Simple" />--%>
+                            <ext:RowSelectionModel ID="rowSelectMuti" runat="server" Mode="Simple">
+                                <%--<DirectEvents>
+                                    <Select OnEvent="RowSelect" Buffer="250">
+                                        <ExtraParams>
+                                            <ext:Parameter Name="Barcode" Value="record.getId()" Mode="Raw" />
+                                        </ExtraParams>
+                                    </Select>
+                                </DirectEvents>
+                                <Listeners>
+                                    <Select Handler="#{storeDetail}.reload();" Buffer="250" />
+                                </Listeners>--%>
+                            </ext:RowSelectionModel>
+                        </SelectionModel>
+                        <Plugins>
+                                <ext:CellEditing ID="CellEditing2" runat="server">
+                                    <Listeners>
+                                        <Edit Fn="edit2" />
+                                    </Listeners>
+                                </ext:CellEditing>
+                            </Plugins>
+                        <BottomBar>
+                            <ext:PagingToolbar ID="pageToolBar" runat="server">
+                                <Plugins>
+                                    <ext:ProgressBarPager ID="ProgressBarPager" runat="server" />
+                                </Plugins>
+                            </ext:PagingToolbar>
+                        </BottomBar>
+                    </ext:GridPanel>
+                </Items>
+                <Buttons>
+                    <ext:Button ID="btnAddSave" runat="server" Text="确定" Icon="Accept">
+                        <%--<Listeners>
+                            <Click Handler="AddStoreIn();" />
+                        </Listeners>--%>
+                        <DirectEvents>
+                            <Click OnEvent="AddStoreIn">
+                                <ExtraParams>
+                                    <ext:Parameter Name="data" Value="#{store}.getChangedData({skipIdForNewRecords : false})" Mode="Raw" Encode="true" />
+                                </ExtraParams>
+                            </Click>
+                        </DirectEvents>
+                    </ext:Button>
+                    <ext:Button ID="btnAddCancel" runat="server" Text="取消" Icon="Cancel">
+                        <DirectEvents>
+                            <Click OnEvent="btnCancel_Click">
+                            </Click>
+                        </DirectEvents>
+                    </ext:Button>
+                </Buttons>
+                <Listeners>
+                    <Show Handler="for(var i=0;i<#{vpStoreoutBill}.items.length;i++){#{vpStoreoutBill}.getComponent(i).disable(true);}" />
+                    <Hide Handler="for(var i=0;i<#{vpStoreoutBill}.items.length;i++){#{vpStoreoutBill}.getComponent(i).enable(true);#{store}.reload();}" />
+                </Listeners>
+            </ext:Window>
+
+            <ext:Hidden ID="hiddenBillNo" runat="server"></ext:Hidden>
+            <ext:Hidden ID="hiddenStorageID" runat="server"></ext:Hidden>
+            <ext:Hidden ID="hiddenStoragePlaceID" runat="server"></ext:Hidden>
+            <ext:Hidden ID="hiddenMaterCode" runat="server"></ext:Hidden>
+            <ext:Hidden ID="hiddenFactoryID" runat="server"></ext:Hidden>
+            <ext:Hidden ID="hiddenOpenEdit" runat="server"></ext:Hidden>
+        </Items>
+    </ext:Viewport>
+    </form>
+</body>
+</html>

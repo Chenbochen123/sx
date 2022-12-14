@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="09/14/2013 21:01:03" ReportInfo.Modified="09/14/2013 23:03:57" ReportInfo.CreatorVersion="1.5.14.0">
+  <ScriptText>using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Data;
+using FastReport;
+using FastReport.Data;
+using FastReport.Dialog;
+using FastReport.Barcode;
+using FastReport.Table;
+using FastReport.Utils;
+
+namespace FastReport
+{
+  public class ReportScript
+  {
+
+    private void Table1_ManualBuild(object sender, EventArgs e)
+    {
+      DataSourceBase rowData = Report.GetDataSource(&quot;TotalWeight&quot;);
+      rowData.Init();
+      Table1.PrintRow(0);
+      Table1.PrintColumns();
+      
+      
+      Text1.Text = rowData.Columns.ToArray()[0].ToString();
+      
+    }
+  }
+}
+</ScriptText>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqAFHGp6KQj27H4qUwAIR20hSnyrpNtgmeY+I5zyTmYE0HuZfX1hs9fAqnt4DRtzHmabOsETFu8uBcY3tAnpVWBTTAdBw7JTBCtzSX8xSQMNVNNe0oRSMlmPwJJUBb3zDgZKPcDdrCWsDxM9qWsy6hliWiTerGcgzrd2bOfloaDI0daBJa7TTu/lq0ks55fBNy">
+      <TableDataSource Name="Table" Alias="TotalWeight" DataType="System.Int32" Enabled="true" SelectCommand="select '' ProdDate, '' ShiftName, '' ClassName, '' EquipName, '' RecipeMaterialName, '主机手' UserName, '合计数量' TotalNum, '合计重量' TotalWeight">
+        <Column Name="ProdDate" DataType="System.String"/>
+        <Column Name="ShiftName" DataType="System.String"/>
+        <Column Name="ClassName" DataType="System.String"/>
+        <Column Name="EquipName" DataType="System.String"/>
+        <Column Name="RecipeMaterialName" DataType="System.String"/>
+        <Column Name="UserName" DataType="System.String"/>
+        <Column Name="TotalNum" DataType="System.String"/>
+        <Column Name="TotalWeight" DataType="System.String"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+  </Dictionary>
+  <ReportPage Name="Page1">
+    <DataBand Name="Data1" Width="718.2" Height="349.65">
+      <TextObject Name="txtTitle" Top="9.45" Width="718.2" Height="28.35" Text="产量报表" HorzAlign="Center" VertAlign="Center" Font="宋体, 14pt, style=Bold"/>
+      <TableObject Name="Table1" Left="9.45" Top="56.7" Width="699.12" Height="37.8" ManualBuildEvent="Table1_ManualBuild">
+        <TableColumn Name="Column1" Width="87.39"/>
+        <TableColumn Name="Column2" Width="87.39"/>
+        <TableColumn Name="Column3" Width="87.39"/>
+        <TableColumn Name="Column4" Width="87.39"/>
+        <TableColumn Name="Column5" Width="87.39"/>
+        <TableColumn Name="Column7" Width="87.39"/>
+        <TableColumn Name="Column8" Width="87.39"/>
+        <TableColumn Name="Column6" Width="87.39"/>
+        <TableRow Name="Row1">
+          <TableCell Name="Cell1" Border.Lines="All" Text="生产日期" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text="班次" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="班组" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="机台" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text="物料" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="主机手" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell15" Border.Lines="All" Text="车数" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell11" Border.Lines="All" Text="重量" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+        <TableRow Name="Row2">
+          <TableCell Name="Cell6" Border.Lines="All" Text="[TotalWeight.ProdDate]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell7" Border.Lines="All" Text="[TotalWeight.ShiftName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[TotalWeight.ClassName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[TotalWeight.EquipName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="[TotalWeight.RecipeMaterialName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell14" Border.Lines="All" Text="[TotalWeight.UserName]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell16" Border.Lines="All" Text="[TotalWeight.TotalNum]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="[TotalWeight.TotalWeight]" HorzAlign="Center" VertAlign="Center" Font="宋体, 9pt"/>
+        </TableRow>
+      </TableObject>
+      <TextObject Name="Text1" Left="85.05" Top="226.8" Width="378" Height="18.9"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="353.65" Width="718.2" Height="18.9"/>
+  </ReportPage>
+</Report>

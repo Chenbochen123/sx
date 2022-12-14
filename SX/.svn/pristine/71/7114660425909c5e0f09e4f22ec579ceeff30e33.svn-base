@@ -1,0 +1,108 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Data;
+using NBear.Common;
+
+namespace Mesnac.Business.Interface
+{
+    using Mesnac.Entity;
+    using Mesnac.Data.Components;
+    using Mesnac.Business.Implements;
+    /// <summary>
+    /// IPmtRecipeManager 接口定义
+    /// 孙本强 @ 2013-04-03 12:18:08
+    /// </summary>
+    /// <remarks></remarks>
+    public interface IPmtRecipeManager : IBaseManager<PmtRecipe>
+    {
+        /// <summary>
+        /// 根据物料名称获取物料配方别名信息
+        /// 孙宜建
+        /// 2013-2-25
+        /// </summary>
+        /// <param name="recipeMaterialName">物料名称</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        DataSet GetRecipeNameByRecipeMaterialName(string recipeMaterialName);
+
+        /// <summary>
+        /// 通过拼音获取前物料信息
+        /// 孙本强 @ 2013-04-03 12:18:08
+        /// </summary>
+        /// <param name="top">The top.</param>
+        /// <param name="equipCode">The equip code.</param>
+        /// <param name="searchkey">The searchkey.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        EntityArrayList<PmtRecipe> GetDistinctRecipeMaterialNameAndCode(int top, string equipCode, string searchkey);
+
+        /// <summary>
+        /// 获取物料信息
+        /// 孙本强 @ 2013-04-03 12:18:08
+        /// </summary>
+        /// <param name="queryParams">查询参数</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        EntityArrayList<BasMaterial> GetBasMaterial(PmtRecipeManager.QueryParams queryParams);
+
+        /// <summary>
+        /// 获取分页数据集
+        /// 孙本强 @ 2013-04-03 12:18:08
+        /// </summary>
+        /// <param name="queryParams">查询参数</param>
+        /// <returns>分页数据集</returns>
+        /// <remarks></remarks>
+        PageResult<PmtRecipe> GetTablePageDataBySql(PmtRecipeManager.QueryParams queryParams);
+
+        /// <summary>
+        /// 审核工艺配方
+        /// 孙本强 @ 2013-04-03 12:18:09
+        /// </summary>
+        /// <param name="id">The id.</param>
+        /// <param name="pass">if set to <c>true</c> [pass].</param>
+        /// <param name="userid">The userid.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        string AuditPmtRecipe(string id, bool pass, string userid);
+
+        /// <summary>
+        /// 删除工艺配方
+        /// 孙本强 @ 2013-04-03 12:18:09
+        /// </summary>
+        /// <param name="id">The id.</param>
+        /// <param name="userid">The userid.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        string DeletePmtRecipe(string id, string userid);
+
+        /// <summary>
+        /// 保存工艺配方
+        /// 孙本强 @ 2013-04-03 12:18:09
+        /// </summary>
+        /// <param name="pmtRecipe">The PMT recipe.</param>
+        /// <param name="pmtRecipeWeight">The PMT recipe weight.</param>
+        /// <param name="pmtRecipeMixing">The PMT recipe mixing.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        string SavePmtRecipe(PmtRecipe pmtRecipe, EntityArrayList<PmtRecipeWeight> pmtRecipeWeight,
+            EntityArrayList<PmtRecipeMixing> pmtRecipeMixing, EntityArrayList<PmtRecipeOpenMixing> pmtRecipeOpenMixing);
+        string SavePmtRecipe(PmtRecipe pmtRecipe, EntityArrayList<PmtRecipeWeightMid> recipePmtRecipeWeightMid, PmtPMILLMain PmtPMILLMain, PmtSMILLMain PmtSMILLMain, PmtCoolMILLMain PmtCoolMILLMain
+             , EntityArrayList<PmtRecipeWeight> pmtRecipeWeight);
+
+        /// <summary>
+        /// 物料配方另存
+        /// 孙本强 @ 2013-04-03 12:18:09
+        /// </summary>
+        /// <param name="UserID">The user ID.</param>
+        /// <param name="RecipeID">The recipe ID.</param>
+        /// <param name="EquipCodeList">The equip code list.</param>
+        /// <param name="RecipeState">State of the recipe.</param>
+        /// <param name="RecipeType">Type of the recipe.</param>
+        /// <returns></returns>
+        /// <remarks></remarks>
+        string CopyToEquip(string UserID, string RecipeID, string[] EquipCodeList, string RecipeState, string RecipeType,string matercode);
+
+        string CopyToEquipNew(string UserID, string RecipeID, string[] EquipCodeList, string RecipeState, string RecipeType, string matercode, string Version);
+    }
+}
